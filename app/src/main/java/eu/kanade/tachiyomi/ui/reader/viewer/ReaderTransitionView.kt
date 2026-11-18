@@ -28,12 +28,19 @@ class ReaderTransitionView @JvmOverloads constructor(context: Context, attrs: At
         layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
     }
 
-    fun bind(theme: Int, transition: ChapterTransition, downloadManager: DownloadManager, manga: Manga?) {
+    fun bind(
+        theme: Int,
+        transition: ChapterTransition,
+        downloadManager: DownloadManager,
+        manga: Manga?,
+        readMillis: (() -> Long)? = null,
+    ) {
         data = if (manga != null) {
             Data(
                 theme = theme,
                 manga = manga,
                 transition = transition,
+                readMillis = readMillis,
                 currChapterDownloaded = transition.from.pageLoader?.isLocal == true,
                 goingToChapterDownloaded = manga.isLocal() ||
                     transition.to?.chapter?.let { goingToChapter ->
@@ -60,6 +67,7 @@ class ReaderTransitionView @JvmOverloads constructor(context: Context, attrs: At
                     ChapterTransition(
                         manga = it.manga,
                         transition = it.transition,
+                        readMillis = it.readMillis,
                         currChapterDownloaded = it.currChapterDownloaded,
                         goingToChapterDownloaded = it.goingToChapterDownloaded,
                     )
@@ -72,6 +80,7 @@ class ReaderTransitionView @JvmOverloads constructor(context: Context, attrs: At
         val theme: Int,
         val manga: Manga,
         val transition: ChapterTransition,
+        val readMillis: (() -> Long)?,
         val currChapterDownloaded: Boolean,
         val goingToChapterDownloaded: Boolean,
     )

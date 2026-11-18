@@ -1,5 +1,6 @@
 package yokai.presentation.reader
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,6 +8,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
@@ -24,9 +27,15 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.buildAnnotatedString
@@ -35,12 +44,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.icerock.moko.resources.compose.pluralStringResource
 import dev.icerock.moko.resources.compose.stringResource
+import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.database.models.Chapter
 import eu.kanade.tachiyomi.domain.manga.models.Manga
 import eu.kanade.tachiyomi.ui.reader.model.ChapterTransition
 import eu.kanade.tachiyomi.ui.reader.viewer.missingChapterCount
 import eu.kanade.tachiyomi.util.chapter.ChapterUtil.Companion.preferredChapterName
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.coroutines.delay
 import yokai.i18n.MR
 import yokai.util.secondaryItemAlpha
 
@@ -50,6 +61,7 @@ fun ChapterTransition(
     transition: ChapterTransition,
     currChapterDownloaded: Boolean,
     goingToChapterDownloaded: Boolean,
+    readMillis: (() -> Long)? = null,
 ) {
     val currChapter = transition.from.chapter
     val goingToChapter = transition.to?.chapter
@@ -70,7 +82,11 @@ fun ChapterTransition(
                     chapterGap = chapterGap,
                 )
             }
-            is ChapterTransition.Next -> {
+            is ChapterTransition.Next -> Column {
+                if (readMillis != null) {
+                    ReadTimeCard(readMillis)
+                    Spacer(Modifier.height(VerticalSpacerSize))
+                }
                 TransitionText(
                     manga = manga,
                     topLabel = stringResource(MR.strings.finished_chapter),
@@ -296,5 +312,47 @@ private val CardColor: CardColors
     )
 
 private val VerticalSpacerSize = 24.dp
+
+/** The little snake points at how long you spent in the chapter you just finished. */
+@Composable
+private fun ReadTimeCard(readMillis: () -> Long) {
+    var millis by remember { mutableStateOf(readMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            millis = readMillis()
+            delay(1000)
+        }
+    }
+    if (millis < 5_000L) return
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.r_mascot_happy), // TODO: swap for the "pointing at the time" pose
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = "قعدت ${formatReadTime(millis)} في الفصل ده",
+            style = MaterialTheme.typography.bodyLarge,
+        )
+    }
+}
+
+private fun formatReadTime(millis: Long): String {
+    val totalSeconds = millis / 1000
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return when {
+        hours > 0 -> if (minutes > 0) "$hours ساعة و$minutes دقيقة" else "$hours ساعة"
+        minutes > 0 -> "$minutes دقيقة"
+        else -> "$seconds ثانية"
+    }
+}
 private const val DOWNLOADED_ICON_ID = "downloaded"
 private const val ONLINE_ICON_ID = "online"

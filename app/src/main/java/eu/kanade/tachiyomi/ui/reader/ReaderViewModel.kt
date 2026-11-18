@@ -149,7 +149,11 @@ class ReaderViewModel(
     /**
      * The time the chapter was started reading
      */
+    @Volatile
     private var chapterReadStartTime: Long? = null
+
+    /** Time spent in each chapter during this reading visit (chapter id -> ms), shown between chapters. */
+    private val chapterReadMillis = java.util.concurrent.ConcurrentHashMap<Long, Long>()
 
     /**
      * Relay used when loading prev/next chapter needed to lock the UI (with a dialog).
@@ -675,6 +679,18 @@ class ReaderViewModel(
         updateChapter.awaitAll(duplicateUnreadChapters)
     }
 
+    /** How long the person has spent in [chapter] so far (saved time + the part still running). */
+    fun getChapterReadMillis(chapter: ReaderChapter): Long {
+        val id = chapter.chapter.id ?: return 0L
+        val saved = chapterReadMillis[id] ?: 0L
+        val live = if (getCurrentChapter()?.chapter?.id == id) {
+            chapterReadStartTime?.let { (Date().time - it).coerceAtLeast(0L) } ?: 0L
+        } else {
+            0L
+        }
+        return saved + live
+    }
+
     fun restartReadTimer() {
         chapterReadStartTime = Date().time
     }
@@ -686,6 +702,10 @@ class ReaderViewModel(
         val startTime = chapterReadStartTime
         val endTime = Date().time
         chapterReadStartTime = null
+        val chapterKey = chapter.chapter.id
+        if (startTime != null && chapterKey != null) {
+            chapterReadMillis.merge(chapterKey, (endTime - startTime).coerceAtLeast(0L), Long::plus)
+        }
         viewModelScope.launchNonCancellableIO {
             saveChapterHistory(chapter, startTime, endTime)
         }
