@@ -15,20 +15,17 @@ class ReaderSlider @JvmOverloads constructor(
 ) : Slider(context, attrs) {
 
     /**
-     * Whether the seekbar should draw from right to left.
+     * Whether the viewer reads right to left. The bar is vertical now (always fills bottom to top),
+     * so this is only used for page labels and never mirrors the slider itself.
      */
-    var isRTL: Boolean
-        set(value) {
-            layoutDirection = if (value) LAYOUT_DIRECTION_RTL else LAYOUT_DIRECTION_LTR
-        }
-        get() = layoutDirection == LAYOUT_DIRECTION_RTL
+    var isRTL: Boolean = false
     private val boundingBox: Rect = Rect()
     private val exclusions = listOf(boundingBox)
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
         if (Build.VERSION.SDK_INT >= 29 && changed) {
-            boundingBox.set(left, top, right, bottom)
+            boundingBox.set(0, 0, right - left, bottom - top)
             systemGestureExclusionRects = exclusions
         }
     }

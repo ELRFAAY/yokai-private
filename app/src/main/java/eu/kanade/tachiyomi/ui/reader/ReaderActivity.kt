@@ -391,6 +391,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
 
         binding.chaptersSheet.chaptersBottomSheet.setup(this)
+        binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateNavHeight() }
         config = ReaderConfig()
         initializeMenu()
 
@@ -462,11 +463,6 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                             }
                         }
                         if (hingeGapSize > 0) {
-                            binding.navLayout.updateLayoutParams<CoordinatorLayout.LayoutParams> {
-                                gravity = Gravity.TOP or Gravity.CENTER
-                                anchorGravity = Gravity.TOP or Gravity.CENTER
-                                width = (binding.root.width - hingeGapSize) / 2 - 24.dpToPx
-                            }
                             binding.chaptersSheet.root.updateLayoutParams<CoordinatorLayout.LayoutParams> {
                                 gravity = Gravity.END
                                 width = (binding.root.width - hingeGapSize) / 2
@@ -574,6 +570,22 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                     width = if (isDoublePage && isCurrent) 48.spToPx else 32.spToPx
                 }
             }
+        }
+    }
+
+    /**
+     * The page bar is vertical: it fills the space between the top bar and the bottom toolbar,
+     * but never gets taller than 400dp (or shorter than 150dp).
+     */
+    private fun updateNavHeight() {
+        val rootHeight = binding.root.height
+        if (rootHeight <= 0) return
+        val peek = binding.chaptersSheet.root.sheetBehavior?.peekHeight ?: 0
+        val topLimit = binding.appBar.height.takeIf { it > 0 } ?: 80.dpToPx
+        val available = rootHeight - peek - topLimit - 24.dpToPx
+        val target = available.coerceIn(150.dpToPx, 400.dpToPx)
+        if (binding.navLayout.layoutParams.height != target) {
+            binding.navLayout.updateLayoutParams { height = target }
         }
     }
 
@@ -1027,6 +1039,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             }
             binding.chaptersSheet.chapterRecycler.updatePaddingRelative(bottom = systemInsets.bottom)
             binding.viewerContainer.requestLayout()
+            updateNavHeight()
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             @Suppress("DEPRECATION")
