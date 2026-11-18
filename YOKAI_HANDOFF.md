@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff
 
 Read this first when starting a new session or from another account. Update it after every meaningful change.
-Last updated: 2026-11-18
+Last updated: 2026-11-18 (11:30, after owner input #10; newest code is on `build/r` commit 7e215cc)
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage).
@@ -115,9 +115,10 @@ Stated by the owner on 2026-11-18:
 ### R switches (keep this table up to date)
 | Switch (pref key) | What it controls | Default | Branch |
 |---|---|---|---|
-| `r_fix_split_tall_image_error` | Download: a missing page file during the tall-image split is only logged (on) vs. fails the page with "page not found during splitting" (off = original) | on | `feat/r-settings` |
+| `r_fix_split_tall_image_error` | Download: page files always named with English digits + a missing file during the tall-image split is only logged (on) vs. device-language digits and the page fails with "page not found during splitting" (off = original) | on | `feat/r-settings` (digits part: `build/r`) |
 | `r_auto_scroll` | Reader (continuous/webtoon mode only): play/pause auto-scroll button at the end of the reader nav row (on) vs. no button (off = original) | on | `feat/r-autoscroll` |
 | `r_auto_scroll_speed` | Auto-scroll speed in dp/second (choices 30/60/100/150/220) | 60 | `feat/r-autoscroll` |
+| `r_single_app_icon` | Appearance: icon picker hidden (on) so the app has one icon vs. original picker with Default/Blue/Orange/Gray/Classic (off) | on | `build/r` |
 
 ## Working rules
 - Make each change on its own branch, not directly on `main`. `main` stays as the known-good base (this handoff file is the only thing committed straight to it).
@@ -191,6 +192,13 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 ### Owner input #9: logo image `557510.jpg` (2026-11-18, recorded before comparing it)
 - After saying the icon in the app was not the logo he meant, the owner sent an image with the message \"this is the logo\". Saved as `branding/logo-owner-557510.jpg`. Comparison with `branding/icon-source.jpg` is noted right below.
 
+### Owner input #10 (2026-11-18 11:19): logo again, one icon, downloads still failing, mascot question
+- Owner sent the logo image once more (same bytes as `branding/logo-owner-557510.jpg` / `icon-source.jpg`, md5 60fe690f...). He said: the OLD logo is black and white, and **the icon he sees on his side is black and white too**, so it is not what he wants; this green Y is the one he wants.
+- He wants **only ONE icon version in the program** (not the 6-7 copies = the icon picker in Settings > Appearance) and **one build that works on any device without problems**.
+- **Downloads still fail** (he said "start work" = go). Root cause found 2026-11-18 (see change log): page files were named with the device-language digits (Arabic UI -> `٠٠٢.jpg`) while the tall-image split looks for `002`; Mihon passes `Locale.ENGLISH`. So it is the Arabic language, not Xiaomi itself. Fix on `build/r`, **not tested on the phone yet**. The separate crash "press download -> app closes and reopens" is still not investigated (needs a logcat).
+- Mascot: he asked whether the small animated creature that reacts to him is part of the final app. Answer given: **not built yet**, waiting for his animation images; goes behind an R switch.
+- Why the icon may still look black and white to him (unconfirmed): he may be looking at the original Yokai app (installed side by side), or the splash screen (fixed now), or the icon picker (hidden now). The launcher icon itself was verified colored (adaptive foreground = the green badge).
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
@@ -202,6 +210,7 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 ## Change log
 | Date | Branch | What changed | Status |
 |------|--------|--------------|--------|
+| 2026-11-18 | `build/r` (commit 7e215cc) | Splash screen uses the green Y logo (`drawable-nodpi/ic_yokai_splash_r.webp`, themes.xml); new switch `r_single_app_icon` hides the icon picker; `Downloader.getOrDownloadImage` names page files with `Locale.ENGLISH` digits (fixes the Arabic-UI "page not found during splitting"). Notification small icon `ic_yokai` left as is on purpose (must be a flat glyph). Not tested on a device. | CI |
 | 2026-11-18 | `feat/r-autoscroll` | Auto-scroll for webtoon mode: `WebtoonViewer.start/stop/toggleAutoScroll` (Choreographer, fractional px accumulation, stops on user drag / end of content / onPause), play button `auto_scroll` in `reader_nav.xml`, prefs `rAutoScroll` + `rAutoScrollSpeed`, controls in Settings > R. Stacked on `feat/r-settings`. Known limit: stops if the next chapter is not loaded yet when the end is reached. Not tested on a device. | pending test |
 | 2026-11-18 | `build/r` | Merge of `feat/r-settings` + `feat/r-branding` + `feat/r-autoscroll`, plus `.github/workflows/build_r.yml` (debug APK as artifact) and `google-services.json` entries for the new application ids (first build failed without them). First green build was before auto-scroll; build with auto-scroll was started after. | CI |
 | 2026-11-18 | `main` | Initial import of upstream `843a59b` | done |
