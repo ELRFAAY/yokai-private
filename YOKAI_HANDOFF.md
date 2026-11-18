@@ -223,6 +223,9 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - Done on `build/r`: the 109 strings added to `i18n/.../ar/strings.xml` (MSA, my own translations, not reviewed by the owner); `SettingsRController`, its entry title ("تعديلات R") and the auto-scroll description are Arabic; new switch `r_force_arabic` opens the app in Arabic by default.
 - Not done / unknown: other hardcoded English outside resources in upstream code (not searched), the app name "Yokai Private" (kept in English as the owner chose it; ask if he wants an Arabic launcher name), extension/source names and manga titles (come from the sources).
 
+### Owner input #15 (2026-11-18 13:00): image `557633.jpg`, no text (recorded before use)
+- Saved as `branding/mascot-extra-557633.jpg` (about 580x470, dark background). It shows a close-up of the snake from the front/top: a big dark green cobra hood with a lime-green pentagon gem at the top, a light-gray speckled band across the middle (looks like scales or teeth), the lower body narrowing downward, and two green hands at the bottom corners. No face/eyes visible. The owner sent it with no message, so its purpose is unknown (maybe a back view, a new pose, or a crop for the chapter-transition panel). Ask him before using it.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
