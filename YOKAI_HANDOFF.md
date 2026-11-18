@@ -242,6 +242,13 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - 20:41 owner sent a text file `03ceb07d-attachment.txt` (content not reviewed yet when this was written; notes added right below once read) and said: the two accounts before this one were working on "the mini ..." (his word sounded like "mini fork"/"mini feature"; unclear which); "try to finish, see what they were working on, and finish it".
 - My reading so far: the unfinished work of the earlier accounts is (a) the mascot judging a series (owner input #17), (b) branch `fix/stats-and-name` that was never merged with `build/r`. To be confirmed from the attachment.
 
+#### The attachment `03ceb07d-attachment.txt` is a crash log (reviewed 2026-11-18 ~20:50)
+- 399 lines, two apps mixed: (1) a one-time crash of the owner's other app **R Music** (Build 7.0.3, `CoverLyricsFragment.onSharedPreferenceChanged` NullPointerException; not this project), then (2) logcat of **our app** (package `com.elrfaay.yokair.yokai`, "App version 1.10.3 (standard, **22d55da**, 198, 2026-11-18T12:41:12Z)" = the tip of `fix/stats-and-name`) on a **POCO M2102J20SG (vayu), Android 12**.
+- The Yokai part shows **5 identical crashes** (15:07:22, 15:07:36, 15:08:15, 20:02:41, 20:04:49 device time): `kotlin.UninitializedPropertyAccessException: lateinit property manga has not been initialized` at `MangaDetailsPresenter.getManga` <- `toModel` <- `getChapters` <- `MangaDetailsPresenter.onCreate` (inside `runBlocking`) <- `MangaDetailsController.onViewCreated`.
+- Two entry paths: **`SearchActivity.handleIntentAction`** (activity launched with an intent; 4 of the 5) and **`MainActivity.onNewIntent -> handleIntentAction -> pushController`** (the 20:02 one). So the manga details screen is opened from an external intent (notification tap, shortcut, widget...) and the presenter's `manga` is never set.
+- Not related to the crash: `HttpException 502` while updating a series, SQLite "automatic index" warnings.
+- Status: cause not yet found when this was written (see the change log for the fix).
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
