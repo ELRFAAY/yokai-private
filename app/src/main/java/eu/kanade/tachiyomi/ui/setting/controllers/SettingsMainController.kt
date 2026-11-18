@@ -114,7 +114,7 @@ class SettingsMainController : SettingsLegacyController(), FloatingSearchInterfa
         preference {
             iconRes = R.drawable.ic_tune_24dp
             iconTint = tintColor
-            title = "R"
+            title = "تعديلات R"
             summary = "R modifications"
             onClick { navigateTo(SettingsRController()) }
         }

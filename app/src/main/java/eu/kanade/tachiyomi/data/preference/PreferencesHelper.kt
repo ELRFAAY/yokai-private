@@ -287,6 +287,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Home screen (library): the floating snake mascot you can grab and throw. */
     fun rMascot() = preferenceStore.getBoolean("r_mascot", true)
 
+    /** Language: open the app in Arabic unless another language was picked in Settings > General. */
+    fun rForceArabic() = preferenceStore.getBoolean("r_force_arabic", true)
+
     fun downloadNewChapters() = preferenceStore.getBoolean(Keys.downloadNew, false)
 
     fun downloadNewChaptersInCategories() = preferenceStore.getStringSet("download_new_categories", emptySet())

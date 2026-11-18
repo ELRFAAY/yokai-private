@@ -119,6 +119,7 @@ Stated by the owner on 2026-11-18:
 | `r_auto_scroll` | Reader (continuous/webtoon mode only): play/pause auto-scroll button at the end of the reader nav row (on) vs. no button (off = original) | on | `feat/r-autoscroll` |
 | `r_auto_scroll_speed` | Auto-scroll speed in dp/second (choices 30/60/100/150/220) | 60 | `feat/r-autoscroll` |
 | `r_single_app_icon` | Appearance: icon picker hidden (on) so the app has one icon vs. original picker with Default/Blue/Orange/Gray/Classic (off) | on | `build/r` |
+| `r_force_arabic` | Language: app opens in Arabic (when no other language was picked) (on) vs. system language (off = original). Applied in `App.onCreate`. | on | `build/r` |
 | `r_mascot` | Home (library screen): floating snake mascot, grab and throw it (on) vs. nothing (off = original) | on | `feat/r-mascot` (in `build/r`) |
 
 ## Working rules
@@ -216,6 +217,12 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - Decisions the owner confirmed in the same message (12:40): final app name is **Yokai Private**; keep the link with the original developer (Firebase/updater untouched) so extension updates keep arriving. Done: `app_name` -> "Yokai Private" (+ Debug/Nightly) on `build/r` (8a3102b).
 - Plan: cut each cell out (flood-fill the dark background), save as `drawable-nodpi/r_mascot_<mood>.webp`, make `RMascotView` swap the bitmap by mood (idle=blink/happy, drag=scared, hard hit=hurt, many bounces=dizzy, rest after hits=sad, tap=happy).
 
+### Owner input #14 (2026-11-18 12:53): everything in Arabic
+- Owner: "I want all translations of the program to be Arabic, nothing in English at all."
+- Found: 109 translatable strings had no Arabic (they fell back to English), 22 more are `translatable="false"` (left alone). The R settings screen and the auto-scroll button description were hardcoded English.
+- Done on `build/r`: the 109 strings added to `i18n/.../ar/strings.xml` (MSA, my own translations, not reviewed by the owner); `SettingsRController`, its entry title ("تعديلات R") and the auto-scroll description are Arabic; new switch `r_force_arabic` opens the app in Arabic by default.
+- Not done / unknown: other hardcoded English outside resources in upstream code (not searched), the app name "Yokai Private" (kept in English as the owner chose it; ask if he wants an Arabic launcher name), extension/source names and manga titles (come from the sources).
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
@@ -227,6 +234,7 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 ## Change log
 | Date | Branch | What changed | Status |
 |------|--------|--------------|--------|
+| 2026-11-18 | `build/r` | Arabic everywhere: 109 missing translations added to `ar/strings.xml`, R settings screen + auto-scroll description in Arabic, new switch `r_force_arabic` (App.onCreate sets the app locale to `ar` when none is set). Not compiled or tested. | CI |
 | 2026-11-18 | `build/r` | Mascot now has 6 faces from the owner's sheet (`branding/mascot-moods-557623.jpg` cut into `drawable-nodpi/r_mascot_{happy,hurt,scared,dizzy,sad,blink}.webp`; the old single `r_mascot.webp` was removed). `RMascotView.currentMood`: idle=happy with a blink every 3.6 s, grabbed/flying=scared, wall hit=hurt, 3+ hard hits in one flight=dizzy, 1-2 hits then rest=sad, tap/soft landing=happy. New phrases for dizzy/sad (not approved by the owner). Cut-out script is not stored in the repo (flood-fill of bg #181C1B, keep components >= 3000 px, 384x384 lossless WebP). Not compiled or tested. | CI |
 | 2026-11-18 | `build/r` (1e3ae7a) | Deleted upstream debug/nightly launcher icon overrides (they hid the green logo), renamed debug/nightly app names, CI builds the minified release APK (`-PrDebugSign=true`, artifact `yokai-r-release`). | CI |
 | 2026-11-18 | `feat/r-mascot` + `build/r` (fd9b895) | Snake mascot overlay (`RMascotView.kt`, `r_mascot.webp`), `r_mascot` pref + Settings > R switch, `MainActivity.updateRMascot` (shown on `LibraryController` only). Not compiled locally (no Android SDK) and not tested on a device. | CI |

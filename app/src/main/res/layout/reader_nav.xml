@@ -94,7 +94,7 @@
             android:layout_height="40dp"
             android:layout_gravity="center"
             android:background="?selectableItemBackgroundBorderless"
-            android:contentDescription="Auto scroll"
+            android:contentDescription="تمرير تلقائي"
             android:padding="@dimen/material_layout_keylines_screen_edge_margin"
             android:visibility="gone"
             app:tint="?actionBarTintColor"

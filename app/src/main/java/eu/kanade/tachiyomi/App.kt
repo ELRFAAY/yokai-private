@@ -16,6 +16,7 @@ import android.os.Build
 import android.os.Looper
 import android.webkit.WebView
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -114,6 +115,14 @@ open class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.F
             modules(preferenceModule(this@App), appModule(this@App), domainModule())
         }
         initExpensiveComponents(this)
+
+        // R: the whole app in Arabic unless the owner picked another language (Settings > R > language)
+        if (preferences.rForceArabic().get() && AppCompatDelegate.getApplicationLocales().get(0) == null) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                preferences.appLanguage().set("ar")
+            }
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("ar"))
+        }
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
 
