@@ -39,16 +39,28 @@ jobs:
           mkdir -p ~/.gradle
           cp .github/runner-files/ci-gradle.properties ~/.gradle/gradle.properties
 
+      - name: Add swap (the minified release build is memory hungry)
+        run: |
+          sudo swapoff -a || true
+          sudo fallocate -l 8G /mnt/swapfile
+          sudo chmod 600 /mnt/swapfile
+          sudo mkswap /mnt/swapfile
+          sudo swapon /mnt/swapfile
+          free -m
+
       - name: Build release APK
         run: |
-          set +e
           ./gradlew assembleStandardRelease -PrDebugSign=true --stacktrace > build.log 2>&1
-          code=$?
-          if [ $code -ne 0 ]; then
-            python3 - <<'PYEOF'
-          import re
-          lines = open('build.log', errors='replace').read().splitlines()
-          pat = re.compile(r'^e: |What went wrong|Execution failed|Could not |Caused by|error:|FAILURE')
+
+      - name: Diagnostics (only when the build failed)
+        if: failure()
+        run: |
+          free -m || true
+          sudo dmesg 2>/dev/null | grep -i -E "out of memory|oom|killed process" | tail -5 || true
+          python3 - <<'PYEOF'
+          import re, os
+          lines = open('build.log', errors='replace').read().splitlines() if os.path.exists('build.log') else []
+          pat = re.compile(r'^e: |What went wrong|Execution failed|Could not |Caused by|error:|FAILURE|OutOfMemory|GC overhead')
           hits = [l for l in lines if pat.search(l)][:25]
           tail = lines[-25:]
           def enc(t):
@@ -56,8 +68,6 @@ jobs:
           print('::error title=Gradle errors::' + enc('\n'.join(hits)))
           print('::error title=Gradle tail::' + enc('\n'.join(tail)))
           PYEOF
-          fi
-          exit $code
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
