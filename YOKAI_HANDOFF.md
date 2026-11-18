@@ -115,6 +115,12 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - The JPG has a dark square background (corner ~#212526) around the circle; launcher icons need it handled (see below).
 - App name: **not decided yet.** Placeholder used until the owner says: "Yokai R".
 
+## Owner input #4: mascot animation (2026-11-18)
+- Owner answered open decision #2: the storage folder stays **shared** with the original Yokai. Do NOT change `app_normalized_name`.
+- Owner sent two images, saved in `branding/`: `mascot-source.jpg` (his own character: a glossy green cobra-like snake head with big green eyes, fangs and two hands, on a dark background) and `mascot-reference-screenshot.jpg` (a screenshot of another app's home screen, Arabic UI, showing a small cat-like mint-green mascot that cries, floating next to the "continue reading" heading).
+- Request: add a mascot like the crying cat in the reference, but using the owner's snake character, **same size and same placement/behavior** as the reference. The reference mascot is an **animation**. The owner will send more images after these (probably the animation frames or other poses), so wait for them before building.
+- Rule that applies: this must be switchable from Settings > R (new switch to add to the table), and must not touch the extension loader, library refresh, downloads or sources.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
