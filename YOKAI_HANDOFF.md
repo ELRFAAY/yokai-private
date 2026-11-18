@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff
 
 Read this first when starting a new session or from another account. Update it after every meaningful change.
-Last updated: 2026-11-18 (12:45, after owner input #11; newest code is on `build/r` commit fd9b895)
+Last updated: 2026-11-18 (12:50, after owner input #13; newest code is on `build/r`, see the top of its git log)
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage).
@@ -42,7 +42,7 @@ Last updated: 2026-11-18 (12:45, after owner input #11; newest code is on `build
 | Settings > R screen | done (scaffold), in `build/r` |
 | Auto-scroll in webtoon mode (play button in reader nav, speed in R settings) | done, in `build/r`, untested; known limit: stops if the next chapter is not loaded yet at the end |
 | Extra reader tools panel like `branding/reader-controls-reference.jpg` (chapter nav, page slider with count, brightness slider, night mode, lock, play, menu) | not started; meaning of each button must be confirmed with the owner; brightness/filters/slider already exist in the code |
-| Mascot (snake from `branding/mascot-source.jpg`) like the reference app: floats on the home screen, the owner **grabs and throws it**, it flies with a dotted trail, changes faces, shows speech bubbles | v1 built on `feat/r-mascot` (in `build/r`), untested; faces limited to tint/squash/tilt (one picture); phrases are my draft, not approved |
+| Mascot (snake from `branding/mascot-source.jpg`) like the reference app: floats on the home screen, the owner **grabs and throws it**, it flies with a dotted trail, changes faces, shows speech bubbles | v1 built on `feat/r-mascot` (in `build/r`), untested; 6 faces added 12:50 (see change log); phrases are my draft, not approved |
 | Chapter-transition panel with the mascot + \"time spent in this chapter\" + next-chapter button (`branding/reader-transition-reference.jpg`) | not started; needs a per-chapter reading timer; goes in `ReaderTransitionView` behind an R switch |
 | New logo everywhere | see below |
 
@@ -227,6 +227,7 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 ## Change log
 | Date | Branch | What changed | Status |
 |------|--------|--------------|--------|
+| 2026-11-18 | `build/r` | Mascot now has 6 faces from the owner's sheet (`branding/mascot-moods-557623.jpg` cut into `drawable-nodpi/r_mascot_{happy,hurt,scared,dizzy,sad,blink}.webp`; the old single `r_mascot.webp` was removed). `RMascotView.currentMood`: idle=happy with a blink every 3.6 s, grabbed/flying=scared, wall hit=hurt, 3+ hard hits in one flight=dizzy, 1-2 hits then rest=sad, tap/soft landing=happy. New phrases for dizzy/sad (not approved by the owner). Cut-out script is not stored in the repo (flood-fill of bg #181C1B, keep components >= 3000 px, 384x384 lossless WebP). Not compiled or tested. | CI |
 | 2026-11-18 | `build/r` (1e3ae7a) | Deleted upstream debug/nightly launcher icon overrides (they hid the green logo), renamed debug/nightly app names, CI builds the minified release APK (`-PrDebugSign=true`, artifact `yokai-r-release`). | CI |
 | 2026-11-18 | `feat/r-mascot` + `build/r` (fd9b895) | Snake mascot overlay (`RMascotView.kt`, `r_mascot.webp`), `r_mascot` pref + Settings > R switch, `MainActivity.updateRMascot` (shown on `LibraryController` only). Not compiled locally (no Android SDK) and not tested on a device. | CI |
 | 2026-11-18 | `build/r` (commit 7e215cc) | Splash screen uses the green Y logo (`drawable-nodpi/ic_yokai_splash_r.webp`, themes.xml); new switch `r_single_app_icon` hides the icon picker; `Downloader.getOrDownloadImage` names page files with `Locale.ENGLISH` digits (fixes the Arabic-UI "page not found during splitting"). Notification small icon `ic_yokai` left as is on purpose (must be a flat glyph). Not tested on a device. | CI |
