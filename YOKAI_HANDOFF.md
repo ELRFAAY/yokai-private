@@ -126,6 +126,12 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - Request: show this panel **between every two chapters** in the reader, using the owner's snake mascot (`branding/mascot-source.jpg`) with a nice animation, and the time spent in the chapter.
 - Notes for whoever builds it: needs a per-chapter reading timer in the reader; it touches the reader's chapter-transition view, so keep it behind a Settings > R switch and keep the original transition when the switch is off. More images are still expected from the owner (animation frames / poses).
 
+### Owner input #6: auto-scroll + reader tools panel (2026-11-18)
+- Owner sent a fourth screenshot, saved as `branding/reader-controls-reference.jpg` (from the same other app, Arabic UI): a rounded dark panel over the page with (top) previous / chapter picker (\"Chapter 2\") / next, (middle) a page slider with a \"3 / 12\" box, a brightness slider (\"brightness\" label, 38%), and (bottom) a row of 6 round buttons: a highlighted toggle, a magic-wand (likely filters/enhance), a moon (night mode), a lock (likely rotation lock), a **play** button (likely auto-scroll) and a list/menu button.
+- Request: add an **auto-scroll** in the reader (moves by itself, with speed control) and add more tools like that panel. The exact meaning of each button is the owner's to confirm (the guesses above are mine, not his).
+- Findings in the code (checked 2026-11-18): no auto-scroll exists in the app. Already existing and reusable: `ReaderNavView.kt` (bottom nav with chapter buttons and slider), `ReaderSlider.kt`, `ReaderColorFilterView.kt` and the filter tab in `settings/ReaderFilterView.kt` (brightness / color filter), `ReaderTransitionView.kt` (chapter transition, where the mascot panel goes), viewers in `viewer/webtoon` and `viewer/pager`.
+- Rule: every new tool needs its own switch in Settings > R.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
