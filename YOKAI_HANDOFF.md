@@ -14,6 +14,50 @@ Last updated: 2026-11-18
 - Many changes are planned, including branding: **app name and logo** (plus more to come, to be listed below).
 - Language of conversation with the owner: Egyptian Arabic.
 
+## LATEST STATE (written 2026-11-18, owner's usage limit at 94%; read this before the older START HERE section below)
+
+### Where things are
+- Branches pushed: `main` (handoff + branding assets only), `fix/download-split-not-found`, `feat/r-settings`, `feat/r-branding`, **`feat/r-autoscroll`** (stacked on `feat/r-settings`), and **`build/r`** = merge of settings + branding + autoscroll, plus `.github/workflows/build_r.yml` and extra entries in `app/src/standard/google-services.json` for the new application ids.
+- Last CI run on `build/r` (auto-scroll build, uploads only the universal debug APK): `in_progress None 45ea4be https://github.com/ELRFAAY/yokai-private/actions/runs/44273600210` (format: status conclusion sha link). If it is `in_progress`, check it; if it failed, read the Gradle error (see "How to read CI errors" below). The earlier build without auto-scroll was green.
+- Nothing has been tested on a device yet. The owner downloads the APK himself from the Actions run page (artifact `yokai-r-debug`); the sandbox cannot download artifacts.
+
+### How to work from the sandbox (important)
+- The owner pasted a GitHub token in the chat; it let the session clone, push and read Actions via `api.github.com`. Never write the token in any file or memory. If it is gone, ask him for access again (he can paste a new token with read/write on Contents + Workflows for this repo only), and remind him to revoke it afterwards.
+- No Android SDK in the sandbox, so every compile check is a CI run (about 15-25 min). Fix compile errors one push at a time.
+- The sandbox cannot download Actions logs or artifacts (their host is blocked). `build_r.yml` therefore prints the Gradle errors as annotations: read them with `GET /repos/ELRFAAY/yokai-private/check-runs/<job id>/annotations` (titles \"Gradle errors\" and \"Gradle tail\").
+- Past compile/build problems already solved: (1) `google-services.json` had no client for the new package names, so `processStandardDebugGoogleServices` failed; (2) `defaultValue = ...` inside `intListPreference` is unresolved (the `bindTo(...)` already sets it).
+- Note: the `standard` flavor still includes Firebase Analytics/Crashlytics tied to the upstream author's Firebase project (`yokai-4034e`); the entries added to `google-services.json` copy that project for the new ids. This is an **open privacy decision** for the owner (turn it off or keep it); not discussed with him yet.
+
+### Owner decisions and requests so far (all stated by the owner)
+- Storage folder is **shared** with the original Yokai (do not change `app_normalized_name`).
+- **One APK that works on all devices** (universal), not many per-architecture files.
+- He mostly reads in **continuous vertical (webtoon) mode, no gaps between pages**.
+- Final app name: still **not decided** (placeholder \"Yokai R\").
+- Hard rules: the app must stay fully usable; every change switchable from Settings > R; extension updates untouched.
+
+### Requested features and status
+| Feature | Status |
+|---|---|
+| Download fix for Xiaomi (tall-image split) | code on `feat/r-settings`, untested on the phone |
+| Settings > R screen | done (scaffold), in `build/r` |
+| Auto-scroll in webtoon mode (play button in reader nav, speed in R settings) | done, in `build/r`, untested; known limit: stops if the next chapter is not loaded yet at the end |
+| Extra reader tools panel like `branding/reader-controls-reference.jpg` (chapter nav, page slider with count, brightness slider, night mode, lock, play, menu) | not started; meaning of each button must be confirmed with the owner; brightness/filters/slider already exist in the code |
+| Mascot (snake from `branding/mascot-source.jpg`) like the reference app: floats on the home screen, the owner **grabs and throws it**, it flies with a dotted trail, changes faces, shows speech bubbles | not started; waiting for the owner's animation images; phrases undecided |
+| Chapter-transition panel with the mascot + \"time spent in this chapter\" + next-chapter button (`branding/reader-transition-reference.jpg`) | not started; needs a per-chapter reading timer; goes in `ReaderTransitionView` behind an R switch |
+| New logo everywhere | see below |
+
+### The logo (owner sent it again as `branding/logo-owner-557510.jpg`)
+- Owner message: \"this is the logo\". It is a 1024x1024 circular badge: dark disc, thin light-green ring, big white **Y**, green flames rising from its notch, green spotted tentacles curling around its base into a spiral.
+- **It is byte-identical to `branding/icon-source.jpg`** (same md5), which is already the launcher icon on `feat/r-branding` (default alias `MainActivityDefaultDummy` uses `@mipmap/ic_launcher`). So the home-screen icon already uses it.
+- Before that, the owner said the icon he saw was \"not the logo he meant\". Probable explanation: other places still show the original Yokai art: the **splash screen** (`@drawable/ic_yokai_splash`, set in `res/values/themes.xml`), the in-app logo (`res/drawable/ic_yokai.xml`), and the icon-switcher icons (Blue, Orange, Gray, Classic mipmaps). Not confirmed.
+- **Open question already asked to the owner (unanswered):** where did he see the wrong logo: the home-screen icon, or the splash / inside the app? If he says \"everywhere\": replace splash, `ic_yokai`, and the icon-switcher icons with this logo; tell him to uninstall the old build first.
+
+### Next steps for the next account
+1. Check the CI run above; if green, tell the owner the link (he downloads `yokai-r-debug`, one universal APK) and ask him to test: download on the Xiaomi phone, Settings > R, auto-scroll button in a webtoon chapter.
+2. Get his answer about the logo location and the Firebase decision.
+3. Then, in this order (each on its own branch behind an R switch, merged into `build/r`): chapter-transition panel with mascot and timer; mascot on the home screen (needs his images); reader tools panel.
+4. Keep this file and the tables below up to date after every change.
+
 ## START HERE: current state and next steps (updated 2026-11-18, written because the previous account was near its usage limit)
 
 ### Branches in `ELRFAAY/yokai-private` (all pushed)
