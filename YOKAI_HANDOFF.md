@@ -226,6 +226,11 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 ### Owner input #15 (2026-11-18 13:00): image `557633.jpg`, no text (recorded before use)
 - Saved as `branding/mascot-extra-557633.jpg` (about 580x470, dark background). It shows a close-up of the snake from the front/top: a big dark green cobra hood with a lime-green pentagon gem at the top, a light-gray speckled band across the middle (looks like scales or teeth), the lower body narrowing downward, and two green hands at the bottom corners. No face/eyes visible. Owner's answer (13:02): "this is the character's back" (a back view). Plan: 7th mood BACK, shown when the snake is thrown and flies away fast. The picture is cropped at the bottom (hands cut by the border), so the cut-out gets a soft fade at the bottom; ask him for an uncropped back view if it looks bad.
 
+### Owner input #16 (2026-11-18, later): two open problems
+- Owner says most of the earlier points are done (logo changed, many things done). Two things remain:
+  1. **The small character (snake mascot) still has a problem.** He did not say what. Ask for a short screen recording or a description (does it not appear, not move, wrong face, wrong place, lag?).
+  2. **Yokai cannot read Mihon's files.** His words: Mihon \"encrypts\" its files and he wants to read Mihon's files from Yokai. Not clear yet which files (downloaded chapters in Mihon's folder? backup files? something else) or what he sees when it fails. Nothing investigated yet. Do not assume Mihon really encrypts anything until we see a sample or the error; ask first.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
