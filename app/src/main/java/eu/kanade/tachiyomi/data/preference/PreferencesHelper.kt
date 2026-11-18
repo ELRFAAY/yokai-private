@@ -271,6 +271,10 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
 
     fun splitTallImages() = preferenceStore.getBoolean("split_tall_images", true)
 
+    // "R" modifications (Settings > R). Every key starts with "r_". Default = our modified behavior;
+    // switching it off restores the original Yokai behavior.
+    fun rFixSplitTallImageError() = preferenceStore.getBoolean("r_fix_split_tall_image_error", true)
+
     fun downloadNewChapters() = preferenceStore.getBoolean(Keys.downloadNew, false)
 
     fun downloadNewChaptersInCategories() = preferenceStore.getStringSet("download_new_categories", emptySet())

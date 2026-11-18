@@ -112,6 +112,13 @@ class SettingsMainController : SettingsLegacyController(), FloatingSearchInterfa
             }
         }
         preference {
+            iconRes = R.drawable.ic_tune_24dp
+            iconTint = tintColor
+            title = "R"
+            summary = "R modifications"
+            onClick { navigateTo(SettingsRController()) }
+        }
+        preference {
             iconRes = R.drawable.ic_info_outline_24dp
             iconTint = tintColor
             titleRes = MR.strings.about
