@@ -585,7 +585,14 @@ class Downloader(
         try {
             val fileName = "%03d".format(Locale.ENGLISH, page.number)
             val imageFile = tmpDir.listFiles()?.firstOrNull { it.name.orEmpty().startsWith(fileName) }
-                ?: throw Error(context.getString(MR.strings.download_notifier_split_page_not_found, page.number))
+                // R switch "r_fix_split_tall_image_error" (Settings > R).
+                // On: use error() (IllegalStateException) so the `catch (e: Exception)` below handles it and the download goes on.
+                // Off: original behavior, throw java.lang.Error, which that catch does not handle (the page fails).
+                ?: if (preferences.rFixSplitTallImageError().get()) {
+                    error(context.getString(MR.strings.download_notifier_split_page_not_found, page.number))
+                } else {
+                    throw Error(context.getString(MR.strings.download_notifier_split_page_not_found, page.number))
+                }
 
             // Check if the original page was previously split before then skip.
             if (imageFile.name.orEmpty().startsWith("${fileName}__")) return
