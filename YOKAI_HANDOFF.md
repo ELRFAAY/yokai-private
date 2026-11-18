@@ -69,6 +69,12 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - Related but separate: "pressing download closes and reopens the app" may be a crash. Needs a logcat; not investigated.
 - Possible workaround to test without any code change: turn off the "split tall images" option in the download settings, if it exists there.
 
+## Owner input #3: the app icon (2026-11-18)
+- The owner sent the new app icon. Original file saved in this repo at **`branding/icon-source.jpg`** (1024x1024 JPG, committed to `main`; the app code does not reference it).
+- What it looks like: a circular badge on a dark charcoal square, thin light-green ring, black disc inside, a big white letter **Y** with green flames rising from its notch and green spotted tentacles curling around its base into a spiral. Colors: black/near-black (#0B1111), greens, white.
+- The JPG has a dark square background (corner ~#212526) around the circle; launcher icons need it handled (see below).
+- App name: **not decided yet.** Placeholder used until the owner says: "Yokai R".
+
 ## Planned changes (to be filled in as the owner decides)
 - [ ] Change `applicationId` so it installs next to the original
 - [ ] App name
