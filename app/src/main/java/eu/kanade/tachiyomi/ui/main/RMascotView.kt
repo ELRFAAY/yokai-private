@@ -13,8 +13,11 @@ import android.view.MotionEvent
 import android.view.VelocityTracker
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.animation.AnimationUtils
 import eu.kanade.tachiyomi.R
 import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.exp
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.pow
@@ -39,6 +42,23 @@ class RMascotView(context: Context) : View(context) {
     private enum class Mood { HAPPY, HURT, SCARED, DIZZY, SAD, BLINK, BACK }
 
     private class Dot(val x: Float, val y: Float, var life: Float)
+
+    /**
+     * A tiny damped spring. [value] is pulled toward a target and overshoots a little before settling,
+     * which is what makes the movement feel soft and alive instead of snapping.
+     */
+    private class Spring(var value: Float, private val stiffness: Float, private val damping: Float) {
+        var velocity = 0f
+
+        fun step(target: Float, dt: Float) {
+            velocity += ((target - value) * stiffness - velocity * damping) * dt
+            value += velocity * dt
+        }
+
+        fun kick(extraVelocity: Float) {
+            velocity += extraVelocity
+        }
+    }
 
     private val density = resources.displayMetrics.density
     private val half = 42f * density // the snake is drawn 84dp wide
@@ -84,7 +104,9 @@ class RMascotView(context: Context) : View(context) {
     private var y = 0f
     private var vx = 0f
     private var vy = 0f
-    private var angle = 0f
+    private var targetX = 0f // where the finger wants the snake; the snake eases toward it
+    private var targetY = 0f
+    private var dragVx = 0f // smoothed drag speed, used to lean the snake
     private var grabDx = 0f
     private var grabDy = 0f
     private var downX = 0f
@@ -104,13 +126,29 @@ class RMascotView(context: Context) : View(context) {
     private var bubbleText: String? = null
     private var bubbleUntil = 0L
 
+    // soft, springy look: every visual value eases toward a target instead of jumping
+    private val tiltSpring = Spring(0f, 220f, 18f)
+    private val scaleXSpring = Spring(1f, 300f, 16f)
+    private val scaleYSpring = Spring(1f, 300f, 16f)
+    private var stretch = 0f // squash and stretch along the flight direction
+    private var bobFactor = 1f // 1 = bobbing while resting, 0 = not bobbing
+
+    // face crossfade
+    private var shownMood = Mood.HAPPY
+    private var fromMood = Mood.HAPPY
+    private var fade = 1f
+    private var fadeSeconds = 0.14f
+    private var showBack = false // with hysteresis, so the back view does not flicker at the speed limit
+    private var blinkAt = 0L
+
     private var running = false
     private var lastFrame = 0L
+    private var frameNow = SystemClock.uptimeMillis() // the time of the frame being drawn (stays in sync with step)
 
     private val frame = object : Runnable {
         override fun run() {
             if (!running) return
-            step()
+            step(AnimationUtils.currentAnimationTimeMillis())
             invalidate()
             postOnAnimation(this)
         }
@@ -122,6 +160,7 @@ class RMascotView(context: Context) : View(context) {
         if (running || !isAttachedToWindow || !isShown) return
         running = true
         lastFrame = SystemClock.uptimeMillis()
+        blinkAt = lastFrame + 3000
         postOnAnimation(frame)
     }
 
@@ -156,6 +195,8 @@ class RMascotView(context: Context) : View(context) {
         if (!positioned) {
             x = w - half - 16f * density
             y = maxY() - 90f * density
+            targetX = x
+            targetY = y
             positioned = true
         } else {
             x = x.coerceIn(half, max(half, w - half))
@@ -168,11 +209,22 @@ class RMascotView(context: Context) : View(context) {
 
     // ---- physics ----
 
-    private fun step() {
-        val now = SystemClock.uptimeMillis()
+    private fun step(now: Long) {
         val dt = ((now - lastFrame) / 1000f).coerceIn(0.001f, 0.033f)
         lastFrame = now
+        frameNow = now
         if (!positioned) return
+
+        // while dragged the snake glides toward the finger instead of jumping to it
+        if (state == State.GRABBED && moved) {
+            val k = 1f - exp(-dt * 26f)
+            val before = x
+            x += (targetX - x) * k
+            y += (targetY - y) * k
+            dragVx += ((x - before) / dt - dragVx) * (1f - exp(-dt * 12f))
+        } else {
+            dragVx *= exp(-dt * 10f)
+        }
 
         if (state == State.FLYING) {
             x += vx * dt
@@ -185,23 +237,32 @@ class RMascotView(context: Context) : View(context) {
             val maxX = max(half, width - half)
             var hitWall = false
             var hitCeiling = false
+            val impact = (hypot(vx, vy) / (2200f * density)).coerceIn(0.25f, 1f) * 6f
             if (x < minX) {
                 x = minX
                 vx = abs(vx) * 0.8f
                 hitWall = true
+                scaleXSpring.kick(-impact)
+                scaleYSpring.kick(impact * 0.6f)
             } else if (x > maxX) {
                 x = maxX
                 vx = -abs(vx) * 0.8f
                 hitWall = true
+                scaleXSpring.kick(-impact)
+                scaleYSpring.kick(impact * 0.6f)
             }
             if (y < minY()) {
                 y = minY()
                 vy = abs(vy) * 0.8f
                 hitCeiling = true
+                scaleYSpring.kick(-impact)
+                scaleXSpring.kick(impact * 0.6f)
             } else if (y > maxY()) {
                 y = maxY()
                 vy = -abs(vy) * 0.8f
                 hitWall = true
+                scaleYSpring.kick(-impact)
+                scaleXSpring.kick(impact * 0.6f)
             }
 
             val speed = hypot(vx, vy)
@@ -210,7 +271,6 @@ class RMascotView(context: Context) : View(context) {
                 bounces++
                 say(if (hitCeiling) CEILING else WALL.random())
             }
-            angle = (vx / (1500f * density)).coerceIn(-1f, 1f) * 25f
 
             if (hypot(x - lastDotX, y - lastDotY) >= 20f * density) {
                 dots.add(Dot(x, y, 1f))
@@ -222,7 +282,9 @@ class RMascotView(context: Context) : View(context) {
                 state = State.IDLE
                 vx = 0f
                 vy = 0f
-                angle = 0f
+                // a little bounce when it comes to rest
+                scaleYSpring.kick(-4f)
+                scaleXSpring.kick(3f)
                 when {
                     bounces >= 3 -> {
                         dizzyUntil = now + 2500
@@ -241,12 +303,50 @@ class RMascotView(context: Context) : View(context) {
             }
         }
 
+        updateLook(now, dt)
+
         val iterator = dots.iterator()
         while (iterator.hasNext()) {
             val dot = iterator.next()
             dot.life -= dt * 1.2f
             if (dot.life <= 0f) iterator.remove()
         }
+    }
+
+    /** Eases every visual value (tilt, size, stretch, face) toward where it should be right now. */
+    private fun updateLook(now: Long, dt: Float) {
+        val idle = state == State.IDLE
+        val grabbedMoving = state == State.GRABBED && moved
+        val happy = idle && now < happyUntil
+        val speed = hypot(vx, vy)
+
+        val tiltTarget = when {
+            state == State.FLYING -> (vx / (1500f * density)).coerceIn(-1f, 1f) * 25f
+            grabbedMoving -> (dragVx / (1200f * density)).coerceIn(-1f, 1f) * 14f
+            happy -> sin(now / 120f) * 6f
+            else -> 0f
+        }
+        val baseScale = if (grabbedMoving) 1.1f else 1f
+        val wobble = if (happy) sin(now / 90f) * 0.06f else 0f
+        tiltSpring.step(tiltTarget, dt)
+        scaleXSpring.step(baseScale * (1f + wobble), dt)
+        scaleYSpring.step(baseScale * (1f - wobble), dt)
+
+        val stretchTarget = if (state == State.FLYING) (speed / (2600f * density)).coerceIn(0f, 0.2f) else 0f
+        stretch += (stretchTarget - stretch) * (1f - exp(-dt * 10f))
+        bobFactor += ((if (idle) 1f else 0f) - bobFactor) * (1f - exp(-dt * 8f))
+
+        // blink at random moments instead of on a fixed clock
+        if (now >= blinkAt + BLINK_MS) blinkAt = now + 2500L + (Math.random() * 3000.0).toLong()
+
+        val mood = currentMood(now, idle)
+        if (mood != shownMood) {
+            fromMood = shownMood
+            shownMood = mood
+            fade = 0f
+            fadeSeconds = if (mood == Mood.BLINK || fromMood == Mood.BLINK) 0.05f else 0.14f
+        }
+        if (fade < 1f) fade = (fade + dt / fadeSeconds).coerceAtMost(1f)
     }
 
     private fun say(text: String) {
@@ -265,6 +365,9 @@ class RMascotView(context: Context) : View(context) {
                 grabDy = y - event.y
                 downX = event.x
                 downY = event.y
+                targetX = x
+                targetY = y
+                dragVx = 0f
                 moved = false
                 tracker?.recycle()
                 tracker = VelocityTracker.obtain().also { it.addMovement(event) }
@@ -279,9 +382,8 @@ class RMascotView(context: Context) : View(context) {
                     say(GRAB.random())
                 }
                 if (moved) {
-                    x = (event.x + grabDx).coerceIn(half, max(half, width - half))
-                    y = (event.y + grabDy).coerceIn(minY(), maxY())
-                    angle = 0f
+                    targetX = (event.x + grabDx).coerceIn(half, max(half, width - half))
+                    targetY = (event.y + grabDy).coerceIn(minY(), maxY())
                 }
                 invalidate()
                 return true
@@ -305,6 +407,8 @@ class RMascotView(context: Context) : View(context) {
                 if (!moved) {
                     state = State.IDLE
                     happyUntil = now + 900
+                    tiltSpring.kick(if (Math.random() < 0.5) -280f else 280f)
+                    scaleYSpring.kick(-5f)
                     say(TAP.random())
                 } else if (speed > 350f * density) {
                     state = State.FLYING
@@ -336,53 +440,57 @@ class RMascotView(context: Context) : View(context) {
             canvas.drawCircle(dot.x, dot.y, (3f + 3f * dot.life) * density, dotPaint)
         }
 
-        val now = SystemClock.uptimeMillis()
+        val now = frameNow
         val idle = state == State.IDLE
-        val bob = if (idle) sin(now / 380f) * 4f * density else 0f
-        val isHurt = now < hurtUntil
-        val isHappy = idle && now < happyUntil
-        val bmp = faces[currentMood(now, idle)] ?: faces[Mood.HAPPY] ?: return
+        val bob = sin(now / 380f) * 4f * density * bobFactor
+        val breath = if (idle) sin(now / 650f) * 0.018f else 0f
+        // the shake fades out smoothly instead of stopping dead
+        val shake = sin(now / 22f) * 5f * density * ((hurtUntil - now) / 450f).coerceIn(0f, 1f)
 
-        var scaleX = 1f
-        var scaleY = 1f
-        var shake = 0f
-        var tilt = angle
-        if (isHurt) shake = sin(now / 18f) * 4f * density
-        if (isHappy) {
-            val k = sin(now / 90f) * 0.06f
-            scaleX = 1f + k
-            scaleY = 1f - k
-            tilt = sin(now / 120f) * 6f
-        }
-        if (state == State.GRABBED && moved) {
-            scaleX = 1.1f
-            scaleY = 1.1f
-        }
+        val current = faces[shownMood] ?: faces[Mood.HAPPY] ?: return
+        val previous = if (fade < 1f) faces[fromMood] else null
 
         canvas.save()
         canvas.translate(x + shake, y + bob)
-        canvas.rotate(tilt)
-        canvas.scale(scaleX, scaleY)
+        canvas.rotate(tiltSpring.value)
+        if (stretch > 0.005f) {
+            // squash and stretch: longer along the flight direction, thinner across it
+            val deg = Math.toDegrees(atan2(vy, vx).toDouble()).toFloat()
+            canvas.rotate(deg)
+            canvas.scale(1f + stretch, 1f / (1f + stretch))
+            canvas.rotate(-deg)
+        }
+        canvas.scale(scaleXSpring.value * (1f - breath * 0.5f), scaleYSpring.value * (1f + breath))
         dest.set(-half, -half, half, half)
-        canvas.drawBitmap(bmp, null, dest, bitmapPaint)
+        if (previous != null) {
+            bitmapPaint.alpha = 255
+            canvas.drawBitmap(previous, null, dest, bitmapPaint)
+        }
+        bitmapPaint.alpha = (fade * 255f).toInt().coerceIn(0, 255)
+        canvas.drawBitmap(current, null, dest, bitmapPaint)
+        bitmapPaint.alpha = 255
         canvas.restore()
 
         drawBubble(canvas, now)
     }
 
-    /** Which of the six pictures to show right now. */
-    private fun currentMood(now: Long, idle: Boolean): Mood = when {
-        now < hurtUntil -> Mood.HURT
-        state == State.GRABBED && moved -> Mood.SCARED
-        state == State.FLYING -> when {
-            bounces >= 3 -> Mood.DIZZY
-            hypot(vx, vy) > 700f * density -> Mood.BACK // flying away fast: we see its back
-            else -> Mood.SCARED
+    /** Which of the pictures to show right now. */
+    private fun currentMood(now: Long, idle: Boolean): Mood {
+        val speed = hypot(vx, vy)
+        showBack = if (showBack) speed > 560f * density else speed > 760f * density
+        return when {
+            now < hurtUntil -> Mood.HURT
+            state == State.GRABBED && moved -> Mood.SCARED
+            state == State.FLYING -> when {
+                bounces >= 3 -> Mood.DIZZY
+                showBack -> Mood.BACK // flying away fast: we see its back
+                else -> Mood.SCARED
+            }
+            idle && now < dizzyUntil -> Mood.DIZZY
+            idle && now < sadUntil -> Mood.SAD
+            idle && now >= happyUntil && now >= blinkAt && now < blinkAt + BLINK_MS -> Mood.BLINK
+            else -> Mood.HAPPY
         }
-        idle && now < dizzyUntil -> Mood.DIZZY
-        idle && now < sadUntil -> Mood.SAD
-        idle && now >= happyUntil && now % 3600L < 160L -> Mood.BLINK
-        else -> Mood.HAPPY
     }
 
     private fun drawBubble(canvas: Canvas, now: Long) {
@@ -421,6 +529,7 @@ class RMascotView(context: Context) : View(context) {
     }
 
     private companion object {
+        const val BLINK_MS = 140L
         val GRAB = listOf("سيبني بقى!", "إنت ماسكني ليه؟", "هششش! أنا التعبان!")
         val THROW = listOf("آآآآه!", "ارمي براحة!", "للانهاية وما بعدها!")
         val WALL = listOf("آي! الحيطة!", "كده هتكسر دماغي!", "بيوجع والله!")
