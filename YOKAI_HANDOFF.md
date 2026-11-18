@@ -25,6 +25,7 @@ The app must stay fully usable after any modification:
 - Make each change on its own branch, not directly on `main`. `main` stays as the known-good base (this handoff file is the only thing committed straight to it).
 - Keep changes small and targeted so any one of them can be dropped.
 - Record each change in the log below.
+- **Before analyzing any video, screenshot or file the owner sends, record it here first** (what it is and what the owner said about it), so a later account can continue right away if the current session's usage limit ends suddenly.
 
 ## Main bug to fix first: downloads
 Symptom (as reported by the owner): downloading chapters does not work. The progress bar in the download queue keeps moving forward then jumping back, over and over, and the chapter never finishes.
@@ -34,6 +35,15 @@ Findings so far (not confirmed, nothing has been changed yet):
 - Leading hypothesis: pages fail mid-download and are retried automatically (`downloadImage` retries 3 times with 2s/4s/8s waits and progress restarts from 0), which would look exactly like a bar that fills and falls back.
 - A similar report exists upstream (issue #552), tied to one specific source and probably the image server, with no fix.
 - Still needed from the owner: which source/extension, any error notification text, whether it happens on every source, and a logcat from the moment it happens.
+
+## Owner report #2 (2026-11-18, with screen-recording video `f366cb17-557507.mp4`)
+What the owner said (video content notes are added below once reviewed):
+- The download problem happens almost only on **Xiaomi / Poco phones** (anything Xiaomi-branded).
+- Sometimes downloads do not start at all: pressing the download button makes the app close and reopen.
+- The download notification shows an error saying roughly "not split" / "not found" (owner's wording, Arabic; exact text not captured yet).
+- The same problem does **not** happen in **Mihon** (the upstream app Yokai comes from — the owner calls it "Hon"), even on the same Xiaomi phone. Every time the owner switches back to a Xiaomi phone they have to use Mihon, because Yokai can't be used there.
+- Goal restated: make Yokai download correctly on Xiaomi phones, the way Mihon does.
+- Lead from the code: `Downloader.splitTallImageIfNeeded` throws `download_notifier_split_page_not_found` ("page not found for splitting") when the page file can't be found right after download, which could match the "not found" wording. Not verified.
 
 ## Planned changes (to be filled in as the owner decides)
 - [ ] Change `applicationId` so it installs next to the original
