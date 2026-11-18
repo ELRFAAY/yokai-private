@@ -5,6 +5,9 @@ import eu.kanade.tachiyomi.core.preference.PreferenceStore
 class LibraryPreferences(private val preferenceStore: PreferenceStore) {
     fun randomSortSeed() = preferenceStore.getInt("library_random_sort_seed", 0)
 
+    /** Ids of the manga pinned to the top of their library category. */
+    fun pinnedManga() = preferenceStore.getStringSet("library_pinned_manga", emptySet())
+
     fun markDuplicateReadChapterAsRead() = preferenceStore.getStringSet("mark_duplicate_read_chapter_read", emptySet())
 
     companion object {

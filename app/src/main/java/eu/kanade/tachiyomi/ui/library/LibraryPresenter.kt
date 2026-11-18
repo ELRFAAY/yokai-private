@@ -664,6 +664,9 @@ class LibraryPresenter(
     private fun LibraryMap.applySort(): LibraryMap {
         // Making sure `allCategories` is stable for `.sort()`
         val categoryOrderMap = allCategories.associate { it.id to it.order }
+        // Pinned manga always come first, whatever the sort is.
+        val pinnedIds = libraryPreferences.pinnedManga().get()
+        fun LibraryMangaItem.isPinnedItem() = manga.manga.id?.toString() in pinnedIds
 
         val sortFn: (LibraryItem, LibraryItem) -> Int = { i1, i2 ->
             val category = i1.header.category
@@ -671,6 +674,7 @@ class LibraryPresenter(
                 i1 is LibraryPlaceholderItem -> -1
                 i2 is LibraryPlaceholderItem -> 1
                 i1 !is LibraryMangaItem || i2 !is LibraryMangaItem -> 0
+                i1.isPinnedItem() != i2.isPinnedItem() -> if (i1.isPinnedItem()) -1 else 1
                 category.mangaSort != null -> {
                     var sort = when (category.sortingMode() ?: LibrarySort.Title) {
                         LibrarySort.Title -> sortAlphabetical(i1, i2)
@@ -752,6 +756,8 @@ class LibraryPresenter(
                         when {
                             i1 is LibraryPlaceholderItem -> -1
                             i2 is LibraryPlaceholderItem -> 1
+                            i1 is LibraryMangaItem && i2 is LibraryMangaItem &&
+                                i1.isPinnedItem() != i2.isPinnedItem() -> if (i1.isPinnedItem()) -1 else 1
                             else -> 0
                         }
                     }
@@ -1250,6 +1256,15 @@ class LibraryPresenter(
     /** Requests the library to have language badges changed. */
     fun requestLanguageBadgesUpdate() {
         requestBadgeUpdate { setSourceLanguage(it) }
+    }
+
+    /** Pins (or unpins) the given manga: pinned manga are listed first in the library. */
+    fun setPinned(mangas: List<Manga>, pinned: Boolean) {
+        val preference = libraryPreferences.pinnedManga()
+        val ids = preference.get().toMutableSet()
+        mangas.mapNotNull { it.id?.toString() }.forEach { if (pinned) ids.add(it) else ids.remove(it) }
+        preference.set(ids)
+        requestSortUpdate()
     }
 
     /** Requests the library to be sorted. */

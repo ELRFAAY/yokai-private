@@ -22,6 +22,11 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_pin"
+        android:title="تثبيت / إلغاء التثبيت"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_download_unread"
         android:title="@string/download_unread"
         app:showAsAction="never" />

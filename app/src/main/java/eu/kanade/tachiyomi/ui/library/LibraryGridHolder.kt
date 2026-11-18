@@ -69,7 +69,7 @@ class LibraryGridHolder(
         setCards(adapter.showOutline, binding.card, binding.unreadDownloadBadge.root)
         binding.playButton.transitionName = "library chapter $bindingAdapterPosition transition"
         binding.constraintLayout.isVisible = item.manga.manga.id != Long.MIN_VALUE
-        binding.title.text = item.manga.manga.title.highlightText(item.filter, color)
+        binding.title.text = (PinnedManga.titlePrefix(item.manga.manga.id) + item.manga.manga.title).highlightText(item.filter, color)
         binding.behindTitle.text = item.manga.manga.title
         val mangaColor = item.manga.manga.dominantCoverColors
         binding.coverConstraint.backgroundColor = mangaColor?.first ?: itemView.context.getResourceColor(R.attr.background)

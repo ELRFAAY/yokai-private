@@ -2046,6 +2046,12 @@ open class LibraryController(
         when (item.itemId) {
             R.id.action_move_to_category -> showChangeMangaCategoriesSheet()
             R.id.action_share -> shareManga()
+            R.id.action_pin -> {
+                val mangas = selectedMangas.toList()
+                val allPinned = mangas.isNotEmpty() && mangas.all { PinnedManga.isPinned(it.id) }
+                presenter.setPinned(mangas, !allPinned)
+                destroyActionModeIfNeeded()
+            }
             R.id.action_delete -> {
                 val options = arrayOf(
                     MR.strings.remove_downloads,

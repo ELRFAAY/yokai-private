@@ -77,7 +77,7 @@ class LibraryListHolder(
         binding.title.textAlignment = View.TEXT_ALIGNMENT_TEXT_START
 
         // Update the binding.title of the manga.
-        binding.title.text = item.manga.manga.title.highlightText(item.filter, color)
+        binding.title.text = (PinnedManga.titlePrefix(item.manga.manga.id) + item.manga.manga.title).highlightText(item.filter, color)
         setUnreadBadge(binding.unreadDownloadBadge.badgeView, item)
 
         val authorArtist =
