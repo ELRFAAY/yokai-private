@@ -1270,6 +1270,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
         viewer = newViewer
         binding.viewerContainer.addView(newViewer.getView())
+        setupAutoScrollButton(newViewer)
 
         if (newViewer is R2LPagerViewer) {
             binding.readerNav.leftChapter.compatToolTipText = getString(MR.strings.next_chapter)
@@ -1303,7 +1304,25 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         startPostponedEnterTransition()
     }
 
+    private fun setupAutoScrollButton(newViewer: BaseViewer) {
+        val webtoon = newViewer as? WebtoonViewer
+        with(binding.readerNav.autoScroll) {
+            isVisible = webtoon != null && preferences.rAutoScroll().get()
+            setImageResource(R.drawable.ic_play_arrow_24dp)
+            setOnClickListener {
+                val running = webtoon?.toggleAutoScroll() ?: false
+                if (running) hideMenu()
+            }
+        }
+        webtoon?.autoScrollListener = { running ->
+            binding.readerNav.autoScroll.setImageResource(
+                if (running) R.drawable.ic_pause_24dp else R.drawable.ic_play_arrow_24dp,
+            )
+        }
+    }
+
     override fun onPause() {
+        (viewer as? WebtoonViewer)?.stopAutoScroll()
         viewModel.flushReadTimer()
         super.onPause()
     }

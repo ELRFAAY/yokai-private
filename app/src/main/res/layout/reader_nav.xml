@@ -88,6 +88,18 @@
             android:textSize="15sp"
             tools:text="15" />
 
+        <ImageButton
+            android:id="@+id/auto_scroll"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:background="?selectableItemBackgroundBorderless"
+            android:contentDescription="Auto scroll"
+            android:padding="@dimen/material_layout_keylines_screen_edge_margin"
+            android:visibility="gone"
+            app:tint="?actionBarTintColor"
+            app:srcCompat="@drawable/ic_play_arrow_24dp" />
+
     </LinearLayout>
 
     <ImageButton
