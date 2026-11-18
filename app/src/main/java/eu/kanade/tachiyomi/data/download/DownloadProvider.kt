@@ -6,6 +6,7 @@ import eu.kanade.tachiyomi.data.database.models.Chapter
 import eu.kanade.tachiyomi.domain.manga.models.Manga
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.SourceManager
+import eu.kanade.tachiyomi.util.lang.Hash
 import eu.kanade.tachiyomi.util.storage.DiskUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -252,6 +253,12 @@ class DownloadProvider(private val context: Context) {
 
             // Legacy chapter directory name used in v0.8.4 and before
             add(DiskUtil.buildValidFilename(chapter.name))
+
+            // Mihon names folders "<scanlator>_<name>_<first 6 chars of md5(chapter url)>" when its
+            // "chapter name hash" option is on, so look for those too (works for .cbz as well).
+            val hashSuffix = "_" + Hash.md5(chapter.url).take(6)
+            val baseNames = toList()
+            baseNames.forEach { add(it + hashSuffix) }
         }.distinct()
     }
 }
