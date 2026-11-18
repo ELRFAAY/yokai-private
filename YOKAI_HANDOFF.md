@@ -236,6 +236,12 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - Open from earlier, still unanswered: approval of the simplified flat mascot (7 faces preview sent at ~13:55; the 6-face detailed art is what is in `build/r`).
 - **Found at this point (another session worked in parallel):** branch `fix/stats-and-name` (5 commits on top of `build/r` d50459a, 14:07-14:38 Cairo time, CI debug builds green, last run 44305802358) is NOT documented in this file by that session. From its commit messages: rename app to "Yokai" (this contradicts the owner's "Yokai Private" unless he asked for it), fix reading time not being recorded + minutes in stats, snake card with time spent in the finished chapter between chapters, recognize Mihon's hashed chapter folder names (so Mihon downloads can be read), page/chapter/auto-scroll bar moved to a vertical bar on the right edge of the reader, pin manga to the top of the library. Ask the owner which APK he runs; new work should start from `fix/stats-and-name`, not `build/r`, and the two lines must be merged. `feat/r-updater` stays parked (see change log).
 
+### Owner input #18 (2026-11-18 18:43-20:41 Cairo, recorded before reading the attachment)
+- 18:43 owner: "we want to focus on the green character" (the snake mascot).
+- 20:15 owner: just "the limit" (his account usage limit is running out; keep everything recorded here).
+- 20:41 owner sent a text file `03ceb07d-attachment.txt` (content not reviewed yet when this was written; notes added right below once read) and said: the two accounts before this one were working on "the mini ..." (his word sounded like "mini fork"/"mini feature"; unclear which); "try to finish, see what they were working on, and finish it".
+- My reading so far: the unfinished work of the earlier accounts is (a) the mascot judging a series (owner input #17), (b) branch `fix/stats-and-name` that was never merged with `build/r`. To be confirmed from the attachment.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
