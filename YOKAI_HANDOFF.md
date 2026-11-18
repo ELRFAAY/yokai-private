@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff
 
 Read this first when starting a new session or from another account. Update it after every meaningful change.
-Last updated: 2026-11-18 (12:50, after owner input #13; newest code is on `build/r`, see the top of its git log)
+Last updated: 2026-11-18 (13:30, green release build 44292393432 on build/r d50459a; earlier note: newest code is on `build/r`, see the top of its git log)
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage).
@@ -237,6 +237,7 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 ## Change log
 | Date | Branch | What changed | Status |
 |------|--------|--------------|--------|
+| 2026-11-18 | `build/r` (d50459a) | **First green minified release build** (run 44292393432, 16 min, artifact `yokai-r-release`, 36 MB, one universal APK, signed with the permanent key). Contains: Yokai Private name, 7 mascot faces, Arabic everywhere, `r_force_arabic`, all earlier features. The swap file fixed the kill. Still untested on a device. Lesson: push once and wait; every push cancels the running build (5 of 13 runs were cancelled that way). | green |
 | 2026-11-18 | `build/r` | CI: the release build (run 44289914775) was killed after 14 min with exit 143 and no Gradle error (probably out of memory while R8 minifies; it is the first minified release run that went that far). `build_r.yml` now adds an 8 GB swap file, and prints Gradle errors / dmesg OOM lines in a separate `Diagnostics` step (the old in-step python never ran when the shell itself was killed). Logs of a failed job CAN be read with `gh run view <id> --log-failed`. If it still dies, fall back to `assembleStandardRelease` with minify off or to the debug build. | CI |
 | 2026-11-18 | `build/r` | 7th mood BACK from the owner's back-view image (`branding/mascot-extra-557633.jpg` -> `drawable-nodpi/r_mascot_back.webp`, bottom fade because the source is cropped): shown while the snake flies away faster than 700dp/s (first ~1 s of a throw), before the scared face. Not compiled or tested. | CI |
 | 2026-11-18 | `build/r` | Arabic everywhere: 109 missing translations added to `ar/strings.xml`, R settings screen + auto-scroll description in Arabic, new switch `r_force_arabic` (App.onCreate sets the app locale to `ar` when none is set). Not compiled or tested. | CI |
