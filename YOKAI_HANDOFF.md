@@ -72,6 +72,8 @@ Stated by the owner on 2026-11-18:
 | Switch (pref key) | What it controls | Default | Branch |
 |---|---|---|---|
 | `r_fix_split_tall_image_error` | Download: a missing page file during the tall-image split is only logged (on) vs. fails the page with "page not found during splitting" (off = original) | on | `feat/r-settings` |
+| `r_auto_scroll` | Reader (continuous/webtoon mode only): play/pause auto-scroll button at the end of the reader nav row (on) vs. no button (off = original) | on | `feat/r-autoscroll` |
+| `r_auto_scroll_speed` | Auto-scroll speed in dp/second (choices 30/60/100/150/220) | 60 | `feat/r-autoscroll` |
 
 ## Working rules
 - Make each change on its own branch, not directly on `main`. `main` stays as the known-good base (this handoff file is the only thing committed straight to it).
@@ -143,6 +145,8 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 ## Change log
 | Date | Branch | What changed | Status |
 |------|--------|--------------|--------|
+| 2026-11-18 | `feat/r-autoscroll` | Auto-scroll for webtoon mode: `WebtoonViewer.start/stop/toggleAutoScroll` (Choreographer, fractional px accumulation, stops on user drag / end of content / onPause), play button `auto_scroll` in `reader_nav.xml`, prefs `rAutoScroll` + `rAutoScrollSpeed`, controls in Settings > R. Stacked on `feat/r-settings`. Known limit: stops if the next chapter is not loaded yet when the end is reached. Not tested on a device. | pending test |
+| 2026-11-18 | `build/r` | Merge of `feat/r-settings` + `feat/r-branding` + `feat/r-autoscroll`, plus `.github/workflows/build_r.yml` (debug APK as artifact) and `google-services.json` entries for the new application ids (first build failed without them). First green build was before auto-scroll; build with auto-scroll was started after. | CI |
 | 2026-11-18 | `main` | Initial import of upstream `843a59b` | done |
 | 2026-11-18 | `feat/r-branding` | `applicationId` -> `com.elrfaay.yokair`, `app_name` -> "Yokai R" (placeholder), new default launcher icon (all densities), monochrome layer removed. Based on `main`. **Not compiled or tested.** | pending test |
 | 2026-11-18 | `feat/r-settings` | New "R" entry in main Settings (`SettingsRController`, legacy preference DSL) + pref `rFixSplitTallImageError` in `PreferencesHelper`; the download fix is now gated by that switch. **Stacked on `fix/download-split-not-found`** (contains its commit), so use this branch, not the fix branch alone. **Not compiled or tested.** | pending test |
