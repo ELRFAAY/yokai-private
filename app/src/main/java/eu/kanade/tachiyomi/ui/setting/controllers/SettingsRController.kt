@@ -40,6 +40,12 @@ class SettingsRController : SettingsLegacyController() {
                 "Off: original icon picker."
         }
 
+        switchPreference {
+            bindTo(preferences.rMascot())
+            title = "Home: snake mascot"
+            summary = "On: a small snake floats on the library screen; grab it and throw it. Off: no mascot (original)."
+        }
+
         intListPreference(activity) {
             bindTo(preferences.rAutoScrollSpeed())
             title = "Reader: auto-scroll speed"

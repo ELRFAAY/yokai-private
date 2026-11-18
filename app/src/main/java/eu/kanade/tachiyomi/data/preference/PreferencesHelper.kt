@@ -284,6 +284,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Appearance: hide the app icon picker so the app has a single icon (the R logo). */
     fun rSingleAppIcon() = preferenceStore.getBoolean("r_single_app_icon", true)
 
+    /** Home screen (library): the floating snake mascot you can grab and throw. */
+    fun rMascot() = preferenceStore.getBoolean("r_mascot", true)
+
     fun downloadNewChapters() = preferenceStore.getBoolean(Keys.downloadNew, false)
 
     fun downloadNewChaptersInCategories() = preferenceStore.getStringSet("download_new_categories", emptySet())

@@ -27,6 +27,7 @@ import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -259,6 +260,13 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
         }
     }
 
+    private var rMascot: RMascotView? = null
+
+    /** R: show the snake mascot only on the library (home) screen and only when the R switch is on. */
+    private fun updateRMascot(controller: Controller?) {
+        rMascot?.visibility = if (preferences.rMascot().get() && controller is LibraryController) View.VISIBLE else View.GONE
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = maybeInstallSplashScreen(savedInstanceState)
 
@@ -372,6 +380,20 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
         binding = MainActivityBinding.inflate(layoutInflater)
 
         setContentView(binding.root)
+
+        // R: floating snake mascot overlay (only shown on the library screen, see updateRMascot)
+        rMascot = RMascotView(this).also { view ->
+            view.visibility = View.GONE
+            binding.root.addView(
+                view,
+                ConstraintLayout.LayoutParams(0, 0).apply {
+                    startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+                    endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+                    topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+                    bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+                },
+            )
+        }
 
         binding.toolbar.overflowIcon?.setTint(getResourceColor(R.attr.actionBarTintColor))
 
@@ -648,6 +670,7 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
                 ) {
                     to?.view?.alpha = 1f
                     syncActivityViewWithController(to, from, isPush)
+                    if (to !is DialogController) updateRMascot(to)
                     binding.appBar.isVisible = !hideAppBar
                     binding.appBar.alpha = 1f
                     if (binding.backShadow.isVisible && !isPush) {
@@ -704,6 +727,10 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
         )
 
         syncActivityViewWithController(router.backstack.lastOrNull()?.controller)
+        updateRMascot(router.backstack.lastOrNull()?.controller)
+        preferences.rMascot().changesIn(lifecycleScope) {
+            updateRMascot(router.backstack.lastOrNull()?.controller)
+        }
 
         val navIcon = if (router.backstackSize > 1) backDrawable else null
         binding.toolbar.navigationIcon = navIcon
