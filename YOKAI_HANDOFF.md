@@ -61,9 +61,10 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - [ ] Change `applicationId` so it installs next to the original
 - [ ] App name
 - [ ] App logo / launcher icon
-- [ ] Fix downloads (see above)
+- [ ] Fix downloads (see above): first fix is on branch `fix/download-split-not-found`, waiting for a build + test on the Xiaomi phone
 
 ## Change log
 | Date | Branch | What changed | Status |
 |------|--------|--------------|--------|
 | 2026-11-18 | `main` | Initial import of upstream `843a59b` | done |
+| 2026-11-18 | `fix/download-split-not-found` | `Downloader.splitTallImageIfNeeded`: `throw Error(...)` -> `error(...)` so a missing file during tall-image split is logged instead of failing the page. 1 line. **Not compiled or tested** (no Android SDK in the session); needs a build and a test on the Xiaomi phone. Not merged into `main`. | pending test |
