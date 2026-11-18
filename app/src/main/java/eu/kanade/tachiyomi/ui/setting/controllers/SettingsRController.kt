@@ -27,6 +27,12 @@ class SettingsRController : SettingsLegacyController() {
         }
 
         switchPreference {
+            bindTo(preferences.rUpstreamUpdater())
+            title = "App updater: check original Yokai releases"
+            summary = "Off (default): this app never offers the original Yokai's updates. On: original behavior."
+        }
+
+        switchPreference {
             bindTo(preferences.rAutoScroll())
             title = "Reader: auto-scroll button (continuous mode)"
             summary = "On: a play button in the reader menu moves the page by itself. Off: original reader (no button)."

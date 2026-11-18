@@ -275,6 +275,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     // switching it off restores the original Yokai behavior.
     fun rFixSplitTallImageError() = preferenceStore.getBoolean("r_fix_split_tall_image_error", true)
 
+    /** App updater: check the upstream Yokai releases (those are for the original app id). Off by default in this fork. */
+    fun rUpstreamUpdater() = preferenceStore.getBoolean("r_upstream_updater", false)
+
     /** Reader: auto-scroll button in the webtoon (continuous) reader. */
     fun rAutoScroll() = preferenceStore.getBoolean("r_auto_scroll", true)
 

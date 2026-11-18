@@ -25,6 +25,9 @@ class AppUpdateChecker(
 ) {
 
     suspend fun checkForUpdate(context: Context, isUserPrompt: Boolean = false, doExtrasAfterNewUpdate: Boolean = true): AppUpdateResult {
+        // R: this fork must not be offered the original Yokai's releases (different app id). Switch in Settings > R.
+        if (!preferences.rUpstreamUpdater().get()) return AppUpdateResult.NoNewUpdate
+
         // Limit checks to once a day at most
         if (!isUserPrompt && Date().time < preferences.lastAppCheck().get() + TimeUnit.DAYS.toMillis(1)) {
             return AppUpdateResult.NoNewUpdate
