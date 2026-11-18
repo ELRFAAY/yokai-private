@@ -91,6 +91,8 @@ android {
             isShrinkResources = true
             isMinifyEnabled = true
             proguardFiles("proguard-android-optimize.txt", "proguard-rules.pro")
+            // R: CI passes -PrDebugSign=true so the minified (fast) release build is installable without a release key.
+            if (project.hasProperty("rDebugSign")) signingConfig = signingConfigs.getByName("debug")
         }
         create("beta") {
             initWith(getByName("release"))
