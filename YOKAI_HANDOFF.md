@@ -134,6 +134,9 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - Findings in the code (checked 2026-11-18): no auto-scroll exists in the app. Already existing and reusable: `ReaderNavView.kt` (bottom nav with chapter buttons and slider), `ReaderSlider.kt`, `ReaderColorFilterView.kt` and the filter tab in `settings/ReaderFilterView.kt` (brightness / color filter), `ReaderTransitionView.kt` (chapter transition, where the mascot panel goes), viewers in `viewer/webtoon` and `viewer/pager`.
 - Rule: every new tool needs its own switch in Settings > R.
 
+### Owner input #7: video `557552.mp4` (2026-11-18, recorded BEFORE reviewing it)
+- The owner sent a screen-recording video (`557552.mp4`) with the message \"look at this\" and nothing else. Probably a reference for the mascot animation or the reader features he asked for; content notes are added below once reviewed.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
