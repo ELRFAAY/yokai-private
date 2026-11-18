@@ -45,6 +45,18 @@ What the owner said (video content notes are added below once reviewed):
 - Goal restated: make Yokai download correctly on Xiaomi phones, the way Mihon does.
 - Lead from the code: `Downloader.splitTallImageIfNeeded` throws `download_notifier_split_page_not_found` ("page not found for splitting") when the page file can't be found right after download, which could match the "not found" wording. Not verified.
 
+### What the video shows (reviewed 2026-11-18)
+- Screen recording (~13 s, 1080x2400) on a Xiaomi phone, Arabic UI, app's download queue screen ("لائحة التنزيل").
+- Queue holds 1 manga (source label "مانجا ليك") with chapter **"Otherworldly Evil Monarch 258"**, shown as **0/2 pages** (only 2 pages) and the bar stuck at the start.
+- The big button flips between "استئناف" (Resume) and "إيقاف مؤقت" (Pause) several times: the downloader starts, fails, stops, over and over.
+- The notification shade shows the error: **"لم يُعثر على الصفحة ٢ أثناء التقسيم"** = "page 2 not found during splitting". This is exactly the `download_notifier_split_page_not_found` string, so the failing step is the tall-image split.
+- Other notifications in the shade are unrelated (screen recorder, a music player).
+
+### Likely root cause (found in code, not yet tested on a device)
+In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Error(...)` (a `java.lang.Error`), but the surrounding `try` only has `catch (e: Exception)`. An `Error` is not an `Exception`, so it is NOT caught there. It escapes to `getOrDownloadImage`, whose `catch (e: Throwable)` marks the page as Error and shows the notification, so the chapter never completes. As far as I recall, Mihon uses Kotlin's `error(...)` there (an `IllegalStateException`), which that same catch does handle: it just logs and the download continues. That would explain why Mihon works on the same phone. The reason the file isn't found right after download on Xiaomi is still unknown (possibly the storage listing right after the rename).
+- Related but separate: "pressing download closes and reopens the app" may be a crash. Needs a logcat; not investigated.
+- Possible workaround to test without any code change: turn off the "split tall images" option in the download settings, if it exists there.
+
 ## Planned changes (to be filled in as the owner decides)
 - [ ] Change `applicationId` so it installs next to the original
 - [ ] App name
