@@ -211,6 +211,11 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - He wants **every build to update the previous one in place** (answer to the signing question). Done on `build/r`: permanent key `r-signing/yokai-r.keystore` (PKCS12, alias `yokair`, password in `app/build.gradle.kts`; committed to this PRIVATE repo, so the repo must never become public; safer later: move it to a GitHub secret) signs the release build, and `versionCode = 162 + commit count` so each build is newer. One-time cost: the first build with this key must be installed after uninstalling any older build (different signature); restore from an in-app backup if needed.
 - Mascot: he asked me to say which angle/images I need so he can make them. Answer given: front view, same framing as `mascot-source.jpg`, same dark background, one image per mood: happy, hurt (X/squeezed eyes), scared/surprised, dizzy (spiral eyes), sad/crying, blink (eyes closed). Code side: `RMascotView` currently only tints/squashes the single picture; when the images arrive, cut them out with the same script logic (flood-fill the dark background), put them in `drawable-nodpi`, and swap the bitmap by mood.
 
+### Owner input #13 (2026-11-18 12:42): mascot mood sheet `557623.jpg` (recorded before use)
+- Owner sent one 1024x1024 sheet with the snake in 6 moods on a dark background, 2 columns x 3 rows, each labeled: HAPPY (top-left), HURT (top-right), SCARED (middle-left), DIZZY (middle-right), SAD (bottom-left), BLINK (bottom-right). Saved as `branding/mascot-moods-557623.jpg`.
+- Decisions the owner confirmed in the same message (12:40): final app name is **Yokai Private**; keep the link with the original developer (Firebase/updater untouched) so extension updates keep arriving. Done: `app_name` -> "Yokai Private" (+ Debug/Nightly) on `build/r` (8a3102b).
+- Plan: cut each cell out (flood-fill the dark background), save as `drawable-nodpi/r_mascot_<mood>.webp`, make `RMascotView` swap the bitmap by mood (idle=blink/happy, drag=scared, hard hit=hurt, many bounces=dizzy, rest after hits=sad, tap=happy).
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
