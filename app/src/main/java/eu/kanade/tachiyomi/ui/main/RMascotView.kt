@@ -28,7 +28,7 @@ import kotlin.math.sin
  * - Grab it and drag it; release with speed and it flies with a dotted trail, bounces on the screen
  *   edges, and slows down until it rests again.
  * - Reactions: it wobbles when you tap it, shakes when it hits a wall, and talks in speech bubbles.
- * - Faces: one picture per mood (happy, hurt, scared, dizzy, sad, blink), see [Mood] and [currentMood].
+ * - Faces: one picture per mood (happy, hurt, scared, dizzy, sad, blink, back view), see [Mood] and [currentMood].
  *
  * The phrases are in [GRAB], [THROW], [WALL], [CEILING], [LAND] and [TAP] below: edit them freely.
  */
@@ -36,7 +36,7 @@ class RMascotView(context: Context) : View(context) {
 
     private enum class State { IDLE, GRABBED, FLYING }
 
-    private enum class Mood { HAPPY, HURT, SCARED, DIZZY, SAD, BLINK }
+    private enum class Mood { HAPPY, HURT, SCARED, DIZZY, SAD, BLINK, BACK }
 
     private class Dot(val x: Float, val y: Float, var life: Float)
 
@@ -57,6 +57,7 @@ class RMascotView(context: Context) : View(context) {
         Mood.DIZZY to load(R.drawable.r_mascot_dizzy),
         Mood.SAD to load(R.drawable.r_mascot_sad),
         Mood.BLINK to load(R.drawable.r_mascot_blink),
+        Mood.BACK to load(R.drawable.r_mascot_back),
     )
 
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
@@ -373,7 +374,11 @@ class RMascotView(context: Context) : View(context) {
     private fun currentMood(now: Long, idle: Boolean): Mood = when {
         now < hurtUntil -> Mood.HURT
         state == State.GRABBED && moved -> Mood.SCARED
-        state == State.FLYING -> if (bounces >= 3) Mood.DIZZY else Mood.SCARED
+        state == State.FLYING -> when {
+            bounces >= 3 -> Mood.DIZZY
+            hypot(vx, vy) > 700f * density -> Mood.BACK // flying away fast: we see its back
+            else -> Mood.SCARED
+        }
         idle && now < dizzyUntil -> Mood.DIZZY
         idle && now < sadUntil -> Mood.SAD
         idle && now >= happyUntil && now % 3600L < 160L -> Mood.BLINK

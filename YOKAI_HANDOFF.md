@@ -223,6 +223,9 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - Done on `build/r`: the 109 strings added to `i18n/.../ar/strings.xml` (MSA, my own translations, not reviewed by the owner); `SettingsRController`, its entry title ("تعديلات R") and the auto-scroll description are Arabic; new switch `r_force_arabic` opens the app in Arabic by default.
 - Not done / unknown: other hardcoded English outside resources in upstream code (not searched), the app name "Yokai Private" (kept in English as the owner chose it; ask if he wants an Arabic launcher name), extension/source names and manga titles (come from the sources).
 
+### Owner input #15 (2026-11-18 13:00): image `557633.jpg`, no text (recorded before use)
+- Saved as `branding/mascot-extra-557633.jpg` (about 580x470, dark background). It shows a close-up of the snake from the front/top: a big dark green cobra hood with a lime-green pentagon gem at the top, a light-gray speckled band across the middle (looks like scales or teeth), the lower body narrowing downward, and two green hands at the bottom corners. No face/eyes visible. Owner's answer (13:02): "this is the character's back" (a back view). Plan: 7th mood BACK, shown when the snake is thrown and flies away fast. The picture is cropped at the bottom (hands cut by the border), so the cut-out gets a soft fade at the bottom; ask him for an uncropped back view if it looks bad.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
@@ -234,6 +237,7 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 ## Change log
 | Date | Branch | What changed | Status |
 |------|--------|--------------|--------|
+| 2026-11-18 | `build/r` | 7th mood BACK from the owner's back-view image (`branding/mascot-extra-557633.jpg` -> `drawable-nodpi/r_mascot_back.webp`, bottom fade because the source is cropped): shown while the snake flies away faster than 700dp/s (first ~1 s of a throw), before the scared face. Not compiled or tested. | CI |
 | 2026-11-18 | `build/r` | Arabic everywhere: 109 missing translations added to `ar/strings.xml`, R settings screen + auto-scroll description in Arabic, new switch `r_force_arabic` (App.onCreate sets the app locale to `ar` when none is set). Not compiled or tested. | CI |
 | 2026-11-18 | `build/r` | Mascot now has 6 faces from the owner's sheet (`branding/mascot-moods-557623.jpg` cut into `drawable-nodpi/r_mascot_{happy,hurt,scared,dizzy,sad,blink}.webp`; the old single `r_mascot.webp` was removed). `RMascotView.currentMood`: idle=happy with a blink every 3.6 s, grabbed/flying=scared, wall hit=hurt, 3+ hard hits in one flight=dizzy, 1-2 hits then rest=sad, tap/soft landing=happy. New phrases for dizzy/sad (not approved by the owner). Cut-out script is not stored in the repo (flood-fill of bg #181C1B, keep components >= 3000 px, 384x384 lossless WebP). Not compiled or tested. | CI |
 | 2026-11-18 | `build/r` (1e3ae7a) | Deleted upstream debug/nightly launcher icon overrides (they hid the green logo), renamed debug/nightly app names, CI builds the minified release APK (`-PrDebugSign=true`, artifact `yokai-r-release`). | CI |
