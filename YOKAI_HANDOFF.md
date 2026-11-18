@@ -144,6 +144,9 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - **One APK for all devices:** the owner got many APK files in one download and wants **a single APK that works on every device**. Cause: the app's `splits.abi` produces one APK per architecture plus a universal one. Decision: CI now uploads **only the universal APK** (`*universal*.apk`) in `build_r.yml`. Do not hand the owner per-architecture files. Size note: universal debug is big; the permanent-key release build (minified) will be much smaller.
 - **Logo:** the owner said the launcher icon currently in the app (made from `branding/icon-source.jpg`, the Y badge) is **not the logo he meant** and that he will send the new logo. Not received yet. Do not touch the icon again until it arrives.
 
+### Owner input #9: logo image `557510.jpg` (2026-11-18, recorded before comparing it)
+- After saying the icon in the app was not the logo he meant, the owner sent an image with the message \"this is the logo\". Saved as `branding/logo-owner-557510.jpg`. Comparison with `branding/icon-source.jpg` is noted right below.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
