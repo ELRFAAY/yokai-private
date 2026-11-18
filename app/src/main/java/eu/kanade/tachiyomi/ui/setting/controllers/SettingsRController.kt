@@ -37,7 +37,6 @@ class SettingsRController : SettingsLegacyController() {
             title = "Reader: auto-scroll speed"
             entries = listOf("Very slow", "Slow", "Normal", "Fast", "Very fast")
             entryValues = listOf(30, 60, 100, 150, 220)
-            defaultValue = 60
         }
     }
 }
