@@ -50,7 +50,8 @@ val supportedAbis = setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
 android {
     defaultConfig {
         applicationId = "com.elrfaay.yokair"
-        versionCode = 162
+        // R: grows with every commit so each new build can be installed over the previous one.
+        versionCode = 162 + (commitCount.toIntOrNull() ?: 0)
         versionName = _versionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
@@ -81,6 +82,19 @@ android {
         }
     }
 
+    // R: one permanent key (r-signing/yokai-r.keystore, private repo) so every build updates the previous one.
+    val rKeystore = rootProject.file("r-signing/yokai-r.keystore")
+    signingConfigs {
+        if (rKeystore.exists()) {
+            create("rRelease") {
+                storeFile = rKeystore
+                storePassword = "yokai-r-private"
+                keyAlias = "yokair"
+                keyPassword = "yokai-r-private"
+            }
+        }
+    }
+
     buildTypes {
         getByName("debug") {
             applicationIdSuffix = ".debugYokai"
@@ -91,8 +105,12 @@ android {
             isShrinkResources = true
             isMinifyEnabled = true
             proguardFiles("proguard-android-optimize.txt", "proguard-rules.pro")
-            // R: CI passes -PrDebugSign=true so the minified (fast) release build is installable without a release key.
-            if (project.hasProperty("rDebugSign")) signingConfig = signingConfigs.getByName("debug")
+            // R: the permanent R key when present; otherwise -PrDebugSign=true falls back to the debug key.
+            if (rKeystore.exists()) {
+                signingConfig = signingConfigs.getByName("rRelease")
+            } else if (project.hasProperty("rDebugSign")) {
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
         create("beta") {
             initWith(getByName("release"))
