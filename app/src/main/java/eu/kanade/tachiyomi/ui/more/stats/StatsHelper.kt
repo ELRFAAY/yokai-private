@@ -91,7 +91,7 @@ object StatsHelper {
         return SpannableStringBuilder().apply {
             if (days != 0L) append("${days}d")
             if (hours != 0L) append("${hours}h")
-            if (minutes != 0L && days == 0L) append("${minutes}min")
+            if (minutes != 0L) append("${minutes}min")
             if (seconds != 0L && days == 0L && hours == 0L) append("${seconds}s")
         }.replace(Regex("(\\D)(?=\\d)"), "$0 ").ifBlank { blankValue }
     }

@@ -680,27 +680,29 @@ class ReaderViewModel(
     }
 
     fun flushReadTimer() {
-        getCurrentChapter()?.let {
-            viewModelScope.launchNonCancellableIO {
-                saveChapterHistory(it)
-            }
+        val chapter = getCurrentChapter() ?: return
+        // Capture the session start and end RIGHT NOW. The save runs asynchronously, and
+        // restartReadTimer() may reset the start before it runs, which used to record ~0 ms.
+        val startTime = chapterReadStartTime
+        val endTime = Date().time
+        chapterReadStartTime = null
+        viewModelScope.launchNonCancellableIO {
+            saveChapterHistory(chapter, startTime, endTime)
         }
     }
 
     /**
      * Saves this [readerChapter] last read history.
      */
-    private suspend fun saveChapterHistory(readerChapter: ReaderChapter) {
+    private suspend fun saveChapterHistory(readerChapter: ReaderChapter, startTime: Long?, endTime: Long) {
         if (preferences.incognitoMode().get()) return
 
-        val endTime = Date().time
-        val sessionReadDuration = chapterReadStartTime?.let { endTime - it } ?: 0
+        val sessionReadDuration = startTime?.let { (endTime - it).coerceAtLeast(0L) } ?: 0L
         val history = History.create(readerChapter.chapter).apply {
             last_read = endTime
             time_read = sessionReadDuration
         }
         upsertHistory.await(history)
-        chapterReadStartTime = null
     }
 
     /**
