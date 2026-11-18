@@ -31,7 +31,7 @@ Stated by the owner on 2026-11-18:
 ### R switches (keep this table up to date)
 | Switch (pref key) | What it controls | Default | Branch |
 |---|---|---|---|
-| _none yet_ | | | |
+| `r_fix_split_tall_image_error` | Download: a missing page file during the tall-image split is only logged (on) vs. fails the page with "page not found during splitting" (off = original) | on | `feat/r-settings` |
 
 ## Working rules
 - Make each change on its own branch, not directly on `main`. `main` stays as the known-good base (this handoff file is the only thing committed straight to it).
@@ -73,10 +73,13 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - [ ] Change `applicationId` so it installs next to the original
 - [ ] App name
 - [ ] App logo / launcher icon
-- [ ] Fix downloads (see above): first fix is on branch `fix/download-split-not-found`, waiting for a build + test on the Xiaomi phone
+- [x] "R" settings section (scaffold done on `feat/r-settings`, not built yet)
+- [ ] Fix downloads (see above): first fix is on `feat/r-settings` (stacked on `fix/download-split-not-found`), waiting for a build + test on the Xiaomi phone
+- Note: the main Settings has "Split tall images" under Downloads (default on); turning it off skips the failing step entirely, a no-code workaround to test.
 
 ## Change log
 | Date | Branch | What changed | Status |
 |------|--------|--------------|--------|
 | 2026-11-18 | `main` | Initial import of upstream `843a59b` | done |
+| 2026-11-18 | `feat/r-settings` | New "R" entry in main Settings (`SettingsRController`, legacy preference DSL) + pref `rFixSplitTallImageError` in `PreferencesHelper`; the download fix is now gated by that switch. **Stacked on `fix/download-split-not-found`** (contains its commit), so use this branch, not the fix branch alone. **Not compiled or tested.** | pending test |
 | 2026-11-18 | `fix/download-split-not-found` | `Downloader.splitTallImageIfNeeded`: `throw Error(...)` -> `error(...)` so a missing file during tall-image split is logged instead of failing the page. 1 line. **Not compiled or tested** (no Android SDK in the session); needs a build and a test on the Xiaomi phone. Not merged into `main`. | pending test |
