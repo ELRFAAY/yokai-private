@@ -275,6 +275,12 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     // switching it off restores the original Yokai behavior.
     fun rFixSplitTallImageError() = preferenceStore.getBoolean("r_fix_split_tall_image_error", true)
 
+    /** Reader: auto-scroll button in the webtoon (continuous) reader. */
+    fun rAutoScroll() = preferenceStore.getBoolean("r_auto_scroll", true)
+
+    /** Reader: auto-scroll speed in dp per second. */
+    fun rAutoScrollSpeed() = preferenceStore.getInt("r_auto_scroll_speed", 60)
+
     fun downloadNewChapters() = preferenceStore.getBoolean(Keys.downloadNew, false)
 
     fun downloadNewChaptersInCategories() = preferenceStore.getStringSet("download_new_categories", emptySet())

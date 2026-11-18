@@ -2,6 +2,7 @@ package eu.kanade.tachiyomi.ui.reader.viewer.webtoon
 
 import android.graphics.PointF
 import android.os.Build
+import android.view.Choreographer
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -13,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.WebtoonLayoutManager
 import co.touchlab.kermit.Logger
 import eu.kanade.tachiyomi.data.download.DownloadManager
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
 import eu.kanade.tachiyomi.ui.reader.model.ChapterTransition
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
@@ -69,6 +71,37 @@ class WebtoonViewer(val activity: ReaderActivity, val hasMargins: Boolean = fals
      */
     val config = WebtoonConfig(scope)
 
+    private val rPreferences: PreferencesHelper by injectLazy()
+
+    /** Called (on the main thread) whenever auto-scroll starts or stops, so the UI can update its button. */
+    var autoScrollListener: ((running: Boolean) -> Unit)? = null
+
+    private var autoScrolling = false
+    private var autoScrollRemainder = 0f
+    private var autoScrollLastFrameNanos = 0L
+
+    private val autoScrollFrame = object : Choreographer.FrameCallback {
+        override fun doFrame(frameTimeNanos: Long) {
+            if (!autoScrolling) return
+            if (autoScrollLastFrameNanos != 0L) {
+                val seconds = (frameTimeNanos - autoScrollLastFrameNanos) / 1_000_000_000f
+                val pxPerSecond = activity.resources.displayMetrics.density * rPreferences.rAutoScrollSpeed().get()
+                autoScrollRemainder += pxPerSecond * seconds
+                val px = autoScrollRemainder.toInt()
+                if (px > 0) {
+                    autoScrollRemainder -= px
+                    recycler.scrollBy(0, px)
+                }
+            }
+            autoScrollLastFrameNanos = frameTimeNanos
+            if (!recycler.canScrollVertically(1)) {
+                stopAutoScroll()
+                return
+            }
+            Choreographer.getInstance().postFrameCallback(this)
+        }
+    }
+
     init {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) recycler.setItemViewCacheSize(RECYCLER_VIEW_CACHE_SIZE)
         recycler.isVisible = false // Don't let the recycler layout yet
@@ -78,6 +111,11 @@ class WebtoonViewer(val activity: ReaderActivity, val hasMargins: Boolean = fals
         recycler.adapter = adapter
         recycler.addOnScrollListener(
             object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    // The user grabbed the page: stop moving by ourselves.
+                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) stopAutoScroll()
+                }
+
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     onScrolled()
 
@@ -185,7 +223,31 @@ class WebtoonViewer(val activity: ReaderActivity, val hasMargins: Boolean = fals
      */
     override fun destroy() {
         super.destroy()
+        stopAutoScroll()
         scope.cancel()
+    }
+
+    /** Starts the auto-scroll. Speed (dp/s) comes from Settings > R. */
+    fun startAutoScroll() {
+        if (autoScrolling) return
+        autoScrolling = true
+        autoScrollRemainder = 0f
+        autoScrollLastFrameNanos = 0L
+        Choreographer.getInstance().postFrameCallback(autoScrollFrame)
+        autoScrollListener?.invoke(true)
+    }
+
+    fun stopAutoScroll() {
+        if (!autoScrolling) return
+        autoScrolling = false
+        Choreographer.getInstance().removeFrameCallback(autoScrollFrame)
+        autoScrollListener?.invoke(false)
+    }
+
+    /** @return true if auto-scroll is now running. */
+    fun toggleAutoScroll(): Boolean {
+        if (autoScrolling) stopAutoScroll() else startAutoScroll()
+        return autoScrolling
     }
 
     /**
