@@ -121,6 +121,11 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - Request: add a mascot like the crying cat in the reference, but using the owner's snake character, **same size and same placement/behavior** as the reference. The reference mascot is an **animation**. The owner will send more images after these (probably the animation frames or other poses), so wait for them before building.
 - Rule that applies: this must be switchable from Settings > R (new switch to add to the table), and must not touch the extension loader, library refresh, downloads or sources.
 
+### Owner input #5: chapter-transition screen (2026-11-18)
+- Owner sent a third screenshot, saved as `branding/reader-transition-reference.jpg` (from the same other app, Arabic UI, reader view). It shows the end of one chapter and the start of the next, with a dark panel between them containing: a small line of text (\"you can continue reading\"), the **mascot with a happy animation**, a line \"you spent less than a minute in this chapter\" with a small timer icon, and an outlined button \"Next chapter · chapter 3\".
+- Request: show this panel **between every two chapters** in the reader, using the owner's snake mascot (`branding/mascot-source.jpg`) with a nice animation, and the time spent in the chapter.
+- Notes for whoever builds it: needs a per-chapter reading timer in the reader; it touches the reader's chapter-transition view, so keep it behind a Settings > R switch and keep the original transition when the switch is off. More images are still expected from the owner (animation frames / poses).
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
