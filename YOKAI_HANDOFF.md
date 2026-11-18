@@ -136,6 +136,8 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 
 ### Owner input #7: video `557552.mp4` (2026-11-18, recorded BEFORE reviewing it)
 - The owner sent a screen-recording video (`557552.mp4`) with the message \"look at this\" and nothing else. Probably a reference for the mascot animation or the reader features he asked for; content notes are added below once reviewed.
+- **Review (2026-11-18, ~36 s, 1080x2400, 48 fps, screen recording of the same other app, Arabic UI):** it stays on the app's home screen with the banner carousel auto-advancing behind. The mint-green flame/drop mascot lives on top of the screen and moves around by itself: it floats, flies across the screen leaving a **dotted trail**, and changes **faces** (smiling, angry/hurt/crying). It also shows **speech bubbles** in Arabic over its head that change with its mood, for example: \"please stop...\", \"ouch, that hurts\", \"are you still hitting me?\", \"enough!\", \"watch out for the ceiling!\", \"that was fun!\", \"again!\", \"to infinity!\", \"why are you hitting me?\".
+- **My reading (an inference, not confirmed by the owner):** the mascot probably reacts to the user touching/flicking it (the phrases are about being hit, thrown and the ceiling). The video alone does not show the touches, so ask the owner before building: is it interactive (tap/throw) or just a floating decoration, and should the phrases be copied or written fresh for the snake?
 
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
