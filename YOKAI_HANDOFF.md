@@ -249,6 +249,11 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - Not related to the crash: `HttpException 502` while updating a series, SQLite "automatic index" warnings.
 - Status: cause not yet found when this was written (see the change log for the fix).
 
+### Owner input #19 (2026-11-19, recorded before answering): improve the green cobra
+- Owner: \"now we want to improve the green cobra we made in Yokai. Do you have suggestions, or do you need images made for you?\"
+- Answer given: suggestions in two groups. **Images from him (ask for PNG with transparent background; the current faces are cut out of JPEGs so edges can show halos):** more moods that fit the \"judge a series\" idea: LOVE (heart eyes / thumbs up) = recommended, DISLIKE (disgusted) = not recommended, THINKING, SLEEPING (idle), ANGRY (thrown too much); optional: waving, peeking from the screen edge. **Without images (code only):** idle breathing/bobbing, peeking from the edge, sleeping after inactivity, light vibration on hits, remembering its last position, Arabic phrase pack (I write it, he approves), reacting to app events (download finished, chapter finished), showing it on the manga details screen too, the judge-a-series feature (basis still undecided, see input #17).
+- Asked him which direction first (judge-a-series / more faces and animation / fix the problem he mentioned earlier). Answer pending. Still unknown: what the \"problem\" with the mascot is (input #16).
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
