@@ -21,6 +21,18 @@ The app must stay fully usable after any modification:
 - browsing sources works
 - **source (extension) updates keep working normally** — do not touch the extension loader, extension repos or extension installer unless the owner asks.
 
+## Hard requirement #2: every change is switchable from an "R" settings section
+Stated by the owner on 2026-11-18:
+- Add a new section in the app's Settings named **"R"** (the owner also called it "R modifications" / "تعديلات R").
+- **Every modification we make must be switchable there** — turn it off, turn it on, or get back the original app's behavior.
+- **Anything new we add must have its own settings inside that section.**
+- Practical meaning for any change: put it behind a preference (default = our new behavior), keep the original code path working when the switch is off, and list the switch in the table below.
+
+### R switches (keep this table up to date)
+| Switch (pref key) | What it controls | Default | Branch |
+|---|---|---|---|
+| _none yet_ | | | |
+
 ## Working rules
 - Make each change on its own branch, not directly on `main`. `main` stays as the known-good base (this handoff file is the only thing committed straight to it).
 - Keep changes small and targeted so any one of them can be dropped.
