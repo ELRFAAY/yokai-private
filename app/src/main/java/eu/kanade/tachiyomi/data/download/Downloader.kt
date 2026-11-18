@@ -465,7 +465,11 @@ class Downloader(
         }
 
         val digitCount = (download.pages?.size ?: 0).toString().length.coerceAtLeast(3)
-        val filename = String.format("%0${digitCount}d", page.number)
+        // R switch "r_fix_split_tall_image_error": always use English digits for the page file name.
+        // Original: the device locale was used, so on an Arabic UI the file became "٠٠٢.jpg" while the
+        // tall-image split looks for "002" (always English digits) and reported "page not found during splitting".
+        val filenameLocale = if (preferences.rFixSplitTallImageError().get()) Locale.ENGLISH else Locale.getDefault()
+        val filename = String.format(filenameLocale, "%0${digitCount}d", page.number)
         val tmpFile = tmpDir.findFile("$filename.tmp")
 
         // Delete temp file if it exists

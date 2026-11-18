@@ -281,6 +281,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Reader: auto-scroll speed in dp per second. */
     fun rAutoScrollSpeed() = preferenceStore.getInt("r_auto_scroll_speed", 60)
 
+    /** Appearance: hide the app icon picker so the app has a single icon (the R logo). */
+    fun rSingleAppIcon() = preferenceStore.getBoolean("r_single_app_icon", true)
+
     fun downloadNewChapters() = preferenceStore.getBoolean(Keys.downloadNew, false)
 
     fun downloadNewChaptersInCategories() = preferenceStore.getStringSet("download_new_categories", emptySet())

@@ -21,15 +21,23 @@ class SettingsRController : SettingsLegacyController() {
 
         switchPreference {
             bindTo(preferences.rFixSplitTallImageError())
-            title = "Download: tolerate missing page when splitting tall images"
-            summary = "On: a missing file during the tall-image split is only logged and the download continues. " +
-                "Off: original behavior (the page fails with a \"page not found during splitting\" error)."
+            title = "Download: fix page names and tall-image split"
+            summary = "On: page files always get English digits (fixes \"page not found during splitting\" on Arabic phones) " +
+                "and a missing file during the split is only logged. " +
+                "Off: original behavior (device-language digits, the page can fail with that error)."
         }
 
         switchPreference {
             bindTo(preferences.rAutoScroll())
             title = "Reader: auto-scroll button (continuous mode)"
             summary = "On: a play button in the reader menu moves the page by itself. Off: original reader (no button)."
+        }
+
+        switchPreference {
+            bindTo(preferences.rSingleAppIcon())
+            title = "Appearance: single app icon"
+            summary = "On: the icon picker is hidden, the app only has the R logo (reopen Appearance to see it). " +
+                "Off: original icon picker."
         }
 
         intListPreference(activity) {

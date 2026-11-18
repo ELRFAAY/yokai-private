@@ -62,7 +62,8 @@ class SettingsAppearanceController : SettingsLegacyController() {
             }
 
             // FIXME: Don't use dropdown, use something similar to Theme
-            dropDownPreference {
+            // R: the icon picker is hidden unless the "single app icon" switch in Settings > R is off.
+            if (!preferences.rSingleAppIcon().get()) dropDownPreference {
                 bindTo(basePreferences.appIcon())
                 title = "Change App Icon".addBetaTag(context)
                 summary = "This feature is still very experimental!"
