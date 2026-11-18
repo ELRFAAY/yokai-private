@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff
 
 Read this first when starting a new session or from another account. Update it after every meaningful change.
-Last updated: 2026-11-18 (11:30, after owner input #10; newest code is on `build/r` commit 7e215cc)
+Last updated: 2026-11-18 (12:45, after owner input #11; newest code is on `build/r` commit fd9b895)
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage).
@@ -42,7 +42,7 @@ Last updated: 2026-11-18 (11:30, after owner input #10; newest code is on `build
 | Settings > R screen | done (scaffold), in `build/r` |
 | Auto-scroll in webtoon mode (play button in reader nav, speed in R settings) | done, in `build/r`, untested; known limit: stops if the next chapter is not loaded yet at the end |
 | Extra reader tools panel like `branding/reader-controls-reference.jpg` (chapter nav, page slider with count, brightness slider, night mode, lock, play, menu) | not started; meaning of each button must be confirmed with the owner; brightness/filters/slider already exist in the code |
-| Mascot (snake from `branding/mascot-source.jpg`) like the reference app: floats on the home screen, the owner **grabs and throws it**, it flies with a dotted trail, changes faces, shows speech bubbles | not started; waiting for the owner's animation images; phrases undecided |
+| Mascot (snake from `branding/mascot-source.jpg`) like the reference app: floats on the home screen, the owner **grabs and throws it**, it flies with a dotted trail, changes faces, shows speech bubbles | v1 built on `feat/r-mascot` (in `build/r`), untested; faces limited to tint/squash/tilt (one picture); phrases are my draft, not approved |
 | Chapter-transition panel with the mascot + \"time spent in this chapter\" + next-chapter button (`branding/reader-transition-reference.jpg`) | not started; needs a per-chapter reading timer; goes in `ReaderTransitionView` behind an R switch |
 | New logo everywhere | see below |
 
@@ -119,6 +119,7 @@ Stated by the owner on 2026-11-18:
 | `r_auto_scroll` | Reader (continuous/webtoon mode only): play/pause auto-scroll button at the end of the reader nav row (on) vs. no button (off = original) | on | `feat/r-autoscroll` |
 | `r_auto_scroll_speed` | Auto-scroll speed in dp/second (choices 30/60/100/150/220) | 60 | `feat/r-autoscroll` |
 | `r_single_app_icon` | Appearance: icon picker hidden (on) so the app has one icon vs. original picker with Default/Blue/Orange/Gray/Classic (off) | on | `build/r` |
+| `r_mascot` | Home (library screen): floating snake mascot, grab and throw it (on) vs. nothing (off = original) | on | `feat/r-mascot` (in `build/r`) |
 
 ## Working rules
 - Make each change on its own branch, not directly on `main`. `main` stays as the known-good base (this handoff file is the only thing committed straight to it).
@@ -199,6 +200,13 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - Mascot: he asked whether the small animated creature that reacts to him is part of the final app. Answer given: **not built yet**, waiting for his animation images; goes behind an R switch.
 - Why the icon may still look black and white to him (unconfirmed): he may be looking at the original Yokai app (installed side by side), or the splash screen (fixed now), or the icon picker (hidden now). The launcher icon itself was verified colored (adaptive foreground = the green badge).
 
+### Owner input #11 (2026-11-18 12:26): screenshot `557615.png`, "slow to open", "where is the character?"
+- Screenshot of his home screen: next to another app, our app's icon labeled **"Yōkai Debug"** with a gray/white Y and a gray flame. He said that is not the logo he wanted added, and that the app opens very slowly. Then asked where the small character (mascot) is.
+- **Cause of the gray icon (found in code):** `app/src/debug/res/mipmap-*` (and `app/src/nightly/res/mipmap-*`) are upstream's per-build-type icons and override `app/src/main`, so every debug build kept the gray upstream icon no matter what we put in main. Fixed on `build/r`: those folders deleted; debug/nightly names are now "Yokai R Debug" / "Yokai R Nightly". Release/main already used the green logo.
+- **Slow opening:** the debug build is not minified and is debuggable (slow by design). CI (`build_r.yml`) now builds `assembleStandardRelease -PrDebugSign=true` (R8 + resource shrinking, signed with the debug key so it installs). Artifact name: `yokai-r-release` (one universal APK). Its package is `com.elrfaay.yokair.yokai` (release suffix), different from the old debug app (`...debugYokai`), so the owner should uninstall the old "Yōkai Debug" to avoid two icons.
+- **Open decision: signing key.** The debug key is regenerated on every CI run, so each new APK has a different signature and cannot update the previous one in place (uninstall first = data loss unless he restores a backup). A permanent keystore is needed; storing it as a GitHub secret is the clean way (needs the owner to add secrets; the pasted token does not allow that), committing it to the private repo is the quick way. Not decided, not asked yet.
+- **Mascot built (v1, untested):** `RMascotView` + `drawable-nodpi/r_mascot.webp` (his cobra cut out of `branding/mascot-source.jpg`), branch `feat/r-mascot`, merged into `build/r`. Behavior: full-screen transparent overlay in `MainActivity` that only takes touches on the snake; drag it, release with speed and it flies with a dotted trail, bounces on the screen edges (hurt tint + shake on a hard hit), rests again; tap = happy squash; speech bubbles with phrases I wrote in Egyptian Arabic (lists at the bottom of `RMascotView.kt`; the owner has NOT approved them). Shown only when the library controller is on top, switch `r_mascot` in Settings > R. Limits: one picture only, so "faces" are tint/squash/tilt; real expressions need more images from him.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
@@ -210,6 +218,8 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 ## Change log
 | Date | Branch | What changed | Status |
 |------|--------|--------------|--------|
+| 2026-11-18 | `build/r` (1e3ae7a) | Deleted upstream debug/nightly launcher icon overrides (they hid the green logo), renamed debug/nightly app names, CI builds the minified release APK (`-PrDebugSign=true`, artifact `yokai-r-release`). | CI |
+| 2026-11-18 | `feat/r-mascot` + `build/r` (fd9b895) | Snake mascot overlay (`RMascotView.kt`, `r_mascot.webp`), `r_mascot` pref + Settings > R switch, `MainActivity.updateRMascot` (shown on `LibraryController` only). Not compiled locally (no Android SDK) and not tested on a device. | CI |
 | 2026-11-18 | `build/r` (commit 7e215cc) | Splash screen uses the green Y logo (`drawable-nodpi/ic_yokai_splash_r.webp`, themes.xml); new switch `r_single_app_icon` hides the icon picker; `Downloader.getOrDownloadImage` names page files with `Locale.ENGLISH` digits (fixes the Arabic-UI "page not found during splitting"). Notification small icon `ic_yokai` left as is on purpose (must be a flat glyph). Not tested on a device. | CI |
 | 2026-11-18 | `feat/r-autoscroll` | Auto-scroll for webtoon mode: `WebtoonViewer.start/stop/toggleAutoScroll` (Choreographer, fractional px accumulation, stops on user drag / end of content / onPause), play button `auto_scroll` in `reader_nav.xml`, prefs `rAutoScroll` + `rAutoScrollSpeed`, controls in Settings > R. Stacked on `feat/r-settings`. Known limit: stops if the next chapter is not loaded yet when the end is reached. Not tested on a device. | pending test |
 | 2026-11-18 | `build/r` | Merge of `feat/r-settings` + `feat/r-branding` + `feat/r-autoscroll`, plus `.github/workflows/build_r.yml` (debug APK as artifact) and `google-services.json` entries for the new application ids (first build failed without them). First green build was before auto-scroll; build with auto-scroll was started after. | CI |
