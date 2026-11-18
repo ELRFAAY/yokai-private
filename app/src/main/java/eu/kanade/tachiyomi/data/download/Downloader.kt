@@ -585,7 +585,9 @@ class Downloader(
         try {
             val fileName = "%03d".format(Locale.ENGLISH, page.number)
             val imageFile = tmpDir.listFiles()?.firstOrNull { it.name.orEmpty().startsWith(fileName) }
-                ?: throw Error(context.getString(MR.strings.download_notifier_split_page_not_found, page.number))
+                // Use error() (IllegalStateException) instead of throwing java.lang.Error: an Error is not caught by
+                // `catch (e: Exception)` below, so a missing file here would fail the whole page download.
+                ?: error(context.getString(MR.strings.download_notifier_split_page_not_found, page.number))
 
             // Check if the original page was previously split before then skip.
             if (imageFile.name.orEmpty().startsWith("${fileName}__")) return
