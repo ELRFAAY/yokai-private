@@ -14,6 +14,46 @@ Last updated: 2026-11-18
 - Many changes are planned, including branding: **app name and logo** (plus more to come, to be listed below).
 - Language of conversation with the owner: Egyptian Arabic.
 
+## START HERE: current state and next steps (updated 2026-11-18, written because the previous account was near its usage limit)
+
+### Branches in `ELRFAAY/yokai-private` (all pushed)
+| Branch | Based on | Contents | Built/tested? |
+|---|---|---|---|
+| `main` | upstream `843a59b` | Clean Yokai + this handoff + `branding/icon-source.jpg`. No app-code changes. | n/a |
+| `fix/download-split-not-found` | `main` | 1-line fix in `Downloader.splitTallImageIfNeeded` (`throw Error` -> `error`). | No |
+| `feat/r-settings` | `fix/download-split-not-found` | "R" entry in main Settings (`SettingsRController`), pref `rFixSplitTallImageError`, download fix gated by it. **Includes the fix branch's commit.** | No |
+| `feat/r-branding` | `main` (NOT stacked on the two above) | `applicationId` base -> `com.elrfaay.yokair`; `app_name` -> "Yokai R" (placeholder); new default launcher icon; old monochrome layer removed. | No |
+
+To get everything in one app: merge `feat/r-settings` and `feat/r-branding` into a new build branch (e.g. `build/r`). They touch different files (Downloader/PreferencesHelper/SettingsMainController/new controller vs. build.gradle.kts/strings.xml/mipmap files), so conflicts are not expected. Nothing has been merged yet.
+
+### Nothing has been compiled or run
+The Claude session had no Android SDK, so no build was possible. Next account: first get a build. Options: (a) the owner builds locally with Android Studio / `./gradlew assembleStandardDebug`; (b) CI. The repo contains the upstream workflows in `.github/workflows/` (`build_check.yml`, `build_push.yml`, `mirror.yml`). They came from upstream and were never adapted; `build_push.yml` / `mirror.yml` likely need upstream secrets and may fail or do nothing useful in the private repo — read them before relying on them, and do not push anything that would publish or mirror this repo outside GitHub-private.
+
+### Installing next to the original
+- Final application ids with the current config: release `com.elrfaay.yokair.yokai`, debug `com.elrfaay.yokair.debugYokai`, nightly `com.elrfaay.yokair.nightlyYokai` (the build-type suffixes were left as upstream). The original app uses `eu.kanade.tachiyomi.yokai` (release) / `...debugYokai` / `...nightlyYokai`, so there is no clash.
+- Every runtime use of the id goes through `BuildConfig.APPLICATION_ID` / `${applicationId}` (provider authority, icon aliases, notifications, backup file names), so changing the base id is safe in code. `namespace` stays `eu.kanade.tachiyomi` on purpose.
+- The new app starts with an empty library (separate data). The owner can restore a Yokai backup into it.
+
+### Icon work (done on `feat/r-branding`)
+- Generated from `branding/icon-source.jpg` with a Pillow script (not stored in the repo). Rules used: legacy square icon = full source image resized (48/72/96/144/192 px); legacy round icon = source cropped to its circle; adaptive foreground = the circular badge (transparent outside the circle) scaled to 64% of the 108dp canvas (inside the 66dp safe zone), saved as lossless WebP at all 5 densities; background stays `@color/yokai_background` (#0E1418).
+- Files replaced: `app/src/main/res/mipmap-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}/ic_launcher.webp`, `ic_launcher_round.webp`, `ic_launcher_foreground.webp`.
+- `mipmap-anydpi-v26/ic_launcher.xml` and `ic_launcher_round.xml`: the `<monochrome>` layer was removed (it was the old Yokai glyph; Android 13 "themed icons" would have shown it). If the owner wants themed icons, a monochrome version of the Y must be made.
+- The other icons in the app's icon switcher (Blue, Orange, Gray, Classic) are untouched and still the original Yokai art.
+- A preview image was checked by eye and looked right, but it has not been seen on a device.
+
+### Open decisions to ask the owner
+1. **Final app name.** Currently the placeholder "Yokai R" (only `app_name` was changed; `app_short_name` and `app_normalized_name` are still "Yōkai"/"Yokai").
+2. **Shared storage folder.** `app_normalized_name` ("Yokai") is used by `AndroidStorageFolderProvider` for the default storage folder (downloads, backups). The new app would use the same folder name as the original, so the two apps may share or clash over downloads. Ask the owner whether they want that or a separate folder (changing `app_normalized_name` gives a separate one).
+3. **Built-in updater.** The `standard` flavor has `INCLUDE_UPDATER = true`: it checks upstream releases, which are for the original app (different id). Probably should be disabled or put behind an R switch. Not touched yet.
+4. **Extension "open in app" links** might be tied to the host package; not checked.
+5. Downloads bug follow-ups still waiting on the owner: which source/extension, whether it fails on every source, a logcat, and whether turning off Downloads > "Split tall images" makes downloads work (that option exists, default on). Also the crash "download closes and reopens the app" on Xiaomi is not investigated.
+
+### Suggested order for the next account
+1. Read this file, then ask the owner the open decisions above (one short message).
+2. Create `build/r` by merging `feat/r-settings` + `feat/r-branding`; get a build (see above); fix compile errors if any.
+3. Owner installs it next to the original and tests: library refresh, download (a chapter that failed before, on the Xiaomi phone), browsing sources, extension updates, and the Settings > R switch.
+4. Then continue with the owner's next modifications, each on its own branch behind an R switch, and keep the tables below updated.
+
 ## Hard requirement for every change
 The app must stay fully usable after any modification:
 - library refresh works
@@ -76,9 +116,9 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - App name: **not decided yet.** Placeholder used until the owner says: "Yokai R".
 
 ## Planned changes (to be filled in as the owner decides)
-- [ ] Change `applicationId` so it installs next to the original
-- [ ] App name
-- [ ] App logo / launcher icon
+- [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
+- [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
+- [x] App logo / launcher icon (`feat/r-branding`, not built)
 - [x] "R" settings section (scaffold done on `feat/r-settings`, not built yet)
 - [ ] Fix downloads (see above): first fix is on `feat/r-settings` (stacked on `fix/download-split-not-found`), waiting for a build + test on the Xiaomi phone
 - Note: the main Settings has "Split tall images" under Downloads (default on); turning it off skips the failing step entirely, a no-code workaround to test.
@@ -87,5 +127,6 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 | Date | Branch | What changed | Status |
 |------|--------|--------------|--------|
 | 2026-11-18 | `main` | Initial import of upstream `843a59b` | done |
+| 2026-11-18 | `feat/r-branding` | `applicationId` -> `com.elrfaay.yokair`, `app_name` -> "Yokai R" (placeholder), new default launcher icon (all densities), monochrome layer removed. Based on `main`. **Not compiled or tested.** | pending test |
 | 2026-11-18 | `feat/r-settings` | New "R" entry in main Settings (`SettingsRController`, legacy preference DSL) + pref `rFixSplitTallImageError` in `PreferencesHelper`; the download fix is now gated by that switch. **Stacked on `fix/download-split-not-found`** (contains its commit), so use this branch, not the fix branch alone. **Not compiled or tested.** | pending test |
 | 2026-11-18 | `fix/download-split-not-found` | `Downloader.splitTallImageIfNeeded`: `throw Error(...)` -> `error(...)` so a missing file during tall-image split is logged instead of failing the page. 1 line. **Not compiled or tested** (no Android SDK in the session); needs a build and a test on the Xiaomi phone. Not merged into `main`. | pending test |
