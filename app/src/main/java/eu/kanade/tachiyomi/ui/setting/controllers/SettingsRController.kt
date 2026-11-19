@@ -119,6 +119,13 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rMascotTransform())
+                title = "تحويل التنين الصغير"
+                summary = "الضغط عليه يحوّله بالدخان لشخصية عشوائية (فارس، نينجا، قرصان، محقق) وبعدها يرجع. عند الإيقاف: الضغط يعمل الحركة العادية."
+                dependency = preferences.rMascot().key()
+            }
+
+            switchPreference {
                 bindTo(preferences.rMascotSound())
                 title = "صوت التنين الصغير"
                 summary = "الكلام يظهر حرفاً حرفاً مع نقرات صغيرة، ويصمت إذا كان الهاتف صامتاً أو على الاهتزاز. عند الإيقاف: كلام بدون صوت."
@@ -171,7 +178,7 @@ class SettingsRController : SettingsLegacyController() {
         switchPreference {
             bindTo(preferences.rReaderCobraScene())
             title = "مشهد العصا: التنين الحكيم"
-            summary = "مفعّل: التنين الصغير يزورك كام مرة، وبعدين يجي التنين الحكيم ويضربه بالعصا على راسه ويسحبه معاه. معطّل: التنين الصغير بس."
+            summary = "مفعّل: التنين الصغير يطلع مرتين أو تلاتة ورا بعض، وبعدين يجي التنين الحكيم من اليمين ويضربه بالعصا على راسه ويسحبه معاه. معطّل: التنين الصغير بس."
         }
 
         intListPreference(activity) {

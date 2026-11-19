@@ -157,6 +157,8 @@ class RReaderCobraView(
     private var shown = false
     private var pose = Pose.NORMAL
     private var visits = 0
+    private var scenePending = false // the little dragon is making his quick visits; the wise dragon comes after them
+    private var burstLeft = 0
     private var sceneIdx = -1 // -1 = normal visit, otherwise the current step of the stick scene
     private var sceneRes = 0
     private var slideT = 0f // 0 = hidden behind the edge, 1 = fully peeking
@@ -259,11 +261,23 @@ class RReaderCobraView(
     }
 
     private fun appear() {
-        visits++
         sceneIdx = -1
         sceneRes = 0
         val night0 = nightOn() && Calendar.getInstance().get(Calendar.HOUR_OF_DAY) in 0..4
-        if (sceneOn() && !night0 && visits % sceneEvery().coerceIn(2, 10) == 0) {
+        if (scenePending && (!sceneOn() || night0)) scenePending = false
+        if (!scenePending) {
+            visits++
+            if (sceneOn() && !night0 && visits % sceneEvery().coerceIn(2, 10) == 0) {
+                scenePending = true
+                burstLeft = Random.nextInt(2, 4) // the little dragon shows up 2-3 times in a row
+            }
+        }
+        if (scenePending && burstLeft <= 0) {
+            scenePending = false
+            sceneIdx = 0
+            sceneRes = SCENE[0].res
+            typedChars = 0
+            bubbleAlpha = 0f
             firstDone = true
             shown = true
             slideT = 0f
@@ -290,8 +304,7 @@ class RReaderCobraView(
     private fun sceneStep(i: Int) {
         if (!running) return
         if (i >= SCENE.size) {
-            sceneIdx = -1
-            disappear()
+            disappear() // keeps the last picture (mirrored, on the right) while it slides out
             return
         }
         sceneIdx = i
@@ -353,7 +366,12 @@ class RReaderCobraView(
         ) {
             shown = false
             invalidate()
-            scheduleNext()
+            if (scenePending) {
+                if (burstLeft > 0) burstLeft--
+                if (running) handler.postDelayed(showRunnable, QUICK_MS) else scheduleNext()
+            } else {
+                scheduleNext()
+            }
         }
     }
 
@@ -367,6 +385,7 @@ class RReaderCobraView(
         cancelAll()
         shown = false
         sceneIdx = -1
+        scenePending = false
         invalidate()
         scheduleNext()
     }
@@ -396,14 +415,26 @@ class RReaderCobraView(
         val bmp = bitmapFor(res) ?: return
         val cobraW = (if (sceneIdx >= 0) 150f else if (pose.peek) 112f else 120f) * density
         val cobraH = cobraW * bmp.height / bmp.width
-        val restLeft = 0f
-        val left = restLeft - (1f - slideT) * (cobraW + 12f * density)
         val top = (height - cobraH) * yFrac
-        cobraRect.set(left, top, left + cobraW, top + cobraH)
-        canvas.drawBitmap(bmp, null, cobraRect, bitmapPaint)
-
-        if (bubbleAlpha > 0f && typedChars > 0) {
-            drawBubble(canvas, restLeft + cobraW - 4f * density, top + cobraH * 0.30f)
+        if (sceneIdx >= 0) {
+            // the wise dragon walks in from the RIGHT edge (pictures are mirrored so the stick points at the screen)
+            val left = width - cobraW + (1f - slideT) * (cobraW + 12f * density)
+            cobraRect.set(left, top, left + cobraW, top + cobraH)
+            canvas.save()
+            canvas.scale(-1f, 1f, cobraRect.centerX(), cobraRect.centerY())
+            canvas.drawBitmap(bmp, null, cobraRect, bitmapPaint)
+            canvas.restore()
+            if (bubbleAlpha > 0f && typedChars > 0) {
+                drawBubble(canvas, left + 4f * density, top + cobraH * 0.30f, true)
+            }
+        } else {
+            val restLeft = 0f
+            val left = restLeft - (1f - slideT) * (cobraW + 12f * density)
+            cobraRect.set(left, top, left + cobraW, top + cobraH)
+            canvas.drawBitmap(bmp, null, cobraRect, bitmapPaint)
+            if (bubbleAlpha > 0f && typedChars > 0) {
+                drawBubble(canvas, restLeft + cobraW - 4f * density, top + cobraH * 0.30f, false)
+            }
         }
     }
 
@@ -413,9 +444,9 @@ class RReaderCobraView(
             .setTextDirection(TextDirectionHeuristics.RTL)
             .build()
 
-    private fun drawBubble(canvas: Canvas, bx: Float, by: Float) {
+    private fun drawBubble(canvas: Canvas, bx: Float, by: Float, fromRight: Boolean) {
         val pad = 12f * density
-        val maxW = minOf(205f * density, width - bx - 12f * density)
+        val maxW = minOf(205f * density, (if (fromRight) bx else width - bx) - 12f * density)
         if (maxW < 110f * density) return
 
         // the full text decides the bubble size, so it does not grow while it is being typed
@@ -449,7 +480,8 @@ class RReaderCobraView(
         textPaint.alpha = a
 
         val y = by.coerceIn(8f * density, (height - bubbleH - 8f * density).coerceAtLeast(8f * density))
-        val rect = RectF(bx, y, bx + bubbleW, y + bubbleH)
+        val x0 = if (fromRight) bx - bubbleW else bx
+        val rect = RectF(x0, y, x0 + bubbleW, y + bubbleH)
         val r = 16f * density
         canvas.drawRoundRect(rect, r, r, bubbleFill)
         canvas.drawRoundRect(rect, r, r, bubbleStroke)
@@ -458,8 +490,9 @@ class RReaderCobraView(
         val y1 = y + 18f * density
         val y2 = y + 38f * density
         val tail = Path().apply {
+            val d = if (fromRight) 14f else -14f
             moveTo(bx, y1)
-            lineTo(bx - 14f * density, y + 30f * density)
+            lineTo(bx + d * density, y + 30f * density)
             lineTo(bx, y2)
         }
         canvas.drawPath(tail, bubbleFill)
@@ -467,7 +500,7 @@ class RReaderCobraView(
         canvas.drawLine(bx, y1 + 2f * density, bx, y2 - 2f * density, seamPaint)
 
         canvas.save()
-        canvas.translate(bx + pad - (textW0 - lineMax) / 2f, y + pad)
+        canvas.translate(x0 + pad - (textW0 - lineMax) / 2f, y + pad)
         layout.draw(canvas)
         canvas.restore()
     }
@@ -476,13 +509,14 @@ class RReaderCobraView(
         private const val FIRST_MS = 45_000L
         private const val AFTER_RESUME_MS = 90_000L
         private const val RETRY_MS = 15_000L
+        private const val QUICK_MS = 12_000L // gap between the little dragon's quick visits before the scene
 
         private val SCENE = listOf(
-            Step(R.drawable.r_stick_wise_walk, "إنت يا شقي! بتزعّج القارئ تاني؟", 900),
-            Step(R.drawable.r_stick_wise_raise, "استنى عندك... هتشوف!", 600, 1),
+            Step(R.drawable.r_stick_wise_walk, "إنت تاني؟! تلات مرات في دقيقة! مفيش أدب!", 900),
+            Step(R.drawable.r_stick_wise_raise, "نصيحة من الحاج: اللي ما يسمعش الكلام... يتضرب!", 600, 1),
             Step(R.drawable.r_stick_wise_hit, "", 450, 2),
             Step(R.drawable.r_stick_small_hit, "آآآي! دماغي!", 900),
-            Step(R.drawable.r_stick_wise_walk_with_small, "تعالى معايا، كفاية كده النهارده.", 700),
+            Step(R.drawable.r_stick_wise_walk_with_small, "يلا معايا. ونصيحة تانية: اشرب مية.", 700),
         )
 
         private val NORMAL = listOf(

@@ -105,6 +105,13 @@ class RMascotView(context: Context) : View(context) {
     private val prefs: PreferencesHelper by injectLazy()
     private var sageUntil = 0L
 
+    // tap = magic transformation: hand seal -> smoke -> cloud -> random character -> back to normal
+    private var tfStart = 0L
+    private var tfForm = 0
+    private var tfSpoke = false
+    private val tfBitmaps = HashMap<Int, Bitmap?>()
+    private fun tfBitmap(id: Int): Bitmap? = tfBitmaps.getOrPut(id) { load(id) }
+
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF6BFF6B.toInt() }
     private val bubbleFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
@@ -481,7 +488,7 @@ class RMascotView(context: Context) : View(context) {
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                if (!positioned || hypot(event.x - x, event.y - y) > half * 1.1f) return false
+                if (!positioned || tfStart != 0L || hypot(event.x - x, event.y - y) > half * 1.1f) return false
                 state = State.GRABBED
                 grabDx = x - event.x
                 grabDy = y - event.y
@@ -532,7 +539,11 @@ class RMascotView(context: Context) : View(context) {
                     tiltSpring.kick(if (Math.random() < 0.5) -280f else 280f)
                     scaleYSpring.kick(-5f)
                     val chance = prefs.rMascotSageChance().get()
-                    if (prefs.rMascotSage().get() && Math.random() * 100.0 < chance) {
+                    if (prefs.rMascotTransform().get()) {
+                        tfStart = now
+                        tfForm = (Math.random() * TF_FORMS.size).toInt().coerceIn(0, TF_FORMS.size - 1)
+                        tfSpoke = false
+                    } else if (prefs.rMascotSage().get() && Math.random() * 100.0 < chance) {
                         sageAdvice(now)
                     } else {
                         say(TAP.random())
@@ -574,8 +585,28 @@ class RMascotView(context: Context) : View(context) {
         // the shake fades out smoothly instead of stopping dead
         val shake = sin(now / 22f) * 5f * density * ((hurtUntil - now) / 450f).coerceIn(0f, 1f)
 
-        val current = shownBitmap ?: return
-        val previous = if (fade < 1f) fromBitmap else null
+        var tfBmp: Bitmap? = null
+        if (tfStart != 0L) {
+            val t = now - tfStart
+            val form = TF_FORMS[tfForm]
+            val id = when {
+                t < TF_SEAL -> R.drawable.r_tf_seal
+                t < TF_SEAL + TF_WRAP -> R.drawable.r_tf_wrap
+                t < TF_SEAL + TF_WRAP + TF_CLOUD -> R.drawable.r_tf_cloud
+                t < TF_SEAL + TF_WRAP + TF_CLOUD + TF_HOLD -> {
+                    if (!tfSpoke) {
+                        tfSpoke = true
+                        say(form.second, TF_HOLD - 600L)
+                    }
+                    form.first
+                }
+                t < TF_SEAL + TF_WRAP + TF_CLOUD + TF_HOLD + TF_CLOUD -> R.drawable.r_tf_cloud
+                else -> 0
+            }
+            if (id == 0) tfStart = 0L else tfBmp = tfBitmap(id)
+        }
+        val current = tfBmp ?: shownBitmap ?: return
+        val previous = if (tfBmp == null && fade < 1f) fromBitmap else null
 
         canvas.save()
         canvas.translate(x + shake, y + bob)
@@ -588,7 +619,15 @@ class RMascotView(context: Context) : View(context) {
             canvas.rotate(-deg)
         }
         canvas.scale(scaleXSpring.value * (1f - breath * 0.5f), scaleYSpring.value * (1f + breath))
-        dest.set(-half, -half, half, half)
+        if (tfBmp != null) {
+            val box = half * 2.3f
+            val k = minOf(box / tfBmp.width, box / tfBmp.height)
+            val w2 = tfBmp.width * k / 2f
+            val h2 = tfBmp.height * k / 2f
+            dest.set(-w2, -h2, w2, h2)
+        } else {
+            dest.set(-half, -half, half, half)
+        }
         if (previous != null) {
             bitmapPaint.alpha = 255
             canvas.drawBitmap(previous, null, dest, bitmapPaint)
@@ -690,6 +729,16 @@ class RMascotView(context: Context) : View(context) {
 
     private companion object {
         const val BLINK_MS = 140L
+        const val TF_SEAL = 450L
+        const val TF_WRAP = 450L
+        const val TF_CLOUD = 450L
+        const val TF_HOLD = 4200L
+        val TF_FORMS = listOf(
+            R.drawable.r_tf_knight to "أنا الفارس! محدش يقرب من المانجا دي!",
+            R.drawable.r_tf_ninja to "نينجا الشاشة... ما تشوفنيش!",
+            R.drawable.r_tf_pirate to "هاااار! المانجا دي كنزي أنا!",
+            R.drawable.r_tf_detective to "فيه شابتر ناقص... وأنا هاعرف مين خدّه!",
+        )
         const val CHAR_MS = 38L // typing speed of the speech bubble
         val BLIP_RATES = floatArrayOf(1.0f, 1.18f, 0.9f, 1.32f, 1.08f)
         val GRAB = listOf("سيبني بقى!", "إنت ماسكني ليه؟", "هششش! أنا التعبان!")
