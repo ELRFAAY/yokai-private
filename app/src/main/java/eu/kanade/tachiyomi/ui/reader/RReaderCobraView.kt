@@ -150,7 +150,7 @@ class RReaderCobraView(
     private var fullLayout: StaticLayout? = null
     private var textW0 = 0
 
-    private val showRunnable = Runnable {
+    private val showRunnable: Runnable = Runnable {
         if (!running) return@Runnable
         if (!enabled() || !canShow()) {
             handler.postDelayed(showRunnable, RETRY_MS)
@@ -158,7 +158,7 @@ class RReaderCobraView(
             appear()
         }
     }
-    private val hideRunnable = Runnable { disappear() }
+    private val hideRunnable: Runnable = Runnable { disappear() }
 
     // ---- lifecycle (called from ReaderActivity) -----------------------------------------------------------
     fun onActivityResume() {
