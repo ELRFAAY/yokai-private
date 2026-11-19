@@ -83,6 +83,12 @@ Last updated: 2026-11-19 07:40 (owner's usage was at 92%). **Read the section "S
 4. Open: approval of Egyptian phrases, "mascot judges a series" basis, Firebase/updater privacy, app name, merging into `build/r`.
 5. Never store the two GitHub tokens he pasted in chat anywhere.
 
+## NEWEST-3 2026-11-19 14:30 (owner's usage 94%): READ FIRST
+- **Settings > R crashed on open** (owner's logcat): `IllegalStateException: Dependency "r_auto_scroll" not found for preference "r_auto_scroll_speed"`. Cause: the settings DSL (`initThenAdd`) runs the block BEFORE adding the pref to the screen, so `dependency = ...key()` can never find its target. Fixed in **a47021b** on `fix/stats-and-name` by replacing every `dependency = prefs.x().key()` in `SettingsRController` with `prefs.x().changesIn(viewScope) { isEnabled = it }`. RULE: never use `dependency =` in this repo's settings DSL.
+- Run **44521457045** (`@50e5724`) is still running and does NOT contain a47021b, so its Settings > R crashes. The owner told me NOT to cancel it. **Next step: `gh workflow run build_r.yml --ref fix/stats-and-name -R ELRFAAY/yokai-private` (the build with a47021b), tell the owner in short Egyptian Arabic to install that one.** The older `chapterSort` crash in his log (13:13) is from old build 1035 and is fixed in later builds (656b8e5); still needs his confirmation.
+- Owner input #29: "leave the running build alone, I'll give you a bug" (the logcat above), then "push everything and give me the next message".
+- Everything is pushed (`fix/stats-and-name` = a47021b, handoff on `main`). The Stop hook "feat-sound-port has N unpushed commits" is a false positive (local helper branch).
+
 ## NEWEST-2 2026-11-19 14:20: sound, stick scene and tap-transformation are on `fix/stats-and-name` (commit 50e5724)
 - **Build to check first:** run **44521457045** (`fix/stats-and-name` @ 50e5724, dispatched 14:1x). Older run 44519333951 (@ 7aa639e) was superseded/cancelled. No local compile exists, CI only; nothing is tested on a phone. If it fails: `gh run view <id> --log-failed`, the workflow prints "Gradle errors" annotations.
 - **Names in all UI text:** small green snake = "التنين الصغير", wise old snake = "التنين الحكيم". Settings > R texts were renamed (they used to say ثعبان/كوبرا).
