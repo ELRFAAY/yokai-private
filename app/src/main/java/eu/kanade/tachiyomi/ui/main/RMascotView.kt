@@ -14,6 +14,8 @@ import android.view.VelocityTracker
 import android.view.View
 import android.view.ViewConfiguration
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import uy.kohesive.injekt.injectLazy
 import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.max
@@ -35,6 +37,9 @@ import kotlin.math.sin
 class RMascotView(context: Context) : View(context) {
 
     private enum class State { IDLE, GRABBED, FLYING }
+
+    /** Sleep: after a minute without any touch the snake says goodnight, a blanket slides up and it sleeps. */
+    private enum class SleepPhase { AWAKE, DROWSY, ASLEEP, WAKING }
 
     private enum class Mood { HAPPY, HURT, SCARED, DIZZY, SAD, BLINK, BACK }
 
@@ -104,6 +109,31 @@ class RMascotView(context: Context) : View(context) {
     private var bubbleText: String? = null
     private var bubbleUntil = 0L
 
+    private val rPrefs: PreferencesHelper by injectLazy()
+    private var sleepPhase = SleepPhase.AWAKE
+    private var lastActiveAt = SystemClock.uptimeMillis()
+    private var drowsyUntil = 0L
+    private var blanketT = 0f // 0 = no blanket, 1 = blanket fully up
+
+    private val blanketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF1F6F6B.toInt() }
+    private val blanketStripe = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF49B6A8.toInt()
+        style = Paint.Style.STROKE
+        strokeWidth = 5f * density
+    }
+    private val blanketEdge = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFFEAF7F2.toInt()
+        style = Paint.Style.STROKE
+        strokeWidth = 3f * density
+    }
+    private val blanketRect = RectF()
+    private val blanketPath = Path()
+    private val zPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFFB7F5B9.toInt()
+        isFakeBoldText = true
+        setShadowLayer(3f * density, 0f, 0f, 0xFF1B5E20.toInt())
+    }
+
     private var running = false
     private var lastFrame = 0L
 
@@ -122,6 +152,10 @@ class RMascotView(context: Context) : View(context) {
         if (running || !isAttachedToWindow || !isShown) return
         running = true
         lastFrame = SystemClock.uptimeMillis()
+        // coming back to the screen: start awake, with a fresh timer
+        sleepPhase = SleepPhase.AWAKE
+        blanketT = 0f
+        lastActiveAt = lastFrame
         postOnAnimation(frame)
     }
 
@@ -173,6 +207,25 @@ class RMascotView(context: Context) : View(context) {
         val dt = ((now - lastFrame) / 1000f).coerceIn(0.001f, 0.033f)
         lastFrame = now
         if (!positioned) return
+
+        // sleep logic
+        if (rPrefs.rMascotSleep().get()) {
+            if (sleepPhase == SleepPhase.AWAKE && state == State.IDLE && now - lastActiveAt >= SLEEP_AFTER_MS) {
+                sleepPhase = SleepPhase.DROWSY
+                drowsyUntil = now + 3000
+                say(GO_SLEEP.random(), 3000L)
+            }
+        } else if (sleepPhase == SleepPhase.DROWSY || sleepPhase == SleepPhase.ASLEEP) {
+            sleepPhase = SleepPhase.WAKING
+        }
+        if (sleepPhase == SleepPhase.DROWSY && now >= drowsyUntil) sleepPhase = SleepPhase.ASLEEP
+        val blanketTarget = if (sleepPhase == SleepPhase.ASLEEP) 1f else 0f
+        if (blanketT < blanketTarget) {
+            blanketT = minOf(blanketTarget, blanketT + dt / 1.2f)
+        } else if (blanketT > blanketTarget) {
+            blanketT = maxOf(blanketTarget, blanketT - dt / 0.6f)
+        }
+        if (sleepPhase == SleepPhase.WAKING && blanketT <= 0f) sleepPhase = SleepPhase.AWAKE
 
         if (state == State.FLYING) {
             x += vx * dt
@@ -249,9 +302,19 @@ class RMascotView(context: Context) : View(context) {
         }
     }
 
-    private fun say(text: String) {
+    private fun say(text: String, durationMs: Long = 2200L) {
         bubbleText = text
-        bubbleUntil = SystemClock.uptimeMillis() + 2200
+        bubbleUntil = SystemClock.uptimeMillis() + durationMs
+    }
+
+    /** Called by MainActivity on every touch anywhere in the app: resets the sleep timer and wakes the snake up. */
+    fun noteActivity() {
+        lastActiveAt = SystemClock.uptimeMillis()
+        if (sleepPhase == SleepPhase.DROWSY || sleepPhase == SleepPhase.ASLEEP) {
+            sleepPhase = SleepPhase.WAKING
+            happyUntil = lastActiveAt + 1500
+            say(WAKE.random())
+        }
     }
 
     // ---- touch: only the snake itself takes touches ----
@@ -260,6 +323,7 @@ class RMascotView(context: Context) : View(context) {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 if (!positioned || hypot(event.x - x, event.y - y) > half * 1.1f) return false
+                noteActivity()
                 state = State.GRABBED
                 grabDx = x - event.x
                 grabDy = y - event.y
@@ -338,7 +402,12 @@ class RMascotView(context: Context) : View(context) {
 
         val now = SystemClock.uptimeMillis()
         val idle = state == State.IDLE
-        val bob = if (idle) sin(now / 380f) * 4f * density else 0f
+        val sleepingNow = sleepPhase == SleepPhase.DROWSY || sleepPhase == SleepPhase.ASLEEP
+        val bob = if (idle) {
+            if (sleepingNow) sin(now / 900f) * 2f * density else sin(now / 380f) * 4f * density
+        } else {
+            0f
+        }
         val isHurt = now < hurtUntil
         val isHappy = idle && now < happyUntil
         val bmp = faces[currentMood(now, idle)] ?: faces[Mood.HAPPY] ?: return
@@ -359,19 +428,28 @@ class RMascotView(context: Context) : View(context) {
             scaleY = 1.1f
         }
 
+        if (sleepingNow) { // slow breathing
+            val k = sin(now / 900f) * 0.025f
+            scaleX = 1f + k
+            scaleY = 1f - k
+        }
+
         canvas.save()
         canvas.translate(x + shake, y + bob)
         canvas.rotate(tilt)
         canvas.scale(scaleX, scaleY)
         dest.set(-half, -half, half, half)
         canvas.drawBitmap(bmp, null, dest, bitmapPaint)
+        if (blanketT > 0f) drawBlanket(canvas)
         canvas.restore()
 
+        if (sleepPhase == SleepPhase.ASLEEP && blanketT > 0.85f) drawZzz(canvas, now)
         drawBubble(canvas, now)
     }
 
     /** Which of the six pictures to show right now. */
     private fun currentMood(now: Long, idle: Boolean): Mood = when {
+        sleepPhase == SleepPhase.DROWSY || sleepPhase == SleepPhase.ASLEEP -> Mood.BLINK // eyes closed
         now < hurtUntil -> Mood.HURT
         state == State.GRABBED && moved -> Mood.SCARED
         state == State.FLYING -> when {
@@ -383,6 +461,37 @@ class RMascotView(context: Context) : View(context) {
         idle && now < sadUntil -> Mood.SAD
         idle && now >= happyUntil && now % 3600L < 160L -> Mood.BLINK
         else -> Mood.HAPPY
+    }
+
+    /** The blanket is drawn in code: a teal quilt with diagonal stripes that slides up over the lower half of the snake. */
+    private fun drawBlanket(canvas: Canvas) {
+        val t = blanketT.coerceIn(0f, 1f)
+        val eased = t * t * (3f - 2f * t)
+        val slide = (1f - eased) * half * 1.4f
+        blanketRect.set(-half * 1.08f, half * 0.05f + slide, half * 1.08f, half * 1.12f + slide)
+        val radius = 12f * density
+        blanketPath.reset()
+        blanketPath.addRoundRect(blanketRect, radius, radius, Path.Direction.CW)
+        canvas.save()
+        canvas.clipPath(blanketPath)
+        canvas.drawRect(blanketRect, blanketPaint)
+        var sx = blanketRect.left - blanketRect.height()
+        while (sx < blanketRect.right) {
+            canvas.drawLine(sx, blanketRect.bottom, sx + blanketRect.height(), blanketRect.top, blanketStripe)
+            sx += 18f * density
+        }
+        canvas.restore()
+        canvas.drawRoundRect(blanketRect, radius, radius, blanketEdge)
+    }
+
+    /** Three small "z" letters that drift up from the sleeping snake and fade out. */
+    private fun drawZzz(canvas: Canvas, now: Long) {
+        for (i in 0 until 3) {
+            val p = (((now / 1000f) + i * 0.9f) % 2.7f) / 2.7f
+            zPaint.alpha = ((1f - p) * 255f).toInt().coerceIn(0, 255)
+            zPaint.textSize = (12f + 8f * p + i * 2f) * density
+            canvas.drawText("z", x + half * 0.35f + p * half * 0.5f + i * 6f * density, y - half * 0.55f - p * half * 0.9f, zPaint)
+        }
     }
 
     private fun drawBubble(canvas: Canvas, now: Long) {
@@ -429,5 +538,8 @@ class RMascotView(context: Context) : View(context) {
         val DIZZY_TALK = listOf("الدنيا بتلف بيا...", "أنا شايف نجوم!", "لفّلي دماغي!")
         val SAD_TALK = listOf("حرام عليك...", "ده أنا زعلان!", "كده يا صاحبي؟")
         val TAP = listOf("أيوه؟", "عايز إيه؟", "بس بتدغدغني!")
+        val GO_SLEEP = listOf("لما تبقى جاهز صحّيني... هنام شوية", "الدنيا هادية... هجيب البطانية وأنام", "صحّيني لما ترجع، تمام؟")
+        val WAKE = listOf("هاه؟ صحيت!", "إيه ده؟ كنت في أحلى حلم...", "خلاص خلاص، صاحي!")
+        const val SLEEP_AFTER_MS = 60_000L
     }
 }

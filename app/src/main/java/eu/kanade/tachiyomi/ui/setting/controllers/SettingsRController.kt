@@ -54,6 +54,12 @@ class SettingsRController : SettingsLegacyController() {
             summary = "مفعّل: ثعبان صغير يطفو على شاشة المكتبة، أمسكه وارمِه. معطّل: بدون الثعبان (الأصلي)."
         }
 
+        switchPreference {
+            bindTo(preferences.rMascotSleep())
+            title = "الرئيسية: الثعبان ينام"
+            summary = "مفعّل: لو محدش لمس الشاشة دقيقة، الثعبان بيجيب بطانية وينام، ولمسة واحدة بتصحّيه. معطّل: بيفضل صاحي."
+        }
+
         intListPreference(activity) {
             bindTo(preferences.rAutoScrollSpeed())
             title = "القارئ: سرعة التمرير التلقائي"

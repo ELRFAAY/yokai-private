@@ -1410,6 +1410,12 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
         router.pushController(StatsController().withFadeTransaction())
     }
 
+    /** R: any touch anywhere in the app resets the mascot's sleep timer (and wakes it up). */
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        rMascot?.noteActivity()
+    }
+
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         ev?.let {
             gestureDetector?.onTouchEvent(it)
