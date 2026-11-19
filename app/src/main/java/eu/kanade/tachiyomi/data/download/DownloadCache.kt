@@ -142,7 +142,8 @@ class DownloadCache(
             if (mangaDir != null) {
                 return provider.getValidChapterDirNames(
                     chapter,
-                ).any { it in mangaDir.chapterDirs }
+                ).any { it in mangaDir.chapterDirs } ||
+                    provider.cacheHasMihonChapter(chapter, mangaDir.chapterDirs)
             }
         }
         return false
@@ -338,6 +339,7 @@ class DownloadCache(
                         mangaDir.chapterDirs -= it
                     }
                 }
+                provider.removeMihonChapter(chapter, mangaDir.chapterDirs)
             }
         }
 

@@ -28,6 +28,13 @@ class SettingsRController : SettingsLegacyController() {
         }
 
         switchPreference {
+            bindTo(preferences.rMihonFiles())
+            title = "التنزيلات: قراءة تنزيلات ميهون"
+            summary = "مفعّل: يتعرّف على الفصول التي نزّلها ميهون (يضيف ميهون رمزاً قصيراً في آخر اسم المجلد)، " +
+                "فتظهر كمحمّلة وتُقرأ ولا تُحذف عند التنظيف. معطّل: السلوك الأصلي (لا يتعرّف عليها)."
+        }
+
+        switchPreference {
             bindTo(preferences.rFixSplitTallImageError())
             title = "التنزيل: إصلاح أسماء الصفحات وتقسيم الصور الطويلة"
             summary = "مفعّل: تُسمّى ملفات الصفحات دائماً بالأرقام اللاتينية (0-9) لإصلاح خطأ \"لم يُعثر على الصفحة أثناء التقسيم\" " +

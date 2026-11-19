@@ -311,6 +311,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Language: open the app in Arabic unless another language was picked in Settings > General. */
     fun rForceArabic() = preferenceStore.getBoolean("r_force_arabic", true)
 
+    /** Downloads: recognize (and never clean up) the chapters downloaded by Mihon. */
+    fun rMihonFiles() = preferenceStore.getBoolean("r_mihon_files", true)
+
     fun downloadNewChapters() = preferenceStore.getBoolean(Keys.downloadNew, false)
 
     fun downloadNewChaptersInCategories() = preferenceStore.getStringSet("download_new_categories", emptySet())

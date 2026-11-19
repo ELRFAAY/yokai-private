@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.data.download
 import android.content.Context
 import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.data.database.models.Chapter
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.domain.manga.models.Manga
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.SourceManager
@@ -32,6 +33,7 @@ class DownloadProvider(private val context: Context) {
      */
     private val downloadPreferences: DownloadPreferences by injectLazy()
     private val storageManager: StorageManager by injectLazy()
+    private val preferences: PreferencesHelper by injectLazy()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -93,6 +95,60 @@ class DownloadProvider(private val context: Context) {
         return getValidChapterDirNames(chapter).asSequence()
             .mapNotNull { mangaDir?.findFile(it) ?: mangaDir?.findFile("$it.cbz") }
             .firstOrNull()
+            ?: mangaDir?.let { findMihonChapterFile(chapter, it) }
+    }
+
+    // ---- R: read the chapters downloaded by Mihon ----
+    // Mihon ends every chapter folder / .cbz name with "_" + the first 6 characters of md5(chapter url).
+    // The rest of its name can differ (padding, scanlator, truncation), so the hash alone identifies the chapter.
+
+    private fun mihonEnabled() = preferences.rMihonFiles().get()
+
+    private fun mihonHashSuffix(chapter: Chapter): String = "_" + Hash.md5(chapter.url).take(6)
+
+    /** True when [name] (a folder name, or a .cbz name) ends with a Mihon hash suffix. */
+    private fun endsWithMihonHash(name: String, suffixes: Set<String>): Boolean {
+        val base = name.removeSuffix(".cbz")
+        return base.length > 7 && base.takeLast(7) in suffixes
+    }
+
+    private fun findMihonChapterFile(chapter: Chapter, mangaDir: UniFile): UniFile? {
+        if (!mihonEnabled()) return null
+        val suffixes = setOf(mihonHashSuffix(chapter))
+        return mangaDir.listFiles().orEmpty().firstOrNull { file ->
+            val name = file.name ?: return@firstOrNull false
+            !name.endsWith(Downloader.TMP_DIR_SUFFIX) && endsWithMihonHash(name, suffixes)
+        }
+    }
+
+    /** All Mihon-named files of a manga folder, keyed by their hash suffix. Listed once per call. */
+    private fun mihonFilesByHash(mangaDir: UniFile): Map<String, UniFile> {
+        val map = HashMap<String, UniFile>()
+        mangaDir.listFiles().orEmpty().forEach { file ->
+            val name = file.name ?: return@forEach
+            if (name.endsWith(Downloader.TMP_DIR_SUFFIX)) return@forEach
+            val base = name.removeSuffix(".cbz")
+            if (base.length > 7 && base[base.length - 7] == '_') map[base.takeLast(7)] = file
+        }
+        return map
+    }
+
+    /** True if one of the cached chapter folder names (without ".cbz") is Mihon's name for [chapter]. */
+    fun cacheHasMihonChapter(chapter: Chapter, chapterDirs: Collection<String>): Boolean {
+        if (!mihonEnabled()) return false
+        val suffix = mihonHashSuffix(chapter)
+        return try {
+            chapterDirs.any { it.endsWith(suffix) }
+        } catch (e: ConcurrentModificationException) {
+            false // the cache was being refreshed; the next call will see it
+        }
+    }
+
+    /** Removes Mihon's name for [chapter] from the cached folder names. */
+    fun removeMihonChapter(chapter: Chapter, chapterDirs: MutableSet<String>) {
+        if (!mihonEnabled()) return
+        val suffix = mihonHashSuffix(chapter)
+        chapterDirs.removeAll { it.endsWith(suffix) }
     }
 
     /**
@@ -104,10 +160,12 @@ class DownloadProvider(private val context: Context) {
      */
     fun findChapterDirs(chapters: List<Chapter>, manga: Manga, source: Source): List<UniFile> {
         val mangaDir = findMangaDir(manga, source) ?: return emptyList()
+        val mihonFiles by lazy { mihonFilesByHash(mangaDir) } // only listed if a chapter is not found by its own name
         return chapters.mapNotNull { chapter ->
             getValidChapterDirNames(chapter).map { listOf(it, "$it.cbz") }.flatten().asSequence()
                 .mapNotNull { mangaDir.findFile(it) }
                 .firstOrNull()
+                ?: (if (mihonEnabled()) mihonFiles[mihonHashSuffix(chapter)] else null)
         }
     }
 
@@ -169,10 +227,17 @@ class DownloadProvider(private val context: Context) {
             "${getChapterDirName(it, includeId = downloadPreferences.downloadWithId().get())}.cbz"
         }.toHashSet()
 
+        val mihonSuffixes: Set<String> =
+            if (mihonEnabled()) chapters.map { mihonHashSuffix(it) }.toHashSet() else emptySet()
+
         return mangaDir.listFiles().orEmpty().asList().filter { file ->
             file.name?.let { fileName ->
                 if (fileName.endsWith(Downloader.TMP_DIR_SUFFIX)) {
                     return@filter true
+                }
+                // R: a download made by Mihon belongs to a chapter, it is not an orphan
+                if (mihonSuffixes.isNotEmpty() && endsWithMihonHash(fileName, mihonSuffixes)) {
+                    return@filter false
                 }
                 // check this first because this is the normal name format
                 if (scanlatorNameHashSet.contains(fileName)) {
