@@ -1,5 +1,13 @@
 package eu.kanade.tachiyomi.ui.setting.controllers
 
+import android.os.Bundle
+import android.view.View
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
+import android.view.animation.AnimationSet
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.LayoutAnimationController
+import android.view.animation.TranslateAnimation
 import androidx.preference.PreferenceScreen
 import eu.kanade.tachiyomi.data.preference.changesIn
 import eu.kanade.tachiyomi.ui.setting.SettingsLegacyController
@@ -18,6 +26,23 @@ import eu.kanade.tachiyomi.ui.setting.switchPreference
  * - anything new we add must also have its settings in this screen, and be listed in the handoff table.
  */
 class SettingsRController : SettingsLegacyController() {
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        // the rows glide in one after another (slide from the side + fade), instead of appearing at once
+        val enter = AnimationSet(true).apply {
+            interpolator = DecelerateInterpolator()
+            addAnimation(AlphaAnimation(0f, 1f))
+            addAnimation(
+                TranslateAnimation(
+                    Animation.RELATIVE_TO_SELF, 0.12f, Animation.RELATIVE_TO_SELF, 0f,
+                    Animation.RELATIVE_TO_SELF, 0f, Animation.RELATIVE_TO_SELF, 0f,
+                ),
+            )
+            duration = 380L
+        }
+        listView.layoutAnimation = LayoutAnimationController(enter, 0.09f)
+    }
 
     override fun setupPreferenceScreen(screen: PreferenceScreen) = screen.apply {
         title = "تعديلات R"
