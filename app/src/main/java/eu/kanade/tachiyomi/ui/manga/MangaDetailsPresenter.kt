@@ -194,8 +194,10 @@ class MangaDetailsPresenter(
 
         isLockedFromSearch = controller.shouldLockIfNeeded && SecureActivityDelegate.shouldBeLocked()
         if (!::manga.isInitialized) runBlocking {
-            setCurrentExcludedScanlators(getExcludedScanlators.await(mangaId))
+            // R: load the manga first; setCurrentExcludedScanlators() reads it through getChapters() and
+            // crashed with "lateinit property manga has not been initialized" when it ran before.
             refreshMangaFromDb()
+            setCurrentExcludedScanlators(getExcludedScanlators.await(mangaId))
         }
         syncData()
 
