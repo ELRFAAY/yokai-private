@@ -59,6 +59,11 @@ Last updated: 2026-11-19 07:40 (owner's usage was at 92%). **Read the section "S
 - Work order: (1) fix the cutter flaw (impact star of `stick_wise_hit` removed as \"text\"); (2) implement the **stick scene** in `RReaderCobraView` on `fix/stats-and-name`: the small dragon appears twice in a row, then the wise dragon comes, raises the stick, hits it on the head and carries it away; Egyptian phrases written by the assistant (NOT approved); a switch `r_reader_cobra_scene` + a frequency list in Settings > R; must never block reading (touches still pass to the reader, never while the menu is open); (3) one single build for everything (the running run 44515091157 must end first).
 - Needs from the owner, asked in the reply: see the \"What I need\" list in the message (phrases approval, how often, a sound).
 
+## 2026-11-19 17:00 BUILD BLOCKER: GitHub Actions billing (owner message #29-30)
+- Run 44533110328 (b66284c, `fix/stats-and-name`) did NOT fail on code: GitHub refused to start the job ("recent account payments have failed or your spending limit needs to be increased"). Previous runs 44530575708 (58a4c3f) and 44528048541 (3c55ed0) were green. The owner says money is the problem, so he will move the repo to a NEW GitHub account (free 2000 Actions minutes/month for private repos; a build here costs ~20-25 min).
+- How: Settings > Danger Zone > Transfer ownership to the new account (stays private, keeps branches, handoff and the signing key `r-signing/yokai-r.keystore`, so the app still updates over the old one). Afterwards check Settings > Secrets and variables > Actions (secrets may need re-adding), connect the new account to Claude (the session attaches repos by name: use `add_repo` with the new owner/name), then re-run the build on b66284c with `gh workflow run build_r.yml --ref fix/stats-and-name`.
+- NEVER make the repo public (the signing key is inside). Update every `ELRFAAY/yokai-private` reference in this file once the new name is known. Waiting for the owner to send the new account/repo name.
+
 ## NEWEST 2026-11-19 13:35 (owner's usage at 90%): read this block first, it supersedes the sections below where they disagree
 
 ### Owner messages since the cobra request (all recorded; the images are in `branding/mascot-models/`)
