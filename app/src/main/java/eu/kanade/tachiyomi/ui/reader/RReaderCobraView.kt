@@ -66,8 +66,22 @@ class RReaderCobraView(
         null
     }
 
-    private val peekBitmap: Bitmap? = load(R.drawable.r_cobra_peek)
-    private val sleepyBitmap: Bitmap? = load(R.drawable.r_cobra_sleepy)
+    /** Poses cut from the owner's model sheet (branding/mascot-models/14-...). Loaded lazily, kept in memory. */
+    private enum class Pose(val res: Int, val peek: Boolean) {
+        NORMAL(R.drawable.r_cobra_peek_normal, true),
+        LOOK(R.drawable.r_cobra_peek_look, true),
+        LAUGH(R.drawable.r_cobra_peek_laugh, true),
+        POINT(R.drawable.r_cobra_peek_point, true),
+        YAWN(R.drawable.r_cobra_yawn, false),
+        RUB(R.drawable.r_cobra_rub, false),
+        BORED(R.drawable.r_cobra_bored, false),
+        NOD(R.drawable.r_cobra_nod1, false),
+    }
+
+    private class Line(val text: String, val pose: Pose)
+
+    private val bitmaps = HashMap<Int, Bitmap?>()
+    private fun bitmapFor(res: Int): Bitmap? = bitmaps.getOrPut(res) { load(res) }
 
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val bubbleFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
@@ -84,7 +98,7 @@ class RReaderCobraView(
     }
     private val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFF1B1B1B.toInt()
-        textSize = 15f * density
+        textSize = 18f * density
         isFakeBoldText = true
     }
 
@@ -136,7 +150,7 @@ class RReaderCobraView(
     private var running = false
     private var firstDone = false
     private var shown = false
-    private var night = false
+    private var pose = Pose.NORMAL
     private var slideT = 0f // 0 = hidden behind the edge, 1 = fully peeking
     private var bubbleAlpha = 0f
     private var typedChars = 0
@@ -235,8 +249,10 @@ class RReaderCobraView(
     }
 
     private fun appear() {
-        night = nightOn() && Calendar.getInstance().get(Calendar.HOUR_OF_DAY) in 0..4
-        text = (if (night) NIGHT else NORMAL).random()
+        val night = nightOn() && Calendar.getInstance().get(Calendar.HOUR_OF_DAY) in 0..4
+        val line = (if (night) NIGHT else NORMAL).random()
+        text = line.text
+        pose = line.pose
         yFrac = 0.30f + Random.nextFloat() * 0.25f
         firstDone = true
         shown = true
@@ -323,17 +339,19 @@ class RReaderCobraView(
             post { if (shown) hideNow() }
             return
         }
-        val bmp = (if (night) sleepyBitmap else peekBitmap) ?: return
-        val cobraW = (if (night) 128f else 118f) * density
+        // the nodding pose swaps between its two frames while the text is being typed
+        val res = if (pose == Pose.NOD && (typedChars / 5) % 2 == 1) R.drawable.r_cobra_nod2 else pose.res
+        val bmp = bitmapFor(res) ?: return
+        val cobraW = (if (pose.peek) 112f else 120f) * density
         val cobraH = cobraW * bmp.height / bmp.width
-        val restLeft = if (night) -8f * density else 0f
+        val restLeft = 0f
         val left = restLeft - (1f - slideT) * (cobraW + 12f * density)
         val top = (height - cobraH) * yFrac
         cobraRect.set(left, top, left + cobraW, top + cobraH)
         canvas.drawBitmap(bmp, null, cobraRect, bitmapPaint)
 
         if (bubbleAlpha > 0f && typedChars > 0) {
-            drawBubble(canvas, restLeft + cobraW - 4f * density, top + cobraH * 0.10f)
+            drawBubble(canvas, restLeft + cobraW - 4f * density, top + cobraH * 0.30f)
         }
     }
 
@@ -345,7 +363,7 @@ class RReaderCobraView(
 
     private fun drawBubble(canvas: Canvas, bx: Float, by: Float) {
         val pad = 12f * density
-        val maxW = minOf(230f * density, width - bx - 12f * density)
+        val maxW = minOf(205f * density, width - bx - 12f * density)
         if (maxW < 110f * density) return
 
         // the full text decides the bubble size, so it does not grow while it is being typed
@@ -408,22 +426,22 @@ class RReaderCobraView(
         private const val RETRY_MS = 15_000L
 
         private val NORMAL = listOf(
-            "الفصل ده شكله جامد، كمّل كمّل!",
-            "إيه ده؟! هو فيه حد يقرا بالسرعة دي؟",
-            "أنا الكوبرا، جاي أطمّن عليك.",
-            "ريّح عينيك شوية يا بطل، المانجا مش هتهرب.",
-            "اشرب مية وارجع كمّل.",
-            "بقالك فترة بتقرا... فخور بيك والله!",
-            "ما تقلقش، مش هبوّظ عليك الأحداث.",
-            "شد حيلك، فاضل شوية وتخلّص الفصل.",
+            Line("الفصل ده شكله جامد، كمّل كمّل!", Pose.LAUGH),
+            Line("إيه ده؟! هو فيه حد يقرا بالسرعة دي؟", Pose.LOOK),
+            Line("أنا الكوبرا، جاي أطمّن عليك.", Pose.NORMAL),
+            Line("ريّح عينيك شوية يا بطل، المانجا مش هتهرب.", Pose.POINT),
+            Line("اشرب مية وارجع كمّل.", Pose.POINT),
+            Line("بقالك فترة بتقرا... فخور بيك والله!", Pose.LAUGH),
+            Line("ما تقلقش، مش هبوّظ عليك الأحداث.", Pose.NORMAL),
+            Line("شد حيلك، فاضل شوية وتخلّص الفصل.", Pose.LOOK),
         )
 
         private val NIGHT = listOf(
-            "إنت لسه صاحي؟! خش نام يا عم إنت!",
-            "الساعة بقت كده وإنت لسه بتقرا؟ نام وكمّل بكره.",
-            "يا عم نام بقى، المانجا مش هتهرب منك!",
-            "عينيك هتقفل لوحدها... خش نام وبكره نكمّل.",
-            "لسه صاحي؟ ده أنا نفسي نعست!",
+            Line("إنت لسه صاحي؟! خش نام يا عم إنت!", Pose.YAWN),
+            Line("الساعة بقت كده وإنت لسه بتقرا؟ نام وكمّل بكره.", Pose.BORED),
+            Line("يا عم نام بقى، المانجا مش هتهرب منك!", Pose.RUB),
+            Line("عينيك هتقفل لوحدها... خش نام وبكره نكمّل.", Pose.NOD),
+            Line("لسه صاحي؟ ده أنا نفسي نعست!", Pose.YAWN),
         )
     }
 }
