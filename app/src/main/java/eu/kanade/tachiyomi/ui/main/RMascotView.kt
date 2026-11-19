@@ -65,6 +65,10 @@ class RMascotView(context: Context) : View(context) {
         Mood.BACK to load(R.drawable.r_mascot_back),
     )
 
+    /** The sleeping picture from the model sheet (snake snug under a red blanket). If it is missing, a blanket is drawn in code. */
+    private val asleepBitmap: Bitmap? = load(R.drawable.r_mascot_asleep)
+    private val asleepDest = RectF()
+
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF6BFF6B.toInt() }
     private val bubbleFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
@@ -439,8 +443,21 @@ class RMascotView(context: Context) : View(context) {
         canvas.rotate(tilt)
         canvas.scale(scaleX, scaleY)
         dest.set(-half, -half, half, half)
-        canvas.drawBitmap(bmp, null, dest, bitmapPaint)
-        if (blanketT > 0f) drawBlanket(canvas)
+        val asleepPic = asleepBitmap
+        if (asleepPic != null && blanketT > 0f) {
+            // cross-fade: the normal face fades out, the sleeping picture fades in (and the other way when waking up)
+            bitmapPaint.alpha = ((1f - blanketT) * 255f).toInt().coerceIn(0, 255)
+            canvas.drawBitmap(bmp, null, dest, bitmapPaint)
+            val aw = half * 2.3f
+            val ah = aw * asleepPic.height / asleepPic.width
+            asleepDest.set(-aw / 2f, -ah / 2f + half * 0.12f, aw / 2f, ah / 2f + half * 0.12f)
+            bitmapPaint.alpha = (blanketT * 255f).toInt().coerceIn(0, 255)
+            canvas.drawBitmap(asleepPic, null, asleepDest, bitmapPaint)
+            bitmapPaint.alpha = 255
+        } else {
+            canvas.drawBitmap(bmp, null, dest, bitmapPaint)
+            if (blanketT > 0f) drawBlanket(canvas)
+        }
         canvas.restore()
 
         if (sleepPhase == SleepPhase.ASLEEP && blanketT > 0.85f) drawZzz(canvas, now)
