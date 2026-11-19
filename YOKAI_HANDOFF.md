@@ -290,6 +290,10 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - My reading: do both reactions as one sequence on the **home-screen mascot** (`RMascotView`): after 60 s without any touch in the app it says a going-to-sleep line, closes its eyes (existing `blink` face), a blanket slides up over it and \"z z z\" float above; any touch anywhere wakes it (blanket slides off, wake-up line). The blanket is **drawn in code** (no blanket picture exists; the owner can send one later). Detected with `Activity.onUserInteraction()` because the overlay itself only receives touches that land on the snake.
 - Planned: branch `feat/r-mascot-sleep` stacked on `feat/r-reader-cobra` (so it contains the compile fix `4604c1b`), a new R switch `r_mascot_sleep` (default on). Phrases are drafts, **not approved by the owner** (the first one follows his own wording).
 
+### Owner input #24 (2026-11-19, recorded before working): use the model sheet's sleeping-under-a-blanket picture
+- About the blanket: the owner says the assistant **already has a model sheet where the snake sleeps under a blanket** (in `branding/mascot-models/`), so use that art instead of the blanket drawn in code. He also said to go to the next step and that he will follow the build himself.
+- Plan: find that picture, cut it out, ship it as a drawable, and use it as the ASLEEP picture of the home mascot (`feat/r-mascot-sleep`); keep the code-drawn blanket only as a fallback if the picture fails to load. Report what I find.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
