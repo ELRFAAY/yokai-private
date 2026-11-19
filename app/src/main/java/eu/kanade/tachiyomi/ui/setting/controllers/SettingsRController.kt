@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.setting.controllers
 
 import androidx.preference.PreferenceScreen
+import eu.kanade.tachiyomi.data.preference.changesIn
 import eu.kanade.tachiyomi.ui.setting.SettingsLegacyController
 import eu.kanade.tachiyomi.ui.setting.bindTo
 import eu.kanade.tachiyomi.ui.setting.intListPreference
@@ -66,7 +67,7 @@ class SettingsRController : SettingsLegacyController() {
                 title = "سرعة التمرير التلقائي"
                 entries = listOf("بطيئة جداً", "بطيئة", "عادية", "سريعة", "سريعة جداً")
                 entryValues = listOf(30, 60, 100, 150, 220)
-                dependency = preferences.rAutoScroll().key()
+                preferences.rAutoScroll().changesIn(viewScope) { isEnabled = it }
             }
         }
 
@@ -122,14 +123,14 @@ class SettingsRController : SettingsLegacyController() {
                 bindTo(preferences.rMascotTransform())
                 title = "تحويل التنين الصغير"
                 summary = "الضغط عليه يحوّله بالدخان لشخصية عشوائية (فارس، نينجا، قرصان، محقق) وبعدها يرجع. عند الإيقاف: الضغط يعمل الحركة العادية."
-                dependency = preferences.rMascot().key()
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
             }
 
             switchPreference {
                 bindTo(preferences.rMascotSound())
                 title = "صوت التنين الصغير"
                 summary = "الكلام يظهر حرفاً حرفاً مع نقرات صغيرة، ويصمت إذا كان الهاتف صامتاً أو على الاهتزاز. عند الإيقاف: كلام بدون صوت."
-                dependency = preferences.rMascot().key()
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
             }
 
             switchPreference {
@@ -137,7 +138,7 @@ class SettingsRController : SettingsLegacyController() {
                 title = "الحكيم العجوز"
                 summary = "أحياناً عند لمس الثعبان يتحوّل إلى الحكيم بقبّعته ولحيته ويعطيك نصيحة صحيحة تماماً " +
                     "ولا تفيدك بشيء، للمزاح فقط. عند الإيقاف: الثعبان العادي دائماً."
-                dependency = preferences.rMascot().key()
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
             }
 
             intListPreference(activity) {
@@ -145,7 +146,7 @@ class SettingsRController : SettingsLegacyController() {
                 title = "كم مرة يظهر الحكيم"
                 entries = listOf("نادراً", "أحياناً", "كثيراً", "في كل لمسة")
                 entryValues = listOf(15, 35, 60, 100)
-                dependency = preferences.rMascotSage().key()
+                preferences.rMascotSage().changesIn(viewScope) { isEnabled = it }
             }
         }
 
@@ -186,7 +187,7 @@ class SettingsRController : SettingsLegacyController() {
             title = "مشهد العصا: كل كام زيارة"
             entries = listOf("كل زيارة تالتة", "كل زيارة رابعة", "كل زيارة خامسة", "كل زيارة سابعة")
             entryValues = listOf(3, 4, 5, 7)
-            dependency = preferences.rReaderCobraScene().key()
+            preferences.rReaderCobraScene().changesIn(viewScope) { isEnabled = it }
         }
     }
 }
