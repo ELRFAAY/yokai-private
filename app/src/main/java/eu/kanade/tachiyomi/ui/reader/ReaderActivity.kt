@@ -323,6 +323,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             soundOn = { preferences.rReaderCobraSound().get() },
             nightOn = { preferences.rReaderCobraNight().get() },
             intervalMinutes = { preferences.rReaderCobraInterval().get() },
+            sceneOn = { preferences.rReaderCobraScene().get() },
+            sceneEvery = { preferences.rReaderCobraSceneEvery().get() },
         ).also { view ->
             binding.root.addView(
                 view,

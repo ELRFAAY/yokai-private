@@ -296,6 +296,12 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Reader cobra: typing and movement sounds. */
     fun rReaderCobraSound() = preferenceStore.getBoolean("r_reader_cobra_sound", true)
 
+    /** Reader: every Nth visit the wise dragon hits the little dragon with his stick and drags him away. */
+    fun rReaderCobraScene() = preferenceStore.getBoolean("r_reader_cobra_scene", true)
+
+    /** Reader: the stick scene comes on every Nth visit (the little dragon visits N-1 times first). */
+    fun rReaderCobraSceneEvery() = preferenceStore.getInt("r_reader_cobra_scene_every", 3)
+
     /** Reader cobra: sleepy cobra that tells you to go to bed between 00:00 and 04:59. */
     fun rReaderCobraNight() = preferenceStore.getBoolean("r_reader_cobra_night", true)
 

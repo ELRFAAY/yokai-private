@@ -55,6 +55,8 @@ class RReaderCobraView(
     private val soundOn: () -> Boolean,
     private val nightOn: () -> Boolean,
     private val intervalMinutes: () -> Int,
+    private val sceneOn: () -> Boolean = { false },
+    private val sceneEvery: () -> Int = { 3 },
 ) : View(context) {
 
     private val density = resources.displayMetrics.density
@@ -79,6 +81,9 @@ class RReaderCobraView(
     }
 
     private class Line(val text: String, val pose: Pose)
+
+    /** One beat of the stick scene: which picture, what is said, how long it stays after the text is typed. */
+    private class Step(val res: Int, val text: String, val holdMs: Long, val sound: Int = 0)
 
     private val bitmaps = HashMap<Int, Bitmap?>()
     private fun bitmapFor(res: Int): Bitmap? = bitmaps.getOrPut(res) { load(res) }
@@ -151,6 +156,9 @@ class RReaderCobraView(
     private var firstDone = false
     private var shown = false
     private var pose = Pose.NORMAL
+    private var visits = 0
+    private var sceneIdx = -1 // -1 = normal visit, otherwise the current step of the stick scene
+    private var sceneRes = 0
     private var slideT = 0f // 0 = hidden behind the edge, 1 = fully peeking
     private var bubbleAlpha = 0f
     private var typedChars = 0
@@ -173,6 +181,7 @@ class RReaderCobraView(
         }
     }
     private val hideRunnable: Runnable = Runnable { disappear() }
+    private val stepRunnable: Runnable = Runnable { sceneStep(sceneIdx + 1) }
 
     // ---- lifecycle (called from ReaderActivity) -----------------------------------------------------------
     fun onActivityResume() {
@@ -205,6 +214,7 @@ class RReaderCobraView(
     private fun cancelAll() {
         handler.removeCallbacks(showRunnable)
         handler.removeCallbacks(hideRunnable)
+        handler.removeCallbacks(stepRunnable)
         animator?.cancel()
         animator = null
     }
@@ -249,6 +259,19 @@ class RReaderCobraView(
     }
 
     private fun appear() {
+        visits++
+        sceneIdx = -1
+        sceneRes = 0
+        val night0 = nightOn() && Calendar.getInstance().get(Calendar.HOUR_OF_DAY) in 0..4
+        if (sceneOn() && !night0 && visits % sceneEvery().coerceIn(2, 10) == 0) {
+            firstDone = true
+            shown = true
+            slideT = 0f
+            yFrac = 0.30f + Random.nextFloat() * 0.25f
+            play(whooshIn, 0.5f)
+            run(420, 0f, 1f, DecelerateInterpolator(), { slideT = it }) { sceneStep(0) }
+            return
+        }
         val night = nightOn() && Calendar.getInstance().get(Calendar.HOUR_OF_DAY) in 0..4
         val line = (if (night) NIGHT else NORMAL).random()
         text = line.text
@@ -261,6 +284,30 @@ class RReaderCobraView(
         bubbleAlpha = 0f
         play(whooshIn, 0.5f)
         run(420, 0f, 1f, DecelerateInterpolator(), { slideT = it }) { typeText() }
+    }
+
+    /** The stick scene: the wise dragon comes, raises the stick, hits the little dragon and drags him away. */
+    private fun sceneStep(i: Int) {
+        if (!running) return
+        if (i >= SCENE.size) {
+            sceneIdx = -1
+            disappear()
+            return
+        }
+        sceneIdx = i
+        val st = SCENE[i]
+        sceneRes = st.res
+        text = st.text
+        typedChars = 0
+        bubbleAlpha = 0f
+        if (st.sound == 1) play(whooshOut, 0.7f)
+        if (st.sound == 2) play(tick1, 1f)
+        if (st.text.isEmpty()) {
+            invalidate()
+            handler.postDelayed(stepRunnable, st.holdMs)
+        } else {
+            typeText()
+        }
     }
 
     private fun typeText() {
@@ -283,7 +330,11 @@ class RReaderCobraView(
             },
         ) {
             typedChars = n
-            handler.postDelayed(hideRunnable, 2200L + n * 45L)
+            if (sceneIdx >= 0) {
+                handler.postDelayed(stepRunnable, SCENE[sceneIdx].holdMs)
+            } else {
+                handler.postDelayed(hideRunnable, 2200L + n * 45L)
+            }
         }
     }
 
@@ -315,6 +366,7 @@ class RReaderCobraView(
     private fun hideNow() {
         cancelAll()
         shown = false
+        sceneIdx = -1
         invalidate()
         scheduleNext()
     }
@@ -340,9 +392,9 @@ class RReaderCobraView(
             return
         }
         // the nodding pose swaps between its two frames while the text is being typed
-        val res = if (pose == Pose.NOD && (typedChars / 5) % 2 == 1) R.drawable.r_cobra_nod2 else pose.res
+        val res = if (sceneIdx >= 0) sceneRes else if (pose == Pose.NOD && (typedChars / 5) % 2 == 1) R.drawable.r_cobra_nod2 else pose.res
         val bmp = bitmapFor(res) ?: return
-        val cobraW = (if (pose.peek) 112f else 120f) * density
+        val cobraW = (if (sceneIdx >= 0) 150f else if (pose.peek) 112f else 120f) * density
         val cobraH = cobraW * bmp.height / bmp.width
         val restLeft = 0f
         val left = restLeft - (1f - slideT) * (cobraW + 12f * density)
@@ -424,6 +476,14 @@ class RReaderCobraView(
         private const val FIRST_MS = 45_000L
         private const val AFTER_RESUME_MS = 90_000L
         private const val RETRY_MS = 15_000L
+
+        private val SCENE = listOf(
+            Step(R.drawable.r_stick_wise_walk, "إنت يا شقي! بتزعّج القارئ تاني؟", 900),
+            Step(R.drawable.r_stick_wise_raise, "استنى عندك... هتشوف!", 600, 1),
+            Step(R.drawable.r_stick_wise_hit, "", 450, 2),
+            Step(R.drawable.r_stick_small_hit, "آآآي! دماغي!", 900),
+            Step(R.drawable.r_stick_wise_walk_with_small, "تعالى معايا، كفاية كده النهارده.", 700),
+        )
 
         private val NORMAL = listOf(
             Line("الفصل ده شكله جامد، كمّل كمّل!", Pose.LAUGH),

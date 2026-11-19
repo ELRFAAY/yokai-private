@@ -144,28 +144,42 @@ class SettingsRController : SettingsLegacyController() {
 
         switchPreference {
             bindTo(preferences.rReaderCobra())
-            title = "القارئ: الكوبرا الخضراء أثناء القراءة"
-            summary = "مفعّل: الكوبرا تطلع من جنب الشاشة وإنت بتقرا وتقولك كلمتين بالمصري. " +
+            title = "القارئ: التنين الصغير أثناء القراءة"
+            summary = "مفعّل: التنين الصغير يطلع من جنب الشاشة وإنت بتقرا وتقولك كلمتين بالمصري. " +
                 "معطّل: القارئ الأصلي (بدون كوبرا). لا تظهر والقائمة مفتوحة، وتضغط عليها علشان تختفي."
         }
 
         switchPreference {
             bindTo(preferences.rReaderCobraSound())
-            title = "الكوبرا: الأصوات"
+            title = "التنين الصغير: الأصوات"
             summary = "مفعّل: صوت كتابة الكلام وصوت حركتها وهي داخلة وخارجة (بصوت الوسائط). معطّل: بدون أصوات."
         }
 
         switchPreference {
             bindTo(preferences.rReaderCobraNight())
-            title = "الكوبرا: وضع الليل"
+            title = "التنين الصغير: وضع الليل"
             summary = "مفعّل: من 12 بالليل لحد 5 الصبح تيجي نعسانة وتقولك «خش نام يا عم». معطّل: نفس الكلام العادي طول اليوم."
         }
 
         intListPreference(activity) {
             bindTo(preferences.rReaderCobraInterval())
-            title = "الكوبرا: كل قد إيه تظهر"
+            title = "التنين الصغير: كل قد إيه يظهر"
             entries = listOf("كل 3 دقايق", "كل 6 دقايق", "كل 10 دقايق", "كل 20 دقيقة", "كل 45 دقيقة")
             entryValues = listOf(3, 6, 10, 20, 45)
+        }
+
+        switchPreference {
+            bindTo(preferences.rReaderCobraScene())
+            title = "مشهد العصا: التنين الحكيم"
+            summary = "مفعّل: التنين الصغير يزورك كام مرة، وبعدين يجي التنين الحكيم ويضربه بالعصا على راسه ويسحبه معاه. معطّل: التنين الصغير بس."
+        }
+
+        intListPreference(activity) {
+            bindTo(preferences.rReaderCobraSceneEvery())
+            title = "مشهد العصا: كل كام زيارة"
+            entries = listOf("كل زيارة تالتة", "كل زيارة رابعة", "كل زيارة خامسة", "كل زيارة سابعة")
+            entryValues = listOf(3, 4, 5, 7)
+            dependency = preferences.rReaderCobraScene().key()
         }
     }
 }
