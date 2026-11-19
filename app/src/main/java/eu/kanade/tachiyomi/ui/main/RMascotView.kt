@@ -55,7 +55,7 @@ class RMascotView(context: Context) : View(context) {
     private class Dot(val x: Float, val y: Float, var life: Float)
 
     private val density = resources.displayMetrics.density
-    private val half = 42f * density // the snake is drawn 84dp wide
+    private val half = 52f * density // the full-body snake is drawn 104dp wide
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
     private fun load(id: Int): Bitmap? = try {
