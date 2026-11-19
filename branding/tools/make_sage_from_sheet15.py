@@ -1,18 +1,16 @@
-"""Cuts the wise-old-snake poses out of branding/mascot-models/13-wise-master-and-poses-559281.jpg into the six
+"""Cuts the wise-old-snake poses out of branding/mascot-models/15-wise-snake-full-body-moods-559299.jpg into the six
 384x384 transparent WebPs the home mascot uses (r_sage_<mood>.webp).
-Usage: python make_sage_from_sheet13.py <sheet.jpg> <res dir>
-Pose index = position on the sheet, row by row (0..11)."""
+Usage: python make_sage_from_sheet15.py <sheet.jpg> <res dir>
+Poses: 0 happy, 1 blink, 2 hurt, 3 sad, 4 scared, 5 small floating scared (used for dizzy); the Arabic labels under the poses are excluded by the boxes."""
 import sys
 import numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
 
 SHEET, RES = sys.argv[1], sys.argv[2]
-BOXES = [(55, 27, 284, 265), (337, 27, 565, 265), (618, 27, 846, 265), (899, 27, 1143, 265),
-         (60, 307, 280, 541), (338, 312, 569, 541), (631, 300, 850, 542), (923, 294, 1139, 542),
-         (61, 600, 275, 868), (345, 597, 560, 868), (604, 601, 891, 868), (926, 581, 1142, 868)]
-MOODS = {'happy': 11, 'blink': 7, 'hurt': 6, 'sad': 1, 'scared': 0, 'dizzy': 2}
-SCALE = 1.3
+BOXES = [(57, 24, 377, 395), (456, 24, 780, 395), (850, 23, 1141, 398), (151, 464, 439, 838), (492, 460, 780, 858), (805, 501, 985, 811)]
+MOODS = {'happy': 0, 'blink': 1, 'hurt': 2, 'sad': 3, 'scared': 4, 'dizzy': 5}
+SCALE = 0.95
 src = Image.open(SHEET).convert('RGB')
 
 def cut(box):
