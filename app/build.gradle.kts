@@ -51,7 +51,10 @@ android {
     defaultConfig {
         applicationId = "com.elrfaay.yokair"
         // R: grows with every commit so each new build can be installed over the previous one.
-        versionCode = 162 + (commitCount.toIntOrNull() ?: 0)
+        // R: CI builds use 1000 + the workflow run number, so a build from ANY branch is always newer than the
+        // previous one (the commit count differs per branch and Android refuses to install a lower versionCode).
+        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()?.let { 1000 + it }
+            ?: (162 + (commitCount.toIntOrNull() ?: 0))
         versionName = _versionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled = true
