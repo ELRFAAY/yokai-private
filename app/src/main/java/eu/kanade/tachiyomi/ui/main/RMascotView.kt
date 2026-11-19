@@ -165,6 +165,9 @@ class RMascotView(context: Context) : View(context) {
     private var blipId = 0
     private var blipReady = false
     private var blipCount = 0
+    private var poofId = 0
+    private var poofReady = 0 // number of loaded sounds (blip + poof) - ready when 2
+    private var tfPoofs = 0 // how many "poof" sounds were played in the current transformation
 
     // soft, springy look: every visual value eases toward a target instead of jumping
     private val tiltSpring = Spring(0f, 220f, 18f)
@@ -221,6 +224,7 @@ class RMascotView(context: Context) : View(context) {
         soundPool?.release()
         soundPool = null
         blipReady = false
+        poofReady = 0
         super.onDetachedFromWindow()
     }
 
@@ -444,13 +448,56 @@ class RMascotView(context: Context) : View(context) {
                     .build(),
             )
             .build()
-        pool.setOnLoadCompleteListener { _, _, status -> blipReady = status == 0 }
+        pool.setOnLoadCompleteListener { _, sampleId, status ->
+            if (sampleId == blipId) blipReady = status == 0
+            if (sampleId == poofId) poofReady = if (status == 0) 1 else 0
+        }
         val file = File(context.cacheDir, "r_mascot_blip.wav")
         writeBlipWav(file)
         blipId = pool.load(file.absolutePath, 1)
+        val poofFile = File(context.cacheDir, "r_mascot_poof.wav")
+        writePoofWav(poofFile)
+        poofId = pool.load(poofFile.absolutePath, 1)
         pool
     } catch (e: Throwable) {
         null
+    }
+
+    /** Ninja "poof": a soft noise burst with a low thump, 420 ms, written as a 16-bit mono WAV. */
+    private fun writePoofWav(file: File) {
+        val sampleRate = 22050
+        val n = sampleRate * 420 / 1000
+        val data = ByteBuffer.allocate(n * 2).order(ByteOrder.LITTLE_ENDIAN)
+        val rnd = java.util.Random(7)
+        var lp = 0.0
+        for (i in 0 until n) {
+            val t = i.toDouble() / sampleRate
+            lp += (rnd.nextDouble() * 2.0 - 1.0 - lp) * 0.35 // low-passed noise = airy smoke
+            val noiseEnv = kotlin.math.exp(-t / 0.11) * (1.0 - kotlin.math.exp(-t / 0.004))
+            val thumpEnv = kotlin.math.exp(-t / 0.07)
+            val thump = sin(2.0 * Math.PI * (110.0 - 60.0 * t) * t)
+            val v = lp * 1.6 * noiseEnv + thump * 0.7 * thumpEnv
+            data.putShort((v.coerceIn(-1.0, 1.0) * 0.85 * Short.MAX_VALUE).toInt().toShort())
+        }
+        RandomAccessFile(file, "rw").use { f ->
+            f.setLength(0)
+            val header = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN)
+            header.put("RIFF".toByteArray()).putInt(36 + n * 2).put("WAVE".toByteArray())
+            header.put("fmt ".toByteArray()).putInt(16).putShort(1).putShort(1)
+            header.putInt(sampleRate).putInt(sampleRate * 2).putShort(2).putShort(16)
+            header.put("data".toByteArray()).putInt(n * 2)
+            f.write(header.array())
+            f.write(data.array())
+        }
+    }
+
+    private fun playPoof() {
+        if (!prefs.rMascotSound().get()) return
+        val pool = soundPool ?: createSoundPool().also { soundPool = it } ?: return
+        if (poofReady == 0) return
+        val audio = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        if (audio != null && audio.ringerMode != AudioManager.RINGER_MODE_NORMAL) return
+        pool.play(poofId, 0.8f, 0.8f, 1, 0, 1f)
     }
 
     /** A 45 ms sine blip with a fast fade-out, written as a 16-bit mono WAV. */
@@ -543,6 +590,8 @@ class RMascotView(context: Context) : View(context) {
                         tfStart = now
                         tfForm = (Math.random() * TF_FORMS.size).toInt().coerceIn(0, TF_FORMS.size - 1)
                         tfSpoke = false
+                        tfPoofs = 0
+                        if (soundPool == null && prefs.rMascotSound().get()) soundPool = createSoundPool() // load the poof early
                     } else if (prefs.rMascotSage().get() && Math.random() * 100.0 < chance) {
                         sageAdvice(now)
                     } else {
@@ -589,6 +638,9 @@ class RMascotView(context: Context) : View(context) {
         if (tfStart != 0L) {
             val t = now - tfStart
             val form = TF_FORMS[tfForm]
+            // "poof!" when the smoke covers the snake and again when it turns back
+            if (tfPoofs == 0 && t >= TF_SEAL + TF_WRAP) { tfPoofs = 1; playPoof() }
+            if (tfPoofs == 1 && t >= TF_SEAL + TF_WRAP + TF_CLOUD + TF_HOLD) { tfPoofs = 2; playPoof() }
             val id = when {
                 t < TF_SEAL -> R.drawable.r_tf_seal
                 t < TF_SEAL + TF_WRAP -> R.drawable.r_tf_wrap
