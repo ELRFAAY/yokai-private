@@ -138,7 +138,7 @@ class DownloadCache(
 
         val sourceDir = rootDownloadsDir.sourceDirs[manga.source]
         if (sourceDir != null) {
-            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga)]
+            val mangaDir = sourceDir.mangaDirs.forManga(manga)
             if (mangaDir != null) {
                 return provider.getValidChapterDirNames(
                     chapter,
@@ -170,7 +170,7 @@ class DownloadCache(
             return 0
         } else {
             if (sourceDir != null) {
-                val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga)]
+                val mangaDir = sourceDir.mangaDirs.forManga(manga)
                 if (mangaDir != null) {
                     return mangaDir.chapterDirs.size
                 }
@@ -202,7 +202,9 @@ class DownloadCache(
             // FIXME: Wait for SourceManager to be initialized
             val sources = getSources()
 
-            val sourceMap = sources.associate { provider.getSourceDirName(it).lowercase() to it.id }
+            val sourceMap = sources
+                .flatMap { s -> provider.getSourceDirNames(s).map { it.lowercase() to s.id } }
+                .toMap()
 
             rootDownloadsDirLock.withLock {
                 rootDownloadsDir = RootDirectory(storageManager.getDownloadsDirectory())
@@ -308,7 +310,7 @@ class DownloadCache(
             }
 
             // Retrieve the cached manga directory or cache a new one
-            val mangaDirName = provider.getMangaDirName(manga)
+            val mangaDirName = sourceDir.mangaDirs.keyForManga(manga) ?: provider.getMangaDirName(manga)
             var mangaDir = sourceDir.mangaDirs[mangaDirName]
             if (mangaDir == null) {
                 mangaDir = MangaDirectory(mangaUniFile)
@@ -331,7 +333,7 @@ class DownloadCache(
     suspend fun removeChapters(chapters: List<Chapter>, manga: Manga) {
         rootDownloadsDirLock.withLock {
             val sourceDir = rootDownloadsDir.sourceDirs[manga.source] ?: return
-            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga)] ?: return
+            val mangaDir = sourceDir.mangaDirs.forManga(manga) ?: return
             chapters.forEach { chapter ->
                 provider.getValidChapterDirNames(chapter).forEach {
                     if (it in mangaDir.chapterDirs) {
@@ -347,7 +349,7 @@ class DownloadCache(
     suspend fun removeChapterFolders(folders: List<String>, manga: Manga) {
         rootDownloadsDirLock.withLock {
             val sourceDir = rootDownloadsDir.sourceDirs[manga.source] ?: return
-            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga)] ?: return
+            val mangaDir = sourceDir.mangaDirs.forManga(manga) ?: return
 
             folders.forEach { chapter ->
                 if (chapter in mangaDir.chapterDirs) {
@@ -380,8 +382,8 @@ class DownloadCache(
     suspend fun removeManga(manga: Manga) {
         rootDownloadsDirLock.withLock {
             val sourceDir = rootDownloadsDir.sourceDirs[manga.source] ?: return
-            val mangaDirName = provider.getMangaDirName(manga)
-            if (sourceDir.mangaDirs.containsKey(mangaDirName)) {
+            val mangaDirName = sourceDir.mangaDirs.keyForManga(manga)
+            if (mangaDirName != null) {
                 sourceDir.mangaDirs -= mangaDirName
             }
         }
@@ -400,6 +402,13 @@ class DownloadCache(
     /**
      * Returns a new map containing only the key entries of [transform] that are not null.
      */
+    /** Finds the manga folder in the cache under any of the names it may have on disk. */
+    private fun Map<String, MangaDirectory>.forManga(manga: Manga): MangaDirectory? =
+        provider.getMangaDirNames(manga).firstNotNullOfOrNull { this[it] }
+
+    private fun Map<String, MangaDirectory>.keyForManga(manga: Manga): String? =
+        provider.getMangaDirNames(manga).firstOrNull { it in this }
+
     private inline fun <K, V, R> Map<out K, V>.mapNotNullKeys(transform: (Map.Entry<K?, V>) -> R?): Map<R, V> {
         val destination = LinkedHashMap<R, V>()
         forEach { element -> transform(element)?.let { destination.put(it, element.value) } }

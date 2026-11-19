@@ -54,8 +54,9 @@ class DownloadProvider(private val context: Context) {
      */
     internal fun getMangaDir(manga: Manga, source: Source): UniFile {
         try {
-            return downloadsDir?.createDirectory(getSourceDirName(source))!!
-                .createDirectory(getMangaDirName(manga))!!
+            // reuse a folder that already exists under any of its known names (e.g. one written by Mihon)
+            val sourceDir = findSourceDir(source) ?: downloadsDir?.createDirectory(getSourceDirName(source))!!
+            return findMangaDirIn(sourceDir, manga) ?: sourceDir.createDirectory(getMangaDirName(manga))!!
         } catch (e: NullPointerException) {
             throw Exception(context.getString(MR.strings.invalid_download_location))
         }
@@ -67,7 +68,7 @@ class DownloadProvider(private val context: Context) {
      * @param source the source to query.
      */
     fun findSourceDir(source: Source): UniFile? {
-        return downloadsDir?.findFile(getSourceDirName(source))
+        return getSourceDirNames(source).firstNotNullOfOrNull { downloadsDir?.findFile(it) }
     }
 
     /**
@@ -78,7 +79,11 @@ class DownloadProvider(private val context: Context) {
      */
     fun findMangaDir(manga: Manga, source: Source): UniFile? {
         val sourceDir = findSourceDir(source)
-        return sourceDir?.findFile(getMangaDirName(manga))
+        return sourceDir?.let { findMangaDirIn(it, manga) }
+    }
+
+    private fun findMangaDirIn(sourceDir: UniFile, manga: Manga): UniFile? {
+        return getMangaDirNames(manga).firstNotNullOfOrNull { sourceDir.findFile(it) }
     }
 
     /**
@@ -215,6 +220,37 @@ class DownloadProvider(private val context: Context) {
     }
 
     /**
+     * Every name the source folder may have on disk: the plain one, the sanitized one, and the one
+     * Mihon writes when its "disallow non-ASCII filenames" option is on.
+     */
+    fun getSourceDirNames(source: Source): List<String> {
+        val raw = source.toString()
+        return listOf(raw, DiskUtil.buildValidFilename(raw), asciiHexName(raw)).distinct()
+    }
+
+    /** Every name the manga folder may have on disk (plain, or Mihon's non-ASCII-as-hex form). */
+    fun getMangaDirNames(manga: Manga): List<String> {
+        val title = manga.originalTitle
+        return listOf(DiskUtil.buildValidFilename(title), asciiHexName(title)).distinct()
+    }
+
+    /**
+     * Mihon's "disallow non-ASCII filenames" writes every non-ASCII character as the lowercase hex of
+     * its UTF-8 bytes, e.g. the apostrophe in "Academy's" becomes "e28099". This builds that same name.
+     */
+    fun asciiHexName(name: String): String {
+        val sb = StringBuilder(name.length)
+        name.forEach { c ->
+            if (c.code >= 0x80) {
+                c.toString().toByteArray(Charsets.UTF_8).forEach { sb.append("%02x".format(it)) }
+            } else {
+                sb.append(c)
+            }
+        }
+        return DiskUtil.buildValidFilename(sb.toString())
+    }
+
+    /**
      * Returns the download directory name for a manga.
      *
      * @param manga the manga to query.
@@ -259,6 +295,9 @@ class DownloadProvider(private val context: Context) {
             val hashSuffix = "_" + Hash.md5(chapter.url).take(6)
             val baseNames = toList()
             baseNames.forEach { add(it + hashSuffix) }
-        }.distinct()
+        }.let { names ->
+            // ...and the same names the way Mihon writes them with non-ASCII characters turned into hex
+            (names + names.map { asciiHexName(it) }).distinct()
+        }
     }
 }
