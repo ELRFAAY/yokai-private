@@ -69,7 +69,9 @@ class DownloadProvider(private val context: Context) {
      * @param source the source to query.
      */
     fun findSourceDir(source: Source): UniFile? {
-        return downloadsDir?.findFile(getSourceDirName(source))
+        val name = getSourceDirName(source)
+        return downloadsDir?.findFile(name)
+            ?: mihonAltName(name)?.let { downloadsDir?.findFile(it) } // R: Mihon's hex-named folder
     }
 
     /**
@@ -79,8 +81,13 @@ class DownloadProvider(private val context: Context) {
      * @param source the source of the manga.
      */
     fun findMangaDir(manga: Manga, source: Source): UniFile? {
-        val sourceDir = findSourceDir(source)
-        return sourceDir?.findFile(getMangaDirName(manga))
+        return findMangaDirs(manga, source).firstOrNull()
+    }
+
+    /** R: the folder(s) of a manga: Yokai's own name first, then the hex name Mihon would have made. */
+    fun findMangaDirs(manga: Manga, source: Source): List<UniFile> {
+        val sourceDir = findSourceDir(source) ?: return emptyList()
+        return getMangaDirNames(manga).mapNotNull { sourceDir.findFile(it) }
     }
 
     /**
@@ -91,11 +98,11 @@ class DownloadProvider(private val context: Context) {
      * @param source the source of the chapter.
      */
     fun findChapterDir(chapter: Chapter, manga: Manga, source: Source): UniFile? {
-        val mangaDir = findMangaDir(manga, source)
-        return getValidChapterDirNames(chapter).asSequence()
-            .mapNotNull { mangaDir?.findFile(it) ?: mangaDir?.findFile("$it.cbz") }
-            .firstOrNull()
-            ?: mangaDir?.let { findMihonChapterFile(chapter, it) }
+        val validNames = getValidChapterDirNames(chapter)
+        return findMangaDirs(manga, source).firstNotNullOfOrNull { mangaDir ->
+            validNames.firstNotNullOfOrNull { mangaDir.findFile(it) ?: mangaDir.findFile("$it.cbz") }
+                ?: findMihonChapterFile(chapter, mangaDir)
+        }
     }
 
     // ---- R: read the chapters downloaded by Mihon ----
@@ -151,6 +158,47 @@ class DownloadProvider(private val context: Context) {
         chapterDirs.removeAll { it.endsWith(suffix) }
     }
 
+    /** True when the name (folder, or .cbz) ends with "_" + 6 lowercase hex characters, like Mihon's chapters. */
+    private fun looksLikeMihonName(name: String): Boolean {
+        val base = name.removeSuffix(".cbz")
+        if (base.length < 7 || base[base.length - 7] != '_') return false
+        return base.takeLast(6).all { it in '0'..'9' || it in 'a'..'f' }
+    }
+
+    /**
+     * Mihon writes every character outside printable ASCII as the lowercase hex of its UTF-8 bytes
+     * (seen on the owner's phone: the apostrophe U+2019 -> e28099).
+     */
+    fun mihonHexName(name: String): String {
+        val sb = StringBuilder(name.length * 2)
+        var i = 0
+        while (i < name.length) {
+            val cp = name.codePointAt(i)
+            i += Character.charCount(cp)
+            if (cp in 32..126) {
+                sb.append(cp.toChar())
+            } else {
+                String(Character.toChars(cp)).toByteArray(Charsets.UTF_8).forEach { b ->
+                    sb.append("%02x".format(b.toInt() and 0xff))
+                }
+            }
+        }
+        return sb.toString()
+    }
+
+    /** The name Mihon would give a folder called [name], or null when the switch is off or it would be the same. */
+    fun mihonAltName(name: String): String? {
+        if (!mihonEnabled()) return null
+        val alt = mihonHexName(name)
+        return if (alt != name) alt else null
+    }
+
+    /** R: the folder names a manga can have: Yokai's own first, then Mihon's hex name. */
+    fun getMangaDirNames(manga: Manga): List<String> {
+        val name = getMangaDirName(manga)
+        return listOfNotNull(name, mihonAltName(name))
+    }
+
     /**
      * Returns a list of downloaded directories for the chapters that exist.
      *
@@ -159,13 +207,13 @@ class DownloadProvider(private val context: Context) {
      * @param source the source of the chapter.
      */
     fun findChapterDirs(chapters: List<Chapter>, manga: Manga, source: Source): List<UniFile> {
-        val mangaDir = findMangaDir(manga, source) ?: return emptyList()
-        val mihonFiles by lazy { mihonFilesByHash(mangaDir) } // only listed if a chapter is not found by its own name
+        val mangaDirs = findMangaDirs(manga, source)
+        if (mangaDirs.isEmpty()) return emptyList()
+        val mihonFiles by lazy { mangaDirs.map { mihonFilesByHash(it) } } // only listed if a chapter is not found by its own name
         return chapters.mapNotNull { chapter ->
-            getValidChapterDirNames(chapter).map { listOf(it, "$it.cbz") }.flatten().asSequence()
-                .mapNotNull { mangaDir.findFile(it) }
-                .firstOrNull()
-                ?: (if (mihonEnabled()) mihonFiles[mihonHashSuffix(chapter)] else null)
+            val names = getValidChapterDirNames(chapter).map { listOf(it, "$it.cbz") }.flatten()
+            mangaDirs.firstNotNullOfOrNull { dir -> names.firstNotNullOfOrNull { dir.findFile(it) } }
+                ?: (if (mihonEnabled()) mihonFiles.firstNotNullOfOrNull { it[mihonHashSuffix(chapter)] } else null)
         }
     }
 
@@ -216,7 +264,8 @@ class DownloadProvider(private val context: Context) {
         manga: Manga,
         source: Source,
     ): List<UniFile> {
-        val mangaDir = findMangaDir(manga, source) ?: return emptyList()
+        // R: only Yokai's own folder is ever cleaned up, never the hex-named folder Mihon made
+        val mangaDir = findSourceDir(source)?.findFile(getMangaDirName(manga)) ?: return emptyList()
         val chapterNameHashSet = chapters.map { it.name }.toHashSet()
         val scanlatorNameHashSet = chapters.map {
             getChapterDirName(it)
@@ -227,16 +276,13 @@ class DownloadProvider(private val context: Context) {
             "${getChapterDirName(it, includeId = downloadPreferences.downloadWithId().get())}.cbz"
         }.toHashSet()
 
-        val mihonSuffixes: Set<String> =
-            if (mihonEnabled()) chapters.map { mihonHashSuffix(it) }.toHashSet() else emptySet()
-
         return mangaDir.listFiles().orEmpty().asList().filter { file ->
             file.name?.let { fileName ->
                 if (fileName.endsWith(Downloader.TMP_DIR_SUFFIX)) {
                     return@filter true
                 }
-                // R: a download made by Mihon belongs to a chapter, it is not an orphan
-                if (mihonSuffixes.isNotEmpty() && endsWithMihonHash(fileName, mihonSuffixes)) {
+                // R: a download made by Mihon (name ends with _<6 hex>) is never treated as an orphan to delete
+                if (mihonEnabled() && looksLikeMihonName(fileName)) {
                     return@filter false
                 }
                 // check this first because this is the normal name format

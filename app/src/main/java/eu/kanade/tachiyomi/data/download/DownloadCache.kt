@@ -138,11 +138,10 @@ class DownloadCache(
 
         val sourceDir = rootDownloadsDir.sourceDirs[manga.source]
         if (sourceDir != null) {
-            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga)]
-            if (mangaDir != null) {
-                return provider.getValidChapterDirNames(
-                    chapter,
-                ).any { it in mangaDir.chapterDirs } ||
+            // R: Yokai's own folder and, if it exists, the hex-named folder Mihon made for the same manga
+            val validNames = provider.getValidChapterDirNames(chapter)
+            return provider.getMangaDirNames(manga).mapNotNull { sourceDir.mangaDirs[it] }.any { mangaDir ->
+                validNames.any { it in mangaDir.chapterDirs } ||
                     provider.cacheHasMihonChapter(chapter, mangaDir.chapterDirs)
             }
         }
@@ -171,9 +170,9 @@ class DownloadCache(
             return 0
         } else {
             if (sourceDir != null) {
-                val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga)]
-                if (mangaDir != null) {
-                    return mangaDir.chapterDirs.size
+                val mangaDirs = provider.getMangaDirNames(manga).mapNotNull { sourceDir.mangaDirs[it] }
+                if (mangaDirs.isNotEmpty()) {
+                    return mangaDirs.sumOf { it.chapterDirs.size }
                 }
             }
             return 0
@@ -203,7 +202,15 @@ class DownloadCache(
             // FIXME: Wait for SourceManager to be initialized
             val sources = getSources()
 
-            val sourceMap = sources.associate { provider.getSourceDirName(it).lowercase() to it.id }
+            val sourceMap = HashMap<String, Long>()
+            sources.forEach { source ->
+                val dirName = provider.getSourceDirName(source)
+                sourceMap[dirName.lowercase()] = source.id
+                // R: the hex-named folder Mihon makes for sources whose name has non-ASCII characters
+                provider.mihonAltName(dirName)?.lowercase()?.let { alt ->
+                    if (alt !in sourceMap) sourceMap[alt] = source.id
+                }
+            }
 
             rootDownloadsDirLock.withLock {
                 rootDownloadsDir = RootDirectory(storageManager.getDownloadsDirectory())
@@ -332,14 +339,17 @@ class DownloadCache(
     suspend fun removeChapters(chapters: List<Chapter>, manga: Manga) {
         rootDownloadsDirLock.withLock {
             val sourceDir = rootDownloadsDir.sourceDirs[manga.source] ?: return
-            val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga)] ?: return
-            chapters.forEach { chapter ->
-                provider.getValidChapterDirNames(chapter).forEach {
-                    if (it in mangaDir.chapterDirs) {
-                        mangaDir.chapterDirs -= it
+            val mangaDirs = provider.getMangaDirNames(manga).mapNotNull { sourceDir.mangaDirs[it] }
+            if (mangaDirs.isEmpty()) return
+            mangaDirs.forEach { mangaDir ->
+                chapters.forEach { chapter ->
+                    provider.getValidChapterDirNames(chapter).forEach {
+                        if (it in mangaDir.chapterDirs) {
+                            mangaDir.chapterDirs -= it
+                        }
                     }
+                    provider.removeMihonChapter(chapter, mangaDir.chapterDirs)
                 }
-                provider.removeMihonChapter(chapter, mangaDir.chapterDirs)
             }
         }
 

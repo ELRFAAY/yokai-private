@@ -510,7 +510,11 @@ class SettingsAdvancedLegacyController : SettingsLegacyController() {
                 val sourceManga = mangaList.filter { it.source == source.id }
 
                 for (mangaFolder in mangaFolders) {
-                    val manga = sourceManga.find { downloadProvider.getMangaDirName(it) == mangaFolder.name }
+                    val manga = sourceManga.find {
+                        val dirName = downloadProvider.getMangaDirName(it)
+                        // R: also match the hex-named folder Mihon made for the same manga
+                        dirName == mangaFolder.name || downloadProvider.mihonAltName(dirName) == mangaFolder.name
+                    }
                     if (manga == null) {
                         // download is orphaned and not even in the db delete it if remove non favorited is enabled
                         if (removeNonFavorite) {
