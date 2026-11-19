@@ -287,6 +287,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Home screen (library): the floating snake mascot you can grab and throw. */
     fun rMascot() = preferenceStore.getBoolean("r_mascot", true)
 
+    /** Mascot: small talking blips (one per letter) while a speech bubble types out; silent in silent/vibrate mode. */
+    fun rMascotSound() = preferenceStore.getBoolean("r_mascot_sound", true)
+
     /** Reader: the green cobra that peeks in from the left edge while you read. */
     fun rReaderCobra() = preferenceStore.getBoolean("r_reader_cobra", true)
 

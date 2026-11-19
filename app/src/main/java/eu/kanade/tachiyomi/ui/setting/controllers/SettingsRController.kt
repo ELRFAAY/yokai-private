@@ -119,6 +119,13 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rMascotSound())
+                title = "صوت التنين الصغير"
+                summary = "الكلام يظهر حرفاً حرفاً مع نقرات صغيرة، ويصمت إذا كان الهاتف صامتاً أو على الاهتزاز. عند الإيقاف: كلام بدون صوت."
+                dependency = preferences.rMascot().key()
+            }
+
+            switchPreference {
                 bindTo(preferences.rMascotSage())
                 title = "الحكيم العجوز"
                 summary = "أحياناً عند لمس الثعبان يتحوّل إلى الحكيم بقبّعته ولحيته ويعطيك نصيحة صحيحة تماماً " +
