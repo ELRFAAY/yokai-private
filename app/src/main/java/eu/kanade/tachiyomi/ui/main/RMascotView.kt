@@ -17,6 +17,8 @@ import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import uy.kohesive.injekt.injectLazy
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.exp
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.pow
@@ -69,6 +71,17 @@ class RMascotView(context: Context) : View(context) {
     private val asleepBitmap: Bitmap? = load(R.drawable.r_mascot_asleep)
     private val asleepDest = RectF()
 
+    /** The going-to-bed sequence from the bedtime model sheet: dragging the blanket, covering the tail, pulling it up, snuggling under. */
+    private val bedFrames: List<Bitmap?> = listOf(
+        R.drawable.r_bed_drag,
+        R.drawable.r_bed_tail,
+        R.drawable.r_bed_pull,
+        R.drawable.r_bed_snug,
+    ).map { load(it) }
+
+    private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK }
+    private val shadowRect = RectF()
+
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF6BFF6B.toInt() }
     private val bubbleFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
@@ -117,6 +130,8 @@ class RMascotView(context: Context) : View(context) {
     private var sleepPhase = SleepPhase.AWAKE
     private var lastActiveAt = SystemClock.uptimeMillis()
     private var drowsyUntil = 0L
+    private var sleepStartedAt = 0L
+    private var settleStart = 0L // when the snake last came to rest (drives the little landing bounce)
     private var blanketT = 0f // 0 = no blanket, 1 = blanket fully up
 
     private val blanketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF1F6F6B.toInt() }
@@ -216,7 +231,8 @@ class RMascotView(context: Context) : View(context) {
         if (rPrefs.rMascotSleep().get()) {
             if (sleepPhase == SleepPhase.AWAKE && state == State.IDLE && now - lastActiveAt >= SLEEP_AFTER_MS) {
                 sleepPhase = SleepPhase.DROWSY
-                drowsyUntil = now + 3000
+                sleepStartedAt = now
+                drowsyUntil = now + BED_STEP_MS * 4
                 say(GO_SLEEP.random(), 3000L)
             }
         } else if (sleepPhase == SleepPhase.DROWSY || sleepPhase == SleepPhase.ASLEEP) {
@@ -277,6 +293,7 @@ class RMascotView(context: Context) : View(context) {
 
             if (speed < 40f * density) {
                 state = State.IDLE
+                settleStart = now
                 vx = 0f
                 vy = 0f
                 angle = 0f
@@ -364,6 +381,7 @@ class RMascotView(context: Context) : View(context) {
                 tracker = null
 
                 val now = SystemClock.uptimeMillis()
+                settleStart = now
                 val speed = hypot(tvx, tvy)
                 val maxSpeed = 4500f * density / 2.75f
                 if (speed > maxSpeed) {
@@ -407,11 +425,22 @@ class RMascotView(context: Context) : View(context) {
         val now = SystemClock.uptimeMillis()
         val idle = state == State.IDLE
         val sleepingNow = sleepPhase == SleepPhase.DROWSY || sleepPhase == SleepPhase.ASLEEP
-        val bob = if (idle) {
-            if (sleepingNow) sin(now / 900f) * 2f * density else sin(now / 380f) * 4f * density
+        val floatOn = rPrefs.rMascotFloat().get()
+        val hover = when {
+            !idle -> 0f
+            sleepingNow -> sin(now / 900f) * 2f * density
+            // R: weightless hover: slow big drift up and down plus a faint quick wobble
+            floatOn -> sin(now / 1150f) * 7f * density + sin(now / 430f) * 1.5f * density
+            else -> sin(now / 380f) * 4f * density
+        }
+        // gravity-like landing: a small damped bounce right after it comes to rest
+        val settleSeconds = (now - settleStart) / 1000f
+        val settle = if (idle && floatOn && !sleepingNow && settleSeconds in 0f..2.5f) {
+            -exp(-3f * settleSeconds) * cos(9f * settleSeconds) * 9f * density
         } else {
             0f
         }
+        val bob = hover + settle
         val isHurt = now < hurtUntil
         val isHappy = idle && now < happyUntil
         val bmp = faces[currentMood(now, idle)] ?: faces[Mood.HAPPY] ?: return
@@ -436,6 +465,20 @@ class RMascotView(context: Context) : View(context) {
             val k = sin(now / 900f) * 0.025f
             scaleX = 1f + k
             scaleY = 1f - k
+        } else if (idle && floatOn && scaleX == 1f && scaleY == 1f) { // breathing while it floats
+            val k = sin(now / 700f) * 0.03f
+            scaleX = 1f + k
+            scaleY = 1f - k
+        }
+
+        if (idle && floatOn && !sleepingNow && sleepPhase == SleepPhase.AWAKE) {
+            // soft shadow on the "ground" under it: smaller and lighter when it is high
+            val rise = (-bob / (9f * density)).coerceIn(-1f, 1f)
+            val sw = half * (1.0f - 0.3f * rise)
+            val sh = half * 0.16f * (1.0f - 0.3f * rise)
+            shadowPaint.alpha = (55f - 22f * rise).toInt().coerceIn(0, 255)
+            shadowRect.set(x - sw, y + half * 1.02f - sh, x + sw, y + half * 1.02f + sh)
+            canvas.drawOval(shadowRect, shadowPaint)
         }
 
         canvas.save()
@@ -444,16 +487,28 @@ class RMascotView(context: Context) : View(context) {
         canvas.scale(scaleX, scaleY)
         dest.set(-half, -half, half, half)
         val asleepPic = asleepBitmap
-        if (asleepPic != null && blanketT > 0f) {
-            // cross-fade: the normal face fades out, the sleeping picture fades in (and the other way when waking up)
-            bitmapPaint.alpha = ((1f - blanketT) * 255f).toInt().coerceIn(0, 255)
-            canvas.drawBitmap(bmp, null, dest, bitmapPaint)
-            val aw = half * 2.3f
-            val ah = aw * asleepPic.height / asleepPic.width
-            asleepDest.set(-aw / 2f, -ah / 2f + half * 0.12f, aw / 2f, ah / 2f + half * 0.12f)
-            bitmapPaint.alpha = (blanketT * 255f).toInt().coerceIn(0, 255)
-            canvas.drawBitmap(asleepPic, null, asleepDest, bitmapPaint)
-            bitmapPaint.alpha = 255
+        val framesOk = bedFrames.all { it != null }
+        if (sleepPhase == SleepPhase.DROWSY && framesOk) {
+            // going to bed: poses 1..4 one after the other, each one fading in over the previous picture
+            val elapsed = (now - sleepStartedAt).coerceAtLeast(0L)
+            val index = (elapsed / BED_STEP_MS).toInt().coerceIn(0, bedFrames.size - 1)
+            val progress = ((elapsed - index * BED_STEP_MS).toFloat() / BED_STEP_MS).coerceIn(0f, 1f)
+            val fadeIn = (progress / 0.2f).coerceIn(0f, 1f)
+            if (index == 0) {
+                drawFace(canvas, bmp, ((1f - fadeIn) * 255f).toInt())
+            } else {
+                drawFit(canvas, bedFrames[index - 1]!!, 255)
+            }
+            drawFit(canvas, bedFrames[index]!!, (fadeIn * 255f).toInt())
+        } else if (asleepPic != null && blanketT > 0f) {
+            // cross-fade between the "snuggling" pose (or the face, when waking up) and the sleeping picture
+            val before = if (sleepPhase == SleepPhase.ASLEEP && framesOk) bedFrames.last() else null
+            if (before != null) {
+                drawFit(canvas, before, ((1f - blanketT) * 255f).toInt())
+            } else {
+                drawFace(canvas, bmp, ((1f - blanketT) * 255f).toInt())
+            }
+            drawFit(canvas, asleepPic, (blanketT * 255f).toInt())
         } else {
             canvas.drawBitmap(bmp, null, dest, bitmapPaint)
             if (blanketT > 0f) drawBlanket(canvas)
@@ -478,6 +533,22 @@ class RMascotView(context: Context) : View(context) {
         idle && now < sadUntil -> Mood.SAD
         idle && now >= happyUntil && now % 3600L < 160L -> Mood.BLINK
         else -> Mood.HAPPY
+    }
+
+    private fun drawFace(canvas: Canvas, face: Bitmap, alpha: Int) {
+        bitmapPaint.alpha = alpha.coerceIn(0, 255)
+        canvas.drawBitmap(face, null, dest, bitmapPaint)
+        bitmapPaint.alpha = 255
+    }
+
+    /** Draws a sleeping/bed picture at a common pixel scale, centered, with its bottom on a fixed "ground" line. */
+    private fun drawFit(canvas: Canvas, pic: Bitmap, alpha: Int) {
+        val w = pic.width * half * 0.0059f
+        val h = pic.height * half * 0.0059f
+        asleepDest.set(-w / 2f, half * 0.95f - h, w / 2f, half * 0.95f)
+        bitmapPaint.alpha = alpha.coerceIn(0, 255)
+        canvas.drawBitmap(pic, null, asleepDest, bitmapPaint)
+        bitmapPaint.alpha = 255
     }
 
     /** The blanket is drawn in code: a teal quilt with diagonal stripes that slides up over the lower half of the snake. */
@@ -558,5 +629,6 @@ class RMascotView(context: Context) : View(context) {
         val GO_SLEEP = listOf("لما تبقى جاهز صحّيني... هنام شوية", "الدنيا هادية... هجيب البطانية وأنام", "صحّيني لما ترجع، تمام؟")
         val WAKE = listOf("هاه؟ صحيت!", "إيه ده؟ كنت في أحلى حلم...", "خلاص خلاص، صاحي!")
         const val SLEEP_AFTER_MS = 60_000L
+        const val BED_STEP_MS = 1300L // one bed pose every 1.3 s
     }
 }

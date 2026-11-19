@@ -290,6 +290,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Mascot: falls asleep (blanket + zzz) after a minute without any touch. */
     fun rMascotSleep() = preferenceStore.getBoolean("r_mascot_sleep", true)
 
+    /** Mascot: floats up and down while breathing, with a soft shadow and a small landing bounce. */
+    fun rMascotFloat() = preferenceStore.getBoolean("r_mascot_float", true)
+
     /** Reader: the green cobra that peeks in from the left edge while you read. */
     fun rReaderCobra() = preferenceStore.getBoolean("r_reader_cobra", true)
 
