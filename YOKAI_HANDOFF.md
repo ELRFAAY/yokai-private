@@ -294,6 +294,11 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - About the blanket: the owner says the assistant **already has a model sheet where the snake sleeps under a blanket** (in `branding/mascot-models/`), so use that art instead of the blanket drawn in code. He also said to go to the next step and that he will follow the build himself.
 - Plan: find that picture, cut it out, ship it as a drawable, and use it as the ASLEEP picture of the home mascot (`feat/r-mascot-sleep`); keep the code-drawn blanket only as a fallback if the picture fails to load. Report what I find.
 
+### Owner input #25 (2026-11-19): HOLD until the new model sheet arrives; request: floating / breathing motion
+- **The owner is about to send a new model sheet and said: do NOT start working until he has sent it.** So nothing is built for this request yet; only this note is written. When the sheet arrives, record it here first, then look at it.
+- The request: the snake should look **alive in the air**: it **breathes** and **moves up and down like it is flying**, hanging in the air, with a **gravity-like feel** (his words: it is hanging in the air, he does not know what its \"place\" is; breathing, moving, floating up, some kind of gravity).
+- What already exists (checked in `RMascotView.kt`, not changed): the idle snake already bobs a little (`sin(now/380) * 4dp`), it breathes slowly only while asleep, and while thrown it flies with a dotted trail and bounces on the edges. So the new work is probably a **stronger, floatier hover** (slow big vertical drift plus a small breathing squash, easing like a weightless object, maybe a small shadow that shrinks/grows underneath) and the same life for the reader cobra. This reading is an inference; confirm with the owner when we start.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
