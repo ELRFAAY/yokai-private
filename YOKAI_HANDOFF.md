@@ -271,6 +271,13 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - At 06:23 he said he created a repo/workspace called **"Claude Work Space"** that contains the green cobra model sheets. **At the time of writing it was NOT visible to the session** (the session sees only `ELRFAAY/yokai-private` and `ELRFAAY/R-Music`). The owner must give Claude access to that repo in the GitHub app settings (Repository access), then the next session lists repos again, attaches it read-only and reads the sheets before touching the mascot art.
 - Until then: nothing built from these sheets. The mascot in `build/r` still uses the earlier 6+1 faces.
 
+### Owner input #21 (2026-11-19 06:32): first mascot feature = the cobra shows up while reading (decided by the owner)
+- Answer to "what do we start with": he said OK, start with ONE thing, record everything in this file and go straight ahead. The thing he described: the cobra must **appear while he is reading**, peeking in **from the side of the screen**, without stopping the reading.
+- Details he gave: (1) **two sounds**: a **typing sound** (for the text appearing in the speech bubble) and a **movement sound** (when it slides in/out); (2) **late-night rule**: if the person is reading late at night, the cobra says something like "you're still awake? go to sleep, man" (his words, Egyptian: "انت لسه صاحي، خش نام يا عم انت"); (3) **all reactions/phrases in Egyptian Arabic**.
+- Not answered by him (my defaults, change if he objects): "late" = 00:00-05:00 device time; the cobra appears at most once every few minutes of reading, never while the reader menu is open; every part has an R switch (feature on/off, sounds on/off).
+- Plan: new branch `feat/r-reader-cobra` based on `fix/stats-and-name` (the line the owner actually installs, tip 22d55da), art from `branding/mascot-models/` (peeking poses 04/03, sleeping 06), sounds generated synthetically (no audio was supplied) into `res/raw`.
+- The earlier crash (`lateinit property manga`) is still open; tracked separately below.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
