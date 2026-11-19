@@ -37,6 +37,12 @@ Last updated: 2026-11-19 07:40 (owner's usage was at 92%). **Read the section "S
 3. Reply to him in Egyptian Arabic, short. On the R Music project (a different app) he wants you to wait for "go"; on this one he just says what he wants.
 
 
+### Mihon downloads (2026-11-19, branch `feat/r-mihon` = `feat/r-mascot-body` + 1 commit e548ef6; build run 44467808973; NOT merged into `build/r`)
+- Owner's request: Mihon "renames the files it downloads", so Yokai cannot read them; make Yokai read them. Cause found: Mihon ends every chapter folder / `.cbz` name with `_` + first 6 chars of `md5(chapter url)` (lowercase hex). Yokai only looked for its own names. I could not open Mihon's source from here (web fetch blocked), so the exact rest of Mihon's name (padding, scanlator, truncation) is unverified; the fix therefore matches **only by the hash suffix**, which does not depend on it.
+- Fix in `DownloadProvider` (`findChapterDir`, `findChapterDirs`, new helpers `mihonHashSuffix`, `findMihonChapterFile`, `mihonFilesByHash`, `cacheHasMihonChapter`, `removeMihonChapter`), `DownloadCache` (`isChapterDownloaded`, `removeChapters`) and **`findUnmatchedChapterDirs`**: before this, `DownloadManager.cleanupChapters` treated unknown folders as orphans and DELETED them, so Mihon's downloads were also at risk. Switch `r_mihon_files` (default on) in Settings > R; off = original behavior.
+- The other session's commit `af31a3d` on `fix/stats-and-name` (adds hash-suffixed guesses to `getValidChapterDirNames`) is the same idea but only for lookup, without the orphan protection; do not merge both, keep this one.
+- Not tested on a device (compile only by CI). To test: put a Mihon download folder in Yokai's downloads folder (same `Source (LANG)/Manga/` layout), open the manga: chapters should show as downloaded and open offline; then run a library update and check the folders were not deleted. If it fails, ask for the real folder names from his phone (the hash part is the thing to compare with `md5(chapter.url).take(6)`).
+
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage).
 - Private repo: `ELRFAAY/yokai-private` (must stay private; everything done on this project is private).
@@ -154,6 +160,7 @@ Stated by the owner on 2026-11-18:
 | `r_auto_scroll_speed` | Auto-scroll speed in dp/second (choices 30/60/100/150/220) | 60 | `feat/r-autoscroll` |
 | `r_single_app_icon` | Appearance: icon picker hidden (on) so the app has one icon vs. original picker with Default/Blue/Orange/Gray/Classic (off) | on | `build/r` |
 | `r_force_arabic` | Language: app opens in Arabic (when no other language was picked) (on) vs. system language (off = original). Applied in `App.onCreate`. | on | `build/r` |
+| `r_mihon_files` | Downloads: recognize chapters downloaded by Mihon (folder name ends with `_<md5(url) first 6>`), show them as downloaded, read them, and never clean them up as orphans (on) vs. original behavior (off) | on | `feat/r-mihon` |
 | `r_mascot` | Home (library screen): floating snake mascot, grab and throw it (on) vs. nothing (off = original) | on | `feat/r-mascot` (in `build/r`) |
 
 ## Working rules
