@@ -287,6 +287,18 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Home screen (library): the floating snake mascot you can grab and throw. */
     fun rMascot() = preferenceStore.getBoolean("r_mascot", true)
 
+    /** Reader: the green cobra that peeks in from the left edge while you read. */
+    fun rReaderCobra() = preferenceStore.getBoolean("r_reader_cobra", true)
+
+    /** Reader cobra: typing and movement sounds. */
+    fun rReaderCobraSound() = preferenceStore.getBoolean("r_reader_cobra_sound", true)
+
+    /** Reader cobra: sleepy cobra that tells you to go to bed between 00:00 and 04:59. */
+    fun rReaderCobraNight() = preferenceStore.getBoolean("r_reader_cobra_night", true)
+
+    /** Reader cobra: minutes between visits (randomized by +-20 %). */
+    fun rReaderCobraInterval() = preferenceStore.getInt("r_reader_cobra_interval", 6)
+
     /** Language: open the app in Arabic unless another language was picked in Settings > General. */
     fun rForceArabic() = preferenceStore.getBoolean("r_force_arabic", true)
 

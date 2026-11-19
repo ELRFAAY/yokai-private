@@ -191,6 +191,9 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
      * Viewer used to display the pages (pager, webtoon, ...).
      */
     var viewer: BaseViewer? = null
+
+    /** R: the cobra overlay (see [RReaderCobraView]). */
+    private var rCobra: RReaderCobraView? = null
         private set
 
     /**
@@ -311,6 +314,25 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         binding = ReaderActivityBinding.inflate(layoutInflater)
         setupReaderNav()
         setContentView(binding.root)
+
+        // R: green cobra that peeks in from the left edge while reading (Settings > R > reader cobra)
+        rCobra = RReaderCobraView(
+            this,
+            enabled = { preferences.rReaderCobra().get() },
+            canShow = { !menuVisible && viewer != null && !isFinishing && !isDestroyed },
+            soundOn = { preferences.rReaderCobraSound().get() },
+            nightOn = { preferences.rReaderCobraNight().get() },
+            intervalMinutes = { preferences.rReaderCobraInterval().get() },
+        ).also { view ->
+            binding.root.addView(
+                view,
+                CoordinatorLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                ),
+            )
+        }
+
         val a = obtainStyledAttributes(intArrayOf(AR.attr.windowLightStatusBar))
         val lightStatusBar = a.getBoolean(0, false)
         a.recycle()
@@ -1367,6 +1389,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
     override fun onPause() {
         (viewer as? WebtoonViewer)?.stopAutoScroll()
+        rCobra?.onActivityPause()
         viewModel.flushReadTimer()
         super.onPause()
     }
@@ -1374,6 +1397,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     override fun onResume() {
         super.onResume()
         viewModel.restartReadTimer()
+        rCobra?.onActivityResume()
     }
 
     fun reloadChapters(doublePages: Boolean, force: Boolean = false) {
