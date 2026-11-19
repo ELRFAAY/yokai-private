@@ -304,6 +304,11 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - What I do with it (the owner asked for both things in #23 and #25): (a) the going-to-sleep animation of the home snake plays poses 1 -> 4 (about 1.3 s each, short cross-fades) while it says the goodnight line, then it ends on the sleeping picture from sheet 06 (\"snug under a blanket\", already in the app) with the z letters drawn in code; waking up still cross-fades back to the normal face. (b) the floating/breathing motion from #25: the idle snake hovers up and down more clearly, breathes with a small squash, a soft shadow below shrinks when it rises, and after a throw it settles with a small damped bounce (gravity feel). New R switch `r_mascot_float` (default on).
 - Not done in this step: the reader cobra (`RReaderCobraView`) keeps its own behavior; pose 5 of this sheet is not used (sheet 06 already has the same pose). Branch: `feat/r-mascot-bed`, stacked on `feat/r-mascot-sleep`.
 
+### Owner input #13 (2026-11-19 07:17): mascot sound + full body
+- Wants the mascot to make a sound when it talks / types, and a nicer look in the main (library) screen: the **full snake body instead of only the floating head**.
+- Sound: he chose "small blips per letter". Built on `feat/r-mascot-sound` (based on `feat/r-mascot-bed`): bubbles type out letter by letter (38 ms) with a generated 45 ms blip (SoundPool, WAV written to cache, no sound files), silent in silent/vibrate mode, switch `r_mascot_sound` in Settings > R. Build run 44464488766 (workflow_dispatch; the workflow only auto-runs on pushes to `build/r`). Not compiled locally, not tested on a device.
+- Full body: he says full-body **model sheets** exist in his Claude workspace ("Claude Work Space / model sheets"). They are NOT in this repo or session (`/mnt/user-data/uploads` empty; repo has only head moods, back view and bed cutouts). Waiting for him to attach the full-body sheet here. Do not invent the body.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
