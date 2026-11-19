@@ -309,6 +309,13 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - Sound: he chose "small blips per letter". Built on `feat/r-mascot-sound` (based on `feat/r-mascot-bed`): bubbles type out letter by letter (38 ms) with a generated 45 ms blip (SoundPool, WAV written to cache, no sound files), silent in silent/vibrate mode, switch `r_mascot_sound` in Settings > R. Build run 44464488766 (workflow_dispatch; the workflow only auto-runs on pushes to `build/r`). Not compiled locally, not tested on a device.
 - Full body: he says full-body **model sheets** exist in his Claude workspace ("Claude Work Space / model sheets"). They are NOT in this repo or session (`/mnt/user-data/uploads` empty; repo has only head moods, back view and bed cutouts). Waiting for him to attach the full-body sheet here. Do not invent the body.
 
+### Owner input #14 (2026-11-19 07:26): full-body model sheet sent (`branding/mascot-fullbody-558800.jpg`) + "it has 4 hands"
+- Sheet has 3 poses: cobra with tail right, same body WITHOUT head, cobra with tail left. Cut out into `branding/mascot-models/body/`; original mood heads kept in `branding/mascot-models/heads/`.
+- Built on `feat/r-mascot-body` (based on `feat/r-mascot-sound`, which is based on `feat/r-mascot-bed`): sprites `r_mascot_{happy,hurt,scared,dizzy,sad,blink}.webp` are now the FULL body in one common frame (scripts: `branding/mascot-models/body/build_sprites.py`, `clean_heads.py`; heads sit on the tail-right pose after erasing its own head above y=236). Mascot drawn 104 dp (was 84).
+- He noticed **4 hands**: the old mood heads carry their own hands (fists, raised hands) on top of the body's two paws. Fixed: each mood face is merged into the hand-free blink head silhouette, so there are only the body's two hands. Side effect: hurt/sad lose the fists on the cheeks; sad still has a faint seam line on one cheek. The tail-left pose is NOT used (its body is drawn differently, swapping would jump); tail wag not done.
+- Sound build 44464488766 failed with a real compile error in my code (`pool` nullable in `playBlip`), fixed in `d92e19f`; bed build 44463388452 (`feat/r-mascot-bed`) succeeded. Latest build for body+sound+bed: run 44465833155. `back` and `asleep`/bed sprites are still the old head-only art (`asleep` is a coil, the back view is just the hood).
+- Not merged into `build/r` yet (the workflow only auto-runs on `build/r`); merge after the owner tests the APK.
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
