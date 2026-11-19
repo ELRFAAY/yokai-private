@@ -1,7 +1,41 @@
 # Yokai (private fork) — Handoff
 
 Read this first when starting a new session or from another account. Update it after every meaningful change.
-Last updated: 2026-11-18 (13:30, green release build 44292393432 on build/r d50459a; earlier note: newest code is on `build/r`, see the top of its git log)
+Last updated: 2026-11-19 07:40 (owner's usage was at 92%). **Read the section "START HERE 2026-11-19" right below first; the older "LATEST STATE" / "START HERE" sections further down are history.**
+
+## START HERE 2026-11-19 (newest; written because the owner's usage hit 92%)
+
+### Branch map (all pushed to `origin`; the workflow `build_r.yml` auto-runs ONLY on pushes to `build/r`; for any other branch run `gh workflow run build_r.yml --ref <branch>`)
+- `build/r` d50459a: last green release build, run 44292393432 (see the change log). It does NOT contain anything below.
+- A stack of mascot branches, each on top of the previous one, **none merged into `build/r` yet** (merge only after the owner tests the APK):
+  1. `feat/r-reader-cobra` (4604c1b): green cobra peeking while reading, run 44460635233 green.
+  2. `feat/r-mascot-sleep` -> 3. `feat/r-mascot-bed` (dfff43e): sleeps under a blanket after 60 s, float/breathing; run 44463388452 **green**.
+  4. `feat/r-mascot-sound` (f7efff1): speech bubbles type out letter by letter with generated blip sounds, switch `r_mascot_sound`; its run 44464488766 **failed**: real compile error `RMascotView.kt` `playBlip` (nullable `SoundPool`), fixed in the next commit.
+  5. `feat/r-mascot-body` (d92e19f): contains everything above + the compile fix + **the full-body snake**. Run **44465833155** was `in_progress` at the time of writing: check it first.
+- Never create a branch from a stale local copy (that is what broke `feat/r-mascot-sleep` once): `git fetch` and branch from `origin/<branch>`.
+- The Stop hook sometimes says a branch has "unpushed commits and no remote branch" although it is pushed; verify with `git ls-remote --heads origin <branch>` and set upstream (`git push -u origin <branch>`), do not push again blindly.
+
+### Decisions made by the owner in this stretch
+- **Every build must update the previous one in place** (permanent signing key, growing versionCode): already in `build/r`; the very first install with that key needs the old app uninstalled.
+- **Sound**: he chose small blips per letter (not voice, not files).
+- **Full-body snake** from his model sheet `branding/mascot-fullbody-558800.jpg` (3 poses: tail right, headless, tail left). Never draw the body yourself; use his sheet.
+- **THE HANDS RULE: the snake must have exactly TWO hands, the body's.** The old mood heads (`branding/mascot-models/heads/*.webp`) carried their own two hands, so every mood showed 4. We removed the heads' hands and kept the body's two paws. Do not put the heads' hands back. (Cost: `hurt`/`sad` lost the fists on the cheeks; `sad` has a faint seam on one cheek.)
+- Build tooling lives in `branding/mascot-models/body/` (`build_sprites.py`, `clean_heads.py`, cut-outs `tailright/tailleft/headless.png`); it needs Pillow, numpy, scipy.
+
+### Not done / open
+- Tail wag (the tail-left pose has a differently drawn body; swapping it jumps). Ask the owner for a tail-only wag frame or do a code rotation of the tail.
+- `asleep` and the bed frames are still the old head+coil art (not the full body) and `back` is only the hood: they look different from the new full body. Ask the owner for matching versions.
+- The bubble phrases (Egyptian Arabic, list at the bottom of `RMascotView.kt`) are my draft, not approved.
+- The crash "press download -> app closes and reopens" is not investigated (needs a logcat); the Arabic-digit page-name fix is untested on his phone.
+- Firebase/updater decision: he said to keep the link with the original developer; `feat/r-updater` is intentionally not merged.
+- Chapter-transition panel with the mascot + reading timer, and the reader tools panel: not started.
+- Nothing from this stretch has been run on a device or even compiled locally (no Android SDK here); the only checks are CI runs.
+
+### What to do first
+1. `gh api repos/ELRFAAY/yokai-private/actions/runs/44465833155 --jq '[.status,.conclusion]'`. Green: give the owner the link, he downloads `yokai-r-release`, installs it, and tests: the full-body snake on the home screen (all moods, two hands only), the typing blips, sleep, and that the size (104 dp) feels right. Red: read the annotations ("Gradle errors" / "Gradle tail") and fix one push at a time.
+2. Only after he approves: merge the stack into `build/r` in order, resolving `RMascotView.kt` conflicts carefully, and re-run the build.
+3. Reply to him in Egyptian Arabic, short. On the R Music project (a different app) he wants you to wait for "go"; on this one he just says what he wants.
+
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage).
