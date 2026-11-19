@@ -54,6 +54,11 @@ Last updated: 2026-11-19 07:40 (owner's usage was at 92%). **Read the section "S
 - NOT checked yet: the look on the phone (size 104 dp: the full body fills more of the square than the old head art), the tail pose swap jump between moods (bbox-centered; cross-fades hide most of it), and the bubble position over the head (the head is now higher/lower depending on the pose). Compile risk is nil (only image files changed) but the APK must be built to see it.
 - Build state at 11:42 UTC: run `44515091157` (`506a1ed`) is still `in_progress` (started 11:28:10). **A new dispatch would cancel it**, so no build was started for `7aa639e`. When it ends: if green, give the owner that APK; then dispatch one build of `fix/stats-and-name` so `7aa639e` is in the next APK.
 
+### Owner input #27 (2026-11-19, recorded before working): go ahead with the stick scene; say quickly what else is needed so everything is pushed at once
+- The owner approved the plan (message #26 follow-up): \"look at the stick scene and fix what you want to fix; if you need anything else tell me quickly so we push everything in one go\".
+- Work order: (1) fix the cutter flaw (impact star of `stick_wise_hit` removed as \"text\"); (2) implement the **stick scene** in `RReaderCobraView` on `fix/stats-and-name`: the small dragon appears twice in a row, then the wise dragon comes, raises the stick, hits it on the head and carries it away; Egyptian phrases written by the assistant (NOT approved); a switch `r_reader_cobra_scene` + a frequency list in Settings > R; must never block reading (touches still pass to the reader, never while the menu is open); (3) one single build for everything (the running run 44515091157 must end first).
+- Needs from the owner, asked in the reply: see the \"What I need\" list in the message (phrases approval, how often, a sound).
+
 ## NEWEST 2026-11-19 13:35 (owner's usage at 90%): read this block first, it supersedes the sections below where they disagree
 
 ### Owner messages since the cobra request (all recorded; the images are in `branding/mascot-models/`)
