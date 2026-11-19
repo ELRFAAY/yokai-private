@@ -197,6 +197,8 @@ class MangaDetailsPresenter(
             // R: load the manga first; setCurrentExcludedScanlators() reads it through getChapters() and
             // crashed with "lateinit property manga has not been initialized" when it ran before.
             refreshMangaFromDb()
+            // chapterSort is created in syncData() and getChapters() needs it too ("lateinit chapterSort" crash)
+            syncData()
             setCurrentExcludedScanlators(getExcludedScanlators.await(mangaId))
         }
         syncData()
