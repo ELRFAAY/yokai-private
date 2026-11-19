@@ -169,6 +169,27 @@ class RMascotView(context: Context) : View(context) {
     private var poofReady = 0 // number of loaded sounds (blip + poof) - ready when 2
     private var welcomeGapMs = -1L // >= 0: the app was just opened after this long away, greet once the view is showing
     private var enterStart = 0L // != 0: the little dragon is dropping in from the top right
+    private var asleep = false
+    private var lastActiveAt = SystemClock.uptimeMillis()
+    private var blanketT = 0f // 0 = no blanket, 1 = blanket fully up
+    private val blanketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF1F6F6B.toInt() }
+    private val blanketStripe = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF49B6A8.toInt()
+        style = Paint.Style.STROKE
+        strokeWidth = 5f * density
+    }
+    private val blanketEdge = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFFEAF7F2.toInt()
+        style = Paint.Style.STROKE
+        strokeWidth = 3f * density
+    }
+    private val blanketRect = RectF()
+    private val blanketPath = Path()
+    private val zPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFFB7F5B9.toInt()
+        isFakeBoldText = true
+        setShadowLayer(3f * density, 0f, 0f, 0xFF1B5E20.toInt())
+    }
     private var tfPoofs = 0 // how many "poof" sounds were played in the current transformation
 
     // soft, springy look: every visual value eases toward a target instead of jumping
@@ -208,6 +229,10 @@ class RMascotView(context: Context) : View(context) {
         running = true
         lastFrame = SystemClock.uptimeMillis()
         blinkAt = lastFrame + 3000
+        // coming back to the screen: awake, with a fresh sleep timer
+        asleep = false
+        blanketT = 0f
+        lastActiveAt = lastFrame
         postOnAnimation(frame)
     }
 
@@ -293,6 +318,18 @@ class RMascotView(context: Context) : View(context) {
         frameNow = now
         updateTyping(now)
         if (!positioned) return
+
+        // sleep: a minute without any touch -> goodnight, blanket slides up, zzz
+        if (prefs.rMascotSleep().get()) {
+            if (!asleep && state == State.IDLE && tfStart == 0L && enterStart == 0L && now - lastActiveAt >= SLEEP_AFTER_MS) {
+                asleep = true
+                say(GO_SLEEP.random(), 3500L)
+            }
+        } else if (asleep) {
+            asleep = false
+        }
+        val blanketTarget = if (asleep) 1f else 0f
+        blanketT = if (blanketT < blanketTarget) minOf(blanketTarget, blanketT + dt / 1.4f) else maxOf(blanketTarget, blanketT - dt / 0.5f)
 
         if (welcomeGapMs >= 0L && isShown) startWelcome(now)
         if (enterStart != 0L) {
@@ -451,6 +488,16 @@ class RMascotView(context: Context) : View(context) {
         shownMood = mood
         shownSage = sage
         if (fade < 1f) fade = (fade + dt / fadeSeconds).coerceAtMost(1f)
+    }
+
+    /** Called by MainActivity on every touch anywhere in the app: restarts the sleep timer and wakes the dragon up. */
+    fun noteActivity() {
+        lastActiveAt = SystemClock.uptimeMillis()
+        if (asleep) {
+            asleep = false
+            happyUntil = lastActiveAt + 1500
+            say(WAKE.random())
+        }
     }
 
     private fun say(text: String, millis: Long = 2200L) {
@@ -733,9 +780,42 @@ class RMascotView(context: Context) : View(context) {
         bitmapPaint.alpha = (fade * 255f).toInt().coerceIn(0, 255)
         canvas.drawBitmap(current, null, dest, bitmapPaint)
         bitmapPaint.alpha = 255
+        if (blanketT > 0f) drawBlanket(canvas)
         canvas.restore()
 
+        if (asleep && blanketT > 0.85f) drawZzz(canvas, now)
         drawBubble(canvas, now)
+    }
+
+    /** A teal quilt with diagonal stripes that slides up over the lower half of the dragon. */
+    private fun drawBlanket(canvas: Canvas) {
+        val t = blanketT.coerceIn(0f, 1f)
+        val eased = t * t * (3f - 2f * t)
+        val slide = (1f - eased) * half * 1.4f
+        blanketRect.set(-half * 0.95f, half * 0.1f + slide, half * 0.95f, half * 1.0f + slide)
+        val radius = 12f * density
+        blanketPath.reset()
+        blanketPath.addRoundRect(blanketRect, radius, radius, Path.Direction.CW)
+        canvas.save()
+        canvas.clipPath(blanketPath)
+        canvas.drawRect(blanketRect, blanketPaint)
+        var sx = blanketRect.left - blanketRect.height()
+        while (sx < blanketRect.right) {
+            canvas.drawLine(sx, blanketRect.bottom, sx + blanketRect.height(), blanketRect.top, blanketStripe)
+            sx += 18f * density
+        }
+        canvas.restore()
+        canvas.drawRoundRect(blanketRect, radius, radius, blanketEdge)
+    }
+
+    /** Three small "z" letters drifting up from the sleeping dragon. */
+    private fun drawZzz(canvas: Canvas, now: Long) {
+        for (i in 0 until 3) {
+            val p = (((now / 1000f) + i * 0.9f) % 2.7f) / 2.7f
+            zPaint.alpha = ((1f - p) * 255f).toInt().coerceIn(0, 255)
+            zPaint.textSize = (12f + 8f * p + i * 2f) * density
+            canvas.drawText("z", x + half * 0.35f + p * half * 0.5f + i * 6f * density, y - half * 0.55f - p * half * 0.9f, zPaint)
+        }
     }
 
     /** Which of the pictures to show right now. */
@@ -743,6 +823,7 @@ class RMascotView(context: Context) : View(context) {
         val speed = hypot(vx, vy)
         showBack = if (showBack) speed > 560f * density else speed > 760f * density
         return when {
+            asleep -> Mood.BLINK // eyes closed
             now < hurtUntil -> Mood.HURT
             state == State.GRABBED && moved -> Mood.SCARED
             state == State.FLYING -> when {
@@ -838,6 +919,9 @@ class RMascotView(context: Context) : View(context) {
             R.drawable.r_tf_detective to "فيه شابتر ناقص... وأنا هاعرف مين خدّه!",
         )
         const val CHAR_MS = 38L // typing speed of the speech bubble
+        val GO_SLEEP = listOf("هنام شوية... صحّيني لما ترجع", "الدنيا هادية... هجيب اللحاف وأنام", "تصبح على خير، المانجا مش هتهرب")
+        val WAKE = listOf("هاه؟ صحيت!", "كنت في أحلى حلم...", "خلاص خلاص، صاحي!")
+        const val SLEEP_AFTER_MS = 60_000L
         const val WELCOME_MIN_GAP_MS = 3L * 60 * 60 * 1000
         const val DAY_MS = 24L * 60 * 60 * 1000
         const val ENTER_MS = 800L

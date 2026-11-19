@@ -1416,6 +1416,7 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
             (router.backstack.lastOrNull()?.controller as? LibraryController)?.handleGeneralEvent(it)
         }
         if (ev?.action == MotionEvent.ACTION_DOWN) {
+            rMascot?.noteActivity() // R: any touch wakes the little dragon and restarts its sleep timer
             if (snackBar != null && snackBar!!.isShown) {
                 val sRect = Rect()
                 snackBar!!.view.getGlobalVisibleRect(sRect)

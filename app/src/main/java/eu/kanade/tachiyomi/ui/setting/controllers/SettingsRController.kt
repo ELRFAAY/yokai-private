@@ -151,6 +151,14 @@ class SettingsRController : SettingsLegacyController() {
         }
 
         switchPreference {
+            bindTo(preferences.rMascotSleep())
+            title = "التنين الصغير: النوم"
+            summary = "بعد دقيقة بدون لمس الشاشة يقول تصبح على خير، ويسحب لحافاً فوقه وينام. " +
+                "أي لمسة توقظه. عند الإيقاف: لا ينام."
+            preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+        }
+
+        switchPreference {
             bindTo(preferences.rMascotWelcome())
             title = "التنين الصغير: الترحيب عند فتح التطبيق"
             summary = "عند فتح التطبيق ينزل التنين الصغير من أعلى اليمين ويقول لك كم من الوقت غبت عنه. " +
