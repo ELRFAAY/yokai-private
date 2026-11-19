@@ -10,6 +10,11 @@ Last updated: 2026-11-19 07:40 (owner's usage was at 92%). **Read the section "S
 - Run **44509788429** (a359eec: manga-details crash fix + `versionCode = 1000 + GITHUB_RUN_NUMBER` in `app/build.gradle.kts`, so builds from any branch update each other; the owner had hit "newer version already installed": installed 209 vs APK 205 because versionCode used the per-branch commit count) = **green**.
 - Commit `eec412a`: reader cobra rebuilt with the new sheet 14: poses `r_cobra_peek_{normal,look,laugh,point}`, `r_cobra_{yawn,rub,bored,nod1,nod2}` (old `r_cobra_peek/sleepy` removed); each phrase has a pose (`Line(text, Pose)` lists at the bottom of `RReaderCobraView.kt`); bubble text 18 dp bold, max bubble width 205 dp (owner input #23: readable but proportional). Cut-out script stored at `branding/tools/make_reader_cobra_v2.py`. Run **44512730636** started for it: CHECK IT. Sheet 13 (wise master) not used yet. No text-size setting in Settings > R yet (possible follow-up).
 
+### NAMES (owner, 2026-11-19 13:30): use these in every text shown to him
+- The small green snake (cobra mascot, home-screen mascot, reader cobra) = **"التنين الصغير"** (the small dragon).
+- The big wise old snake (hat + beard) = **"التنين الحكيم"** (the wise dragon).
+- Code names stay (`RMascotView`, `r_sage_*`); only talk to him and write UI texts with the new names. Settings texts in `SettingsRController.kt` still say "ثعبان"/"كوبرا": change them to the new names when next touching that file.
+
 ### Sheet 15 from the owner (2026-11-19 13:27): wise snake full body (saved before use)
 - `branding/mascot-models/15-wise-snake-full-body-moods-559299.jpg` (Arabic labels under each pose): happy/normal hand on side, eyes closed (blink), annoyed/hurt, sad, scared, and a small floating scared one. Cut by `branding/tools/make_sage_from_sheet15.py` into `r_sage_{happy,blink,hurt,sad,scared,dizzy}.webp` (dizzy = the small floating one); this REPLACES the sheet-13 based version (script for 13 deleted). Commit on `fix/stats-and-name`: see log. Still missing from him: sage back view, and the stick scene art of input #25.
 
