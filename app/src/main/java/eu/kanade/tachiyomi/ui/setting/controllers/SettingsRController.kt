@@ -60,5 +60,31 @@ class SettingsRController : SettingsLegacyController() {
             entries = listOf("بطيئة جداً", "بطيئة", "عادية", "سريعة", "سريعة جداً")
             entryValues = listOf(30, 60, 100, 150, 220)
         }
+
+        switchPreference {
+            bindTo(preferences.rReaderCobra())
+            title = "القارئ: الكوبرا الخضراء أثناء القراءة"
+            summary = "مفعّل: الكوبرا تطلع من جنب الشاشة وإنت بتقرا وتقولك كلمتين بالمصري. " +
+                "معطّل: القارئ الأصلي (بدون كوبرا). لا تظهر والقائمة مفتوحة، وتضغط عليها علشان تختفي."
+        }
+
+        switchPreference {
+            bindTo(preferences.rReaderCobraSound())
+            title = "الكوبرا: الأصوات"
+            summary = "مفعّل: صوت كتابة الكلام وصوت حركتها وهي داخلة وخارجة (بصوت الوسائط). معطّل: بدون أصوات."
+        }
+
+        switchPreference {
+            bindTo(preferences.rReaderCobraNight())
+            title = "الكوبرا: وضع الليل"
+            summary = "مفعّل: من 12 بالليل لحد 5 الصبح تيجي نعسانة وتقولك «خش نام يا عم». معطّل: نفس الكلام العادي طول اليوم."
+        }
+
+        intListPreference(activity) {
+            bindTo(preferences.rReaderCobraInterval())
+            title = "الكوبرا: كل قد إيه تظهر"
+            entries = listOf("كل 3 دقايق", "كل 6 دقايق", "كل 10 دقايق", "كل 20 دقيقة", "كل 45 دقيقة")
+            entryValues = listOf(3, 6, 10, 20, 45)
+        }
     }
 }
