@@ -293,6 +293,12 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
 
     fun rMascotSound() = preferenceStore.getBoolean("r_mascot_sound", true)
 
+    /** Mascot: when the app is opened the little dragon drops in from the top right and says how long you were away. */
+    fun rMascotWelcome() = preferenceStore.getBoolean("r_mascot_welcome", true)
+
+    /** When the app was last on screen (epoch ms), used by the welcome. */
+    fun rLastOpenMs() = preferenceStore.getLong("r_last_open_ms", 0L)
+
     /** Reader: the green cobra that peeks in from the left edge while you read. */
     fun rReaderCobra() = preferenceStore.getBoolean("r_reader_cobra", true)
 

@@ -167,6 +167,8 @@ class RMascotView(context: Context) : View(context) {
     private var blipCount = 0
     private var poofId = 0
     private var poofReady = 0 // number of loaded sounds (blip + poof) - ready when 2
+    private var welcomeGapMs = -1L // >= 0: the app was just opened after this long away, greet once the view is showing
+    private var enterStart = 0L // != 0: the little dragon is dropping in from the top right
     private var tfPoofs = 0 // how many "poof" sounds were played in the current transformation
 
     // soft, springy look: every visual value eases toward a target instead of jumping
@@ -235,7 +237,34 @@ class RMascotView(context: Context) : View(context) {
 
     override fun onWindowVisibilityChanged(visibility: Int) {
         super.onWindowVisibilityChanged(visibility)
-        if (visibility == VISIBLE) startLoop() else stopLoop()
+        if (visibility == VISIBLE) {
+            if (prefs.rMascotWelcome().get()) {
+                val last = prefs.rLastOpenMs().get()
+                val gap = System.currentTimeMillis() - last
+                // first run (last == 0) says nothing; a quick app switch (< 3 h) says nothing
+                if (last > 0L && gap >= WELCOME_MIN_GAP_MS) welcomeGapMs = gap
+            }
+            startLoop()
+        } else {
+            prefs.rLastOpenMs().set(System.currentTimeMillis())
+            stopLoop()
+        }
+    }
+
+    private fun startWelcome(now: Long) {
+        val days = (welcomeGapMs / DAY_MS).toInt()
+        welcomeGapMs = -1L
+        prefs.rLastOpenMs().set(System.currentTimeMillis())
+        if (state != State.IDLE || tfStart != 0L) return
+        enterStart = now
+        val text = when {
+            days <= 0 -> "أهلاً من تاني! وحشتني."
+            days == 1 -> "كنت فين؟ بقالي يوم مستنيك!"
+            days == 2 -> "يومين! ما قريتش من يومين، كنت فين؟"
+            days in 3..10 -> "بقالي $days أيام مستنيك! ما قريتش من فترة طويلة."
+            else -> "بقالي $days يوم مستنيك! افتكرت إنك نسيتني."
+        }
+        say(text, 4500L)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -264,6 +293,23 @@ class RMascotView(context: Context) : View(context) {
         frameNow = now
         updateTyping(now)
         if (!positioned) return
+
+        if (welcomeGapMs >= 0L && isShown) startWelcome(now)
+        if (enterStart != 0L) {
+            // drop in from above the top right corner, easing out; a touch ends it at once
+            val p = ((now - enterStart) / ENTER_MS.toFloat()).coerceIn(0f, 1f)
+            val e = 1f - (1f - p) * (1f - p) * (1f - p)
+            val destX = width - half - 16f * density
+            val destY = minY() + 8f * density
+            x = destX + half * 1.8f * (1f - e)
+            y = destY - half * 2.2f * (1f - e)
+            if (p >= 1f || state != State.IDLE) enterStart = 0L
+            if (p >= 1f) {
+                targetX = x
+                targetY = y
+                scaleYSpring.kick(-6f)
+            }
+        }
 
         // while dragged the snake glides toward the finger instead of jumping to it
         if (state == State.GRABBED && moved) {
@@ -792,6 +838,9 @@ class RMascotView(context: Context) : View(context) {
             R.drawable.r_tf_detective to "فيه شابتر ناقص... وأنا هاعرف مين خدّه!",
         )
         const val CHAR_MS = 38L // typing speed of the speech bubble
+        const val WELCOME_MIN_GAP_MS = 3L * 60 * 60 * 1000
+        const val DAY_MS = 24L * 60 * 60 * 1000
+        const val ENTER_MS = 800L
         val BLIP_RATES = floatArrayOf(1.0f, 1.18f, 0.9f, 1.32f, 1.08f)
         val GRAB = listOf("سيبني بقى!", "إنت ماسكني ليه؟", "هششش! أنا التعبان!")
         val THROW = listOf("آآآآه!", "ارمي براحة!", "للانهاية وما بعدها!")

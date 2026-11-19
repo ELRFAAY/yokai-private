@@ -151,6 +151,14 @@ class SettingsRController : SettingsLegacyController() {
         }
 
         switchPreference {
+            bindTo(preferences.rMascotWelcome())
+            title = "التنين الصغير: الترحيب عند فتح التطبيق"
+            summary = "عند فتح التطبيق ينزل التنين الصغير من أعلى اليمين ويقول لك كم من الوقت غبت عنه. " +
+                "عند الإيقاف: لا يظهر ترحيب."
+            preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+        }
+
+        switchPreference {
             bindTo(preferences.rReaderCobra())
             title = "القارئ: التنين الصغير أثناء القراءة"
             summary = "مفعّل: التنين الصغير يطلع من جنب الشاشة وإنت بتقرا وتقولك كلمتين بالمصري. " +
