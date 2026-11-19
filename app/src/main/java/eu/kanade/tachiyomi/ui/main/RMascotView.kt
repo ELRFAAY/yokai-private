@@ -365,7 +365,7 @@ class RMascotView(context: Context) : View(context) {
 
     private fun playBlip() {
         if (!rPrefs.rMascotSound().get()) return
-        val pool = soundPool ?: createSoundPool().also { soundPool = it }
+        val pool = soundPool ?: createSoundPool().also { soundPool = it } ?: return
         if (!blipReady) return
         val audio = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
         if (audio != null && audio.ringerMode != AudioManager.RINGER_MODE_NORMAL) return // silent / vibrate = no sound
