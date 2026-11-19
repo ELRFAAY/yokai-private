@@ -8,6 +8,9 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.SoundPool
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.VelocityTracker
@@ -15,6 +18,10 @@ import android.view.View
 import android.view.ViewConfiguration
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import java.io.File
+import java.io.RandomAccessFile
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import uy.kohesive.injekt.injectLazy
 import kotlin.math.abs
 import kotlin.math.cos
@@ -125,6 +132,14 @@ class RMascotView(context: Context) : View(context) {
     private var bounces = 0 // hard hits during the current flight
     private var bubbleText: String? = null
     private var bubbleUntil = 0L
+    private var bubbleStart = 0L
+    private var bubbleShown = 0 // how many letters of the bubble are visible (typewriter effect)
+
+    // tiny "talking" blips, generated in code (no sound files in the app)
+    private var soundPool: SoundPool? = null
+    private var blipId = 0
+    private var blipReady = false
+    private var blipCount = 0
 
     private val rPrefs: PreferencesHelper by injectLazy()
     private var sleepPhase = SleepPhase.AWAKE
@@ -190,6 +205,9 @@ class RMascotView(context: Context) : View(context) {
 
     override fun onDetachedFromWindow() {
         stopLoop()
+        soundPool?.release()
+        soundPool = null
+        blipReady = false
         super.onDetachedFromWindow()
     }
 
@@ -315,6 +333,8 @@ class RMascotView(context: Context) : View(context) {
             }
         }
 
+        updateTyping(now)
+
         val iterator = dots.iterator()
         while (iterator.hasNext()) {
             val dot = iterator.next()
@@ -324,8 +344,76 @@ class RMascotView(context: Context) : View(context) {
     }
 
     private fun say(text: String, durationMs: Long = 2200L) {
+        val now = SystemClock.uptimeMillis()
         bubbleText = text
-        bubbleUntil = SystemClock.uptimeMillis() + durationMs
+        bubbleStart = now
+        bubbleShown = 0
+        // typing time + the time the full sentence stays on screen
+        bubbleUntil = now + text.length * CHAR_MS + durationMs
+    }
+
+    /** Typewriter: reveal one more letter every [CHAR_MS] and play a short blip for it. */
+    private fun updateTyping(now: Long) {
+        val text = bubbleText ?: return
+        val target = ((now - bubbleStart) / CHAR_MS).toInt().coerceIn(0, text.length)
+        if (target > bubbleShown) {
+            val c = text[target - 1]
+            bubbleShown = target
+            if (!c.isWhitespace()) playBlip()
+        }
+    }
+
+    private fun playBlip() {
+        if (!rPrefs.rMascotSound().get()) return
+        val pool = soundPool ?: createSoundPool().also { soundPool = it }
+        if (!blipReady) return
+        val audio = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        if (audio != null && audio.ringerMode != AudioManager.RINGER_MODE_NORMAL) return // silent / vibrate = no sound
+        // a few pitches in a row so it sounds like talking, not like a beep
+        val rate = BLIP_RATES[blipCount++ % BLIP_RATES.size]
+        pool.play(blipId, 0.35f, 0.35f, 1, 0, rate)
+    }
+
+    private fun createSoundPool(): SoundPool? = try {
+        val pool = SoundPool.Builder()
+            .setMaxStreams(3)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build(),
+            )
+            .build()
+        pool.setOnLoadCompleteListener { _, _, status -> blipReady = status == 0 }
+        val file = File(context.cacheDir, "r_mascot_blip.wav")
+        writeBlipWav(file)
+        blipId = pool.load(file.absolutePath, 1)
+        pool
+    } catch (e: Throwable) {
+        null
+    }
+
+    /** A 45 ms sine blip with a fast fade-out, written as a 16-bit mono WAV. */
+    private fun writeBlipWav(file: File) {
+        val sampleRate = 22050
+        val n = sampleRate * 45 / 1000
+        val data = ByteBuffer.allocate(n * 2).order(ByteOrder.LITTLE_ENDIAN)
+        for (i in 0 until n) {
+            val t = i.toDouble() / sampleRate
+            val env = exp(-i.toDouble() / (n * 0.35)) * (1.0 - exp(-i / 40.0))
+            val v = (sin(2.0 * Math.PI * 520.0 * t) * 0.8 + sin(2.0 * Math.PI * 1040.0 * t) * 0.2) * env
+            data.putShort((v * 0.8 * Short.MAX_VALUE).toInt().toShort())
+        }
+        RandomAccessFile(file, "rw").use { f ->
+            f.setLength(0)
+            val header = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN)
+            header.put("RIFF".toByteArray()).putInt(36 + n * 2).put("WAVE".toByteArray())
+            header.put("fmt ".toByteArray()).putInt(16).putShort(1).putShort(1)
+            header.putInt(sampleRate).putInt(sampleRate * 2).putShort(2).putShort(16)
+            header.put("data".toByteArray()).putInt(n * 2)
+            f.write(header.array())
+            f.write(data.array())
+        }
     }
 
     /** Called by MainActivity on every touch anywhere in the app: resets the sleep timer and wakes the snake up. */
@@ -614,7 +702,14 @@ class RMascotView(context: Context) : View(context) {
         bubblePath.close()
         canvas.drawPath(bubblePath, bubbleFill)
 
-        canvas.drawText(text, bubbleRect.centerX(), bubbleRect.top + pad * 0.7f - fm.ascent, textPaint)
+        // the bubble has the size of the whole sentence; the letters appear one by one from the reading side
+        val shown = text.substring(0, bubbleShown.coerceIn(0, text.length))
+        val baseline = bubbleRect.top + pad * 0.7f - fm.ascent
+        val rtl = text.firstOrNull { Character.isLetter(it) }
+            ?.let { Character.getDirectionality(it) == Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC } ?: false
+        textPaint.textAlign = if (rtl) Paint.Align.RIGHT else Paint.Align.LEFT
+        canvas.drawText(shown, if (rtl) bubbleRect.right - pad else bubbleRect.left + pad, baseline, textPaint)
+        textPaint.textAlign = Paint.Align.CENTER
     }
 
     private companion object {
@@ -630,5 +725,7 @@ class RMascotView(context: Context) : View(context) {
         val WAKE = listOf("هاه؟ صحيت!", "إيه ده؟ كنت في أحلى حلم...", "خلاص خلاص، صاحي!")
         const val SLEEP_AFTER_MS = 60_000L
         const val BED_STEP_MS = 1300L // one bed pose every 1.3 s
+        const val CHAR_MS = 38L // typing speed of the speech bubble
+        val BLIP_RATES = floatArrayOf(1.0f, 1.18f, 0.9f, 1.32f, 1.08f)
     }
 }

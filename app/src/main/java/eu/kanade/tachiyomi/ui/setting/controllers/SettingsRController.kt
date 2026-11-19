@@ -66,6 +66,12 @@ class SettingsRController : SettingsLegacyController() {
             summary = "مفعّل: الثعبان طاير في الهوا يطلع وينزل ببطء ويتنفس، وله ضل تحته. معطّل: حركة صغيرة بس (الأصلي)."
         }
 
+        switchPreference {
+            bindTo(preferences.rMascotSound())
+            title = "الرئيسية: صوت الثعبان"
+            summary = "مفعّل: الكلام بيظهر حرف حرف مع نقرات صغيرة، وبيسكت لو الموبايل صامت أو على الاهتزاز. معطّل: الكلام بدون صوت."
+        }
+
         intListPreference(activity) {
             bindTo(preferences.rAutoScrollSpeed())
             title = "القارئ: سرعة التمرير التلقائي"

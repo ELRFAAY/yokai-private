@@ -293,6 +293,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Mascot: floats up and down while breathing, with a soft shadow and a small landing bounce. */
     fun rMascotFloat() = preferenceStore.getBoolean("r_mascot_float", true)
 
+    /** Mascot: small talking blips (one per letter) while a speech bubble types out; silent in silent/vibrate mode. */
+    fun rMascotSound() = preferenceStore.getBoolean("r_mascot_sound", true)
+
     /** Reader: the green cobra that peeks in from the left edge while you read. */
     fun rReaderCobra() = preferenceStore.getBoolean("r_reader_cobra", true)
 
