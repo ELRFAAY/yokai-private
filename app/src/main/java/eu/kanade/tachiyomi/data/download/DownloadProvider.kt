@@ -32,8 +32,9 @@ class DownloadProvider(private val context: Context) {
      */
     private val downloadPreferences: DownloadPreferences by injectLazy()
     private val storageManager: StorageManager by injectLazy()
+    private val rPrefs: eu.kanade.tachiyomi.data.preference.PreferencesHelper by injectLazy()
     private val rMihonFolders: Boolean
-        get() = uy.kohesive.injekt.Injekt.get<eu.kanade.tachiyomi.data.preference.PreferencesHelper>().rMihonFolders().get()
+        get() = rPrefs.rMihonFolders().get()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 

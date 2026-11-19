@@ -7,8 +7,9 @@ import java.util.concurrent.TimeUnit
 
 object StatsHelper {
 
+    private val rPrefs: eu.kanade.tachiyomi.data.preference.PreferencesHelper by uy.kohesive.injekt.injectLazy()
     private val rStatsMinutes: Boolean
-        get() = uy.kohesive.injekt.Injekt.get<eu.kanade.tachiyomi.data.preference.PreferencesHelper>().rStatsMinutes().get()
+        get() = rPrefs.rStatsMinutes().get()
 
     private val STATUS_COLOR_LIST = arrayListOf(
         Color.parseColor("#3BAEEA"),
