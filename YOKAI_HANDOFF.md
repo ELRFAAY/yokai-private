@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff
 
 Read this first when starting a new session or from another account. Update it after every meaningful change.
-Last updated: 2026-11-18 (12:50, after owner input #13; newest code is on `build/r`, see the top of its git log)
+Last updated: 2026-11-19 (after owner input #14 and the work on branch `fix/stats-and-name`; see the 2026-11-19 section right below)
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage).
@@ -13,6 +13,22 @@ Last updated: 2026-11-18 (12:50, after owner input #13; newest code is on `build
 - The app will be installed **alongside the original Yokai**, as a separate app. So the `applicationId` must be changed, and so must everything that would clash with the original.
 - Many changes are planned, including branding: **app name and logo** (plus more to come, to be listed below).
 - Language of conversation with the owner: Egyptian Arabic.
+
+## 2026-11-19 update (branch `fix/stats-and-name`, NOT merged into `build/r` yet)
+Work done in this branch (each behind an R switch, see the table further down):
+- App name is now **"Yokai"** (also "Yokai Debug"/"Yokai Nightly"). `applicationId` unchanged on purpose (updates keep working).
+- Reader: **vertical page bar** on the right edge above the bottom toolbar (progress fills bottom to top, play/auto-scroll at the bottom). `reader_nav_vertical.xml` is new; the original `reader_nav.xml` is untouched and used when the switch is off. Both are inflated, the unused one is hidden in `ReaderActivity.setupReaderNav()`; all reader code goes through the wrapper `ReaderNavViews` (property `readerNav`). `ReaderVerticalSliderLayout` stands the slider up (rotation 270).
+- Reader: **chapter-time card** between chapters (snake + "time spent in the chapter you just finished").
+- **Reading-time bug fixed** in `ReaderViewModel.flushReadTimer` (the async save used to read the start time after `restartReadTimer()` reset it, so almost no time was recorded). This is a plain bug fix, no switch. Stats now also show minutes when the total is over a day (switch).
+- Library: **pin manga** (selection menu > "تثبيت / إلغاء التثبيت"); pinned come first in their category, 📌 before the title. Stored in pref `library_pinned_manga` (not in backups).
+- Downloads: Yokai also finds **folders written by Mihon**: chapter folder hash suffix `_<md5(url).take(6)>`, and Mihon's option "Disallow non-ASCII filenames" writes every non-ASCII char as lowercase hex of its UTF-8 bytes (e.g. the apostrophe ’ becomes `e28099`) in source, manga and chapter names. See `DownloadProvider.getSourceDirNames/getMangaDirNames/asciiHexName/getValidChapterDirNames` and `DownloadCache` (`forManga/keyForManga`). Known limits: two folders for the same source (plain + hex) -> only one is seen; names truncated differently by Mihon are not matched.
+- Mascot: smoother animation (springs, eased drag, squash and stretch, face crossfade, random blink) and the **wise old snake** (hat + beard, sprites `r_sage_*.webp`): on tap, with a chance set in R settings, the mascot turns into the sage for ~7 s and says a useless-but-true piece of advice (list `ADVICE` in `RMascotView`). The owner wants this as a joke.
+- Settings > R was reorganized into sections (عام / القارئ / المكتبة / التنزيلات / الإحصائيات / الثعبان) and every new feature has a switch.
+
+Owner inputs recorded (newest last):
+- #14: sent three images, saved in `branding/`: `sage-arm-and-cane-559012.jpg` (arm, cane and grip pieces for the sage), `sage-old-cobra-faces-559013.jpg` (9 faces of the wise old cobra: hat, white brows, long beard; checkerboard baked into the JPG), `cobra-body-faces-and-arms-559014.jpg` (the normal cobra WITH body/tail coil in 6 moods, plus 6 separate arm pieces: open hand, pointing, fist, hand-on-face, curved arm, thumbs up). Also `cobra-model-sheet-557773.jpg` (front/side/back/top/bottom model sheet). Used so far: the sage faces (6 sprites cut out of 559013). **Not used yet:** the arm kit and the body-with-coil sprites from 559014 (the owner wants the snake to "use its hands"; plan: draw the arms as separate layers rotating around the shoulder; the current sprites have hands baked in, so they cannot be animated). The cane/arm sheet 559012 is for a later sage idea.
+- #14 text: wants Settings > R tidied and improved, and the sage to give pointless advice as a joke.
+- Earlier in this session: the owner reads in webtoon mode; wants the mascot to judge a manga when opening its page ("good / I don't recommend it") using **both AniList's public rating and his own taste (genres in his library)**; not built yet (design: AniList GraphQL `Media(search:)` -> `averageScore`; taste = share of the manga's genres among his top library genres; show in the mascot bubble; the mascot is currently shown only on the library screen, so it would need to appear briefly on the manga page).
 
 ## LATEST STATE (written 2026-11-18, owner's usage limit at 94%; read this before the older START HERE section below)
 
@@ -121,6 +137,13 @@ Stated by the owner on 2026-11-18:
 | `r_single_app_icon` | Appearance: icon picker hidden (on) so the app has one icon vs. original picker with Default/Blue/Orange/Gray/Classic (off) | on | `build/r` |
 | `r_force_arabic` | Language: app opens in Arabic (when no other language was picked) (on) vs. system language (off = original). Applied in `App.onCreate`. | on | `build/r` |
 | `r_mascot` | Home (library screen): floating snake mascot, grab and throw it (on) vs. nothing (off = original) | on | `feat/r-mascot` (in `build/r`) |
+| `r_vertical_nav` | Reader: vertical page/chapter/auto-scroll bar on the right (on) vs. the original horizontal bar (off) | on | `fix/stats-and-name` |
+| `r_chapter_time_card` | Reader: card with the time spent in the finished chapter between chapters (on) vs. none (off) | on | `fix/stats-and-name` |
+| `r_pin_manga` | Library: pin manga to the top + pin marker (on) vs. no pinning (off) | on | `fix/stats-and-name` |
+| `r_mihon_folders` | Downloads: also find Mihon-written folders (hash suffix / hex-encoded non-ASCII names) (on) vs. original names only (off) | on | `fix/stats-and-name` |
+| `r_stats_minutes` | Statistics: minutes shown even when over a day (on) vs. days and hours only (off) | on | `fix/stats-and-name` |
+| `r_mascot_sage` | Mascot: the wise old snake appears on tap and gives useless advice (on) vs. normal snake only (off) | on | `fix/stats-and-name` |
+| `r_mascot_sage_chance` | Percent of taps on which the sage appears (15/35/60/100) | 35 | `fix/stats-and-name` |
 
 ## Working rules
 - Make each change on its own branch, not directly on `main`. `main` stays as the known-good base (this handoff file is the only thing committed straight to it).

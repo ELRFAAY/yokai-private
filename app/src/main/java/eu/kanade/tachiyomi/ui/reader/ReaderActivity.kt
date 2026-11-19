@@ -309,6 +309,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
         super.onCreate(savedInstanceState)
         binding = ReaderActivityBinding.inflate(layoutInflater)
+        setupReaderNav()
         setContentView(binding.root)
         val a = obtainStyledAttributes(intArrayOf(AR.attr.windowLightStatusBar))
         val lightStatusBar = a.getBoolean(0, false)
@@ -322,7 +323,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
         binding.appBar.setBackgroundColor(contextCompatColor(R.color.surface_alpha))
         ViewCompat.setBackgroundTintList(
-            binding.readerNav.root,
+            readerNav.root,
             ColorStateList.valueOf(contextCompatColor(R.color.surface_alpha)),
         )
 
@@ -385,9 +386,9 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 .takeIf { it != Int.MIN_VALUE }
             indexChapterToShift = savedInstanceState.getLong(SHIFTED_CHAP_INDEX, Long.MIN_VALUE)
                 .takeIf { it != Long.MIN_VALUE }
-            binding.readerNav.root.isInvisible = !menuVisible
+            readerNav.root.isInvisible = !menuVisible
         } else {
-            binding.readerNav.root.isInvisible = true
+            readerNav.root.isInvisible = true
         }
 
         binding.chaptersSheet.chaptersBottomSheet.setup(this)
@@ -469,6 +470,13 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                             }
                             binding.pleaseWait.updateLayoutParams<CoordinatorLayout.LayoutParams> {
                                 marginStart = binding.root.width / 2 + hingeGapSize
+                            }
+                            if (!verticalNav) {
+                                binding.navLayout.updateLayoutParams<CoordinatorLayout.LayoutParams> {
+                                    gravity = Gravity.TOP or Gravity.CENTER
+                                    anchorGravity = Gravity.TOP or Gravity.CENTER
+                                    width = (binding.root.width - hingeGapSize) / 2 - 24.dpToPx
+                                }
                             }
                         }
                     }
@@ -563,7 +571,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 },
             ),
         )
-        with(binding.readerNav) {
+        with(readerNav) {
             listOf(leftPageText, rightPageText).forEach {
                 it.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                     val isCurrent = (viewer is R2LPagerViewer).xor(it === leftPageText)
@@ -573,11 +581,34 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
     }
 
+    /** The page bar in use: the vertical one on the right (R switch r_vertical_nav) or the original horizontal one. */
+    lateinit var readerNav: ReaderNavViews
+        private set
+    private var verticalNav = false
+
+    private fun setupReaderNav() {
+        verticalNav = preferences.rVerticalNav().get()
+        if (verticalNav) {
+            readerNav = ReaderNavViews.of(binding.readerNavVertical)
+            readerNav.pageSeekbar.vertical = true
+            binding.readerNav.root.visibility = View.GONE
+            binding.readerNavVertical.root.visibility = View.VISIBLE
+            binding.navLayout.updateLayoutParams<CoordinatorLayout.LayoutParams> {
+                width = ViewGroup.LayoutParams.WRAP_CONTENT
+                height = 380.dpToPx
+                gravity = Gravity.TOP or Gravity.RIGHT
+            }
+        } else {
+            readerNav = ReaderNavViews.of(binding.readerNav)
+        }
+    }
+
     /**
-     * The page bar is vertical: it fills the space between the top bar and the bottom toolbar,
+     * The vertical page bar fills the space between the top bar and the bottom toolbar,
      * but never gets taller than 400dp (or shorter than 150dp).
      */
     private fun updateNavHeight() {
+        if (!verticalNav) return
         val rootHeight = binding.root.height
         if (rootHeight <= 0) return
         val peek = binding.chaptersSheet.root.sheetBehavior?.peekHeight ?: 0
@@ -720,26 +751,26 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         when (keyCode) {
             KeyEvent.KEYCODE_N -> {
                 if (viewer is R2LPagerViewer) {
-                    binding.readerNav.leftChapter.performClick()
+                    readerNav.leftChapter.performClick()
                 } else {
-                    binding.readerNav.rightChapter.performClick()
+                    readerNav.rightChapter.performClick()
                 }
                 return true
             }
             KeyEvent.KEYCODE_P -> {
                 if (viewer !is R2LPagerViewer) {
-                    binding.readerNav.leftChapter.performClick()
+                    readerNav.leftChapter.performClick()
                 } else {
-                    binding.readerNav.rightChapter.performClick()
+                    readerNav.rightChapter.performClick()
                 }
                 return true
             }
             KeyEvent.KEYCODE_L -> {
-                binding.readerNav.leftChapter.performClick()
+                readerNav.leftChapter.performClick()
                 return true
             }
             KeyEvent.KEYCODE_R -> {
-                binding.readerNav.rightChapter.performClick()
+                readerNav.rightChapter.performClick()
                 return true
             }
             KeyEvent.KEYCODE_E -> {
@@ -887,8 +918,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             manuallyShiftedPages = true
         }
 
-        binding.readerNav.leftChapter.setOnClickListener { loadAdjacentChapter(false) }
-        binding.readerNav.rightChapter.setOnClickListener { loadAdjacentChapter(true) }
+        readerNav.leftChapter.setOnClickListener { loadAdjacentChapter(false) }
+        readerNav.rightChapter.setOnClickListener { loadAdjacentChapter(true) }
 
         binding.touchView.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
@@ -900,8 +931,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
         val readerNavGestureDetector = ReaderNavGestureDetector(this)
         val gestureDetector = GestureDetector(this, readerNavGestureDetector)
-        with(binding.readerNav) {
-            binding.readerNav.pageSeekbar.addOnSliderTouchListener(
+        with(readerNav) {
+            readerNav.pageSeekbar.addOnSliderTouchListener(
                 object : Slider.OnSliderTouchListener {
                     override fun onStartTrackingTouch(slider: Slider) {
                         readerNavGestureDetector.lockVertical = false
@@ -941,7 +972,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
 
         // Init listeners on bottom menu
-        binding.readerNav.pageSeekbar.addOnChangeListener { _, value, fromUser ->
+        readerNav.pageSeekbar.addOnChangeListener { _, value, fromUser ->
             if (viewer != null && fromUser) {
                 val prevValue = (viewer as? PagerViewer)?.pager?.currentItem ?: -1
                 moveToPageIndex(value.roundToInt())
@@ -949,18 +980,18 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 &&
                     ((prevValue > -1 && newValue != prevValue) || viewer !is PagerViewer)
                 ) {
-                    binding.readerNav.pageSeekbar.performHapticFeedback(HapticFeedbackConstants.TEXT_HANDLE_MOVE)
+                    readerNav.pageSeekbar.performHapticFeedback(HapticFeedbackConstants.TEXT_HANDLE_MOVE)
                 }
             }
         }
 
-        binding.readerNav.pageSeekbar.setLabelFormatter { value ->
+        readerNav.pageSeekbar.setLabelFormatter { value ->
             val pageNumber = (value + 1).roundToInt()
             (viewer as? PagerViewer)?.let {
                 if (it.config.doublePages || it.config.splitPages) {
                     if (it.hasExtraPage(value.roundToInt(), viewModel.getCurrentChapter())) {
                         val invertDoublePage = (viewer as? PagerViewer)?.config?.invertDoublePages ?: false
-                        return@setLabelFormatter if (!binding.readerNav.pageSeekbar.isRTL.xor(invertDoublePage)) {
+                        return@setLabelFormatter if (!readerNav.pageSeekbar.isRTL.xor(invertDoublePage)) {
                             "$pageNumber-${pageNumber + 1}"
                         } else {
                             "${pageNumber + 1}-$pageNumber"
@@ -1061,11 +1092,11 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             val adjChapter = viewModel.adjacentChapter(getNextChapter)
             if (adjChapter != null) {
                 if (rightButton) {
-                    binding.readerNav.rightChapter.isInvisible = true
-                    binding.readerNav.rightProgress.isVisible = true
+                    readerNav.rightChapter.isInvisible = true
+                    readerNav.rightProgress.isVisible = true
                 } else {
-                    binding.readerNav.leftChapter.isInvisible = true
-                    binding.readerNav.leftProgress.isVisible = true
+                    readerNav.leftChapter.isInvisible = true
+                    readerNav.leftProgress.isVisible = true
                 }
                 loadChapter(adjChapter)
             } else {
@@ -1286,11 +1317,11 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         setupAutoScrollButton(newViewer)
 
         if (newViewer is R2LPagerViewer) {
-            binding.readerNav.leftChapter.compatToolTipText = getString(MR.strings.next_chapter)
-            binding.readerNav.rightChapter.compatToolTipText = getString(MR.strings.previous_chapter)
+            readerNav.leftChapter.compatToolTipText = getString(MR.strings.next_chapter)
+            readerNav.rightChapter.compatToolTipText = getString(MR.strings.previous_chapter)
         } else {
-            binding.readerNav.leftChapter.compatToolTipText = getString(MR.strings.previous_chapter)
-            binding.readerNav.rightChapter.compatToolTipText = getString(MR.strings.next_chapter)
+            readerNav.leftChapter.compatToolTipText = getString(MR.strings.previous_chapter)
+            readerNav.rightChapter.compatToolTipText = getString(MR.strings.next_chapter)
         }
 
         if (newViewer is PagerViewer) {
@@ -1305,7 +1336,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
         supportActionBar?.title = manga.title
 
-        binding.readerNav.pageSeekbar.isRTL = newViewer is R2LPagerViewer
+        readerNav.pageSeekbar.isRTL = newViewer is R2LPagerViewer
 
         binding.pleaseWait.isVisible = true
         binding.pleaseWait.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in_long))
@@ -1319,7 +1350,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
     private fun setupAutoScrollButton(newViewer: BaseViewer) {
         val webtoon = newViewer as? WebtoonViewer
-        with(binding.readerNav.autoScroll) {
+        with(readerNav.autoScroll) {
             isVisible = webtoon != null && preferences.rAutoScroll().get()
             setImageResource(R.drawable.ic_play_arrow_24dp)
             setOnClickListener {
@@ -1328,7 +1359,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             }
         }
         webtoon?.autoScrollListener = { running ->
-            binding.readerNav.autoScroll.setImageResource(
+            readerNav.autoScroll.setImageResource(
                 if (running) R.drawable.ic_pause_24dp else R.drawable.ic_play_arrow_24dp,
             )
         }
@@ -1358,7 +1389,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
         if (doublePages) {
             // If we're moving from single to double, we want the current page to be the first page
-            val currentIndex = binding.readerNav.pageSeekbar.value.roundToInt()
+            val currentIndex = readerNav.pageSeekbar.value.roundToInt()
             viewModel.getCurrentChapter()?.requestedPage = currentIndex
             pViewer.hasMoved = false
             pViewer.config.shiftDoublePage = shouldShiftDoublePages(currentIndex)
@@ -1392,7 +1423,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             indexPageToShift = null
         }
         val currentChapterPageCount = viewerChapters.currChapter.pages?.size ?: 1
-        binding.readerNav.root.visibility = when {
+        readerNav.root.visibility = when {
             currentChapterPageCount == 1 -> View.GONE
             binding.chaptersSheet.root.sheetBehavior.isCollapsed() -> View.VISIBLE
             else -> View.INVISIBLE
@@ -1420,14 +1451,14 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
 
         if (viewerChapters.nextChapter == null && viewerChapters.prevChapter == null) {
-            binding.readerNav.leftChapter.isVisible = false
-            binding.readerNav.rightChapter.isVisible = false
+            readerNav.leftChapter.isVisible = false
+            readerNav.rightChapter.isVisible = false
         } else if (viewer is R2LPagerViewer) {
-            binding.readerNav.leftChapter.alpha = if (viewerChapters.nextChapter != null) 1f else 0.5f
-            binding.readerNav.rightChapter.alpha = if (viewerChapters.prevChapter != null) 1f else 0.5f
+            readerNav.leftChapter.alpha = if (viewerChapters.nextChapter != null) 1f else 0.5f
+            readerNav.rightChapter.alpha = if (viewerChapters.prevChapter != null) 1f else 0.5f
         } else {
-            binding.readerNav.rightChapter.alpha = if (viewerChapters.nextChapter != null) 1f else 0.5f
-            binding.readerNav.leftChapter.alpha = if (viewerChapters.prevChapter != null) 1f else 0.5f
+            readerNav.rightChapter.alpha = if (viewerChapters.nextChapter != null) 1f else 0.5f
+            readerNav.leftChapter.alpha = if (viewerChapters.prevChapter != null) 1f else 0.5f
         }
         if (didTransitionFromChapter) {
             MainActivity.chapterIdToExitTo = viewerChapters.currChapter.chapter.id ?: 0L
@@ -1478,11 +1509,11 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
      */
     private fun setProgressDialog(show: Boolean) {
         if (!show) {
-            binding.readerNav.leftChapter.isVisible = true
-            binding.readerNav.rightChapter.isVisible = true
+            readerNav.leftChapter.isVisible = true
+            readerNav.rightChapter.isVisible = true
 
-            binding.readerNav.leftProgress.isVisible = false
-            binding.readerNav.rightProgress.isVisible = false
+            readerNav.leftProgress.isVisible = false
+            readerNav.rightProgress.isVisible = false
             binding.chaptersSheet.root.resetChapter()
         }
         if (show) {
@@ -1524,7 +1555,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
         val currentPage = if (hasExtraPage) {
             val invertDoublePage = (viewer as? PagerViewer)?.config?.invertDoublePages ?: false
-            if (!binding.readerNav.pageSeekbar.isRTL.xor(invertDoublePage)) {
+            if (!readerNav.pageSeekbar.isRTL.xor(invertDoublePage)) {
                 "${page.number}-${page.number + 1}"
             } else {
                 "${page.number + 1}-${page.number}"
@@ -1541,20 +1572,20 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
         binding.pageNumber.text = if (resources.isLTR) "$currentPage/$totalPages" else "$totalPages/$currentPage"
         if (viewer is R2LPagerViewer) {
-            binding.readerNav.rightPageText.text = currentPage
-            binding.readerNav.leftPageText.text = totalPages
+            readerNav.rightPageText.text = currentPage
+            readerNav.leftPageText.text = totalPages
         } else {
-            binding.readerNav.leftPageText.text = currentPage
-            binding.readerNav.rightPageText.text = totalPages
+            readerNav.leftPageText.text = currentPage
+            readerNav.rightPageText.text = totalPages
         }
         if (binding.chaptersSheet.chaptersBottomSheet.selectedChapterId != page.chapter.chapter.id) {
             binding.chaptersSheet.chaptersBottomSheet.refreshList()
         }
         // Set seekbar progress
-        binding.readerNav.pageSeekbar.valueTo = max(pages.lastIndex.toFloat(), 1f)
+        readerNav.pageSeekbar.valueTo = max(pages.lastIndex.toFloat(), 1f)
         val progress = page.index + if (hasExtraPage) 1 else 0
         // For a double page, show the last 2 pages as if it was the final part of the seekbar
-        binding.readerNav.pageSeekbar.value = (if (progress == pages.lastIndex) progress else page.index).toFloat()
+        readerNav.pageSeekbar.value = (if (progress == pages.lastIndex) progress else page.index).toFloat()
     }
 
     /**

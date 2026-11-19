@@ -3,6 +3,8 @@ package eu.kanade.tachiyomi.ui.main
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import uy.kohesive.injekt.injectLazy
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -20,6 +22,7 @@ import kotlin.math.atan2
 import kotlin.math.exp
 import kotlin.math.hypot
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 
@@ -80,6 +83,21 @@ class RMascotView(context: Context) : View(context) {
         Mood.BACK to load(R.drawable.r_mascot_back),
     )
 
+    // the wise old snake (hat and beard): sometimes shows up when you tap, and gives useless advice
+    private val sageFaces: Map<Mood, Bitmap?> by lazy {
+        mapOf(
+            Mood.HAPPY to load(R.drawable.r_sage_happy),
+            Mood.HURT to load(R.drawable.r_sage_hurt),
+            Mood.SCARED to load(R.drawable.r_sage_scared),
+            Mood.DIZZY to load(R.drawable.r_sage_dizzy),
+            Mood.SAD to load(R.drawable.r_sage_sad),
+            Mood.BLINK to load(R.drawable.r_sage_blink),
+            // there is no sage back view: the normal one is used while flying away fast
+        )
+    }
+    private val prefs: PreferencesHelper by injectLazy()
+    private var sageUntil = 0L
+
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF6BFF6B.toInt() }
     private val bubbleFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
@@ -135,7 +153,9 @@ class RMascotView(context: Context) : View(context) {
 
     // face crossfade
     private var shownMood = Mood.HAPPY
-    private var fromMood = Mood.HAPPY
+    private var shownSage = false
+    private var shownBitmap: Bitmap? = null
+    private var fromBitmap: Bitmap? = null
     private var fade = 1f
     private var fadeSeconds = 0.14f
     private var showBack = false // with hysteresis, so the back view does not flicker at the speed limit
@@ -340,18 +360,33 @@ class RMascotView(context: Context) : View(context) {
         if (now >= blinkAt + BLINK_MS) blinkAt = now + 2500L + (Math.random() * 3000.0).toLong()
 
         val mood = currentMood(now, idle)
-        if (mood != shownMood) {
-            fromMood = shownMood
-            shownMood = mood
-            fade = 0f
-            fadeSeconds = if (mood == Mood.BLINK || fromMood == Mood.BLINK) 0.05f else 0.14f
+        val sage = now < sageUntil
+        val bitmap = (if (sage) sageFaces[mood] else null) ?: faces[mood] ?: faces[Mood.HAPPY]
+        if (bitmap !== shownBitmap) {
+            fromBitmap = shownBitmap
+            fade = if (fromBitmap == null) 1f else 0f
+            fadeSeconds = when {
+                sage != shownSage -> 0.25f // changing into / out of the wise old snake
+                mood == Mood.BLINK || shownMood == Mood.BLINK -> 0.05f
+                else -> 0.14f
+            }
+            shownBitmap = bitmap
         }
+        shownMood = mood
+        shownSage = sage
         if (fade < 1f) fade = (fade + dt / fadeSeconds).coerceAtMost(1f)
     }
 
-    private fun say(text: String) {
+    private fun say(text: String, millis: Long = 2200L) {
         bubbleText = text
-        bubbleUntil = SystemClock.uptimeMillis() + 2200
+        bubbleUntil = SystemClock.uptimeMillis() + millis
+    }
+
+    /** The wise old snake takes over for a few seconds and says something that helps nobody. */
+    private fun sageAdvice(now: Long) {
+        sageUntil = now + 7500
+        happyUntil = now + 1200
+        say(ADVICE.random(), 7000L)
     }
 
     // ---- touch: only the snake itself takes touches ----
@@ -409,7 +444,12 @@ class RMascotView(context: Context) : View(context) {
                     happyUntil = now + 900
                     tiltSpring.kick(if (Math.random() < 0.5) -280f else 280f)
                     scaleYSpring.kick(-5f)
-                    say(TAP.random())
+                    val chance = prefs.rMascotSageChance().get()
+                    if (prefs.rMascotSage().get() && Math.random() * 100.0 < chance) {
+                        sageAdvice(now)
+                    } else {
+                        say(TAP.random())
+                    }
                 } else if (speed > 350f * density) {
                     state = State.FLYING
                     vx = tvx
@@ -447,8 +487,8 @@ class RMascotView(context: Context) : View(context) {
         // the shake fades out smoothly instead of stopping dead
         val shake = sin(now / 22f) * 5f * density * ((hurtUntil - now) / 450f).coerceIn(0f, 1f)
 
-        val current = faces[shownMood] ?: faces[Mood.HAPPY] ?: return
-        val previous = if (fade < 1f) faces[fromMood] else null
+        val current = shownBitmap ?: return
+        val previous = if (fade < 1f) fromBitmap else null
 
         canvas.save()
         canvas.translate(x + shake, y + bob)
@@ -493,6 +533,23 @@ class RMascotView(context: Context) : View(context) {
         }
     }
 
+    /** Splits [text] into lines no wider than [maxWidth] (long advice does not fit on one line). */
+    private fun wrap(text: String, maxWidth: Float): List<String> {
+        val lines = ArrayList<String>()
+        var current = ""
+        for (word in text.split(' ')) {
+            val candidate = if (current.isEmpty()) word else "$current $word"
+            if (current.isEmpty() || textPaint.measureText(candidate) <= maxWidth) {
+                current = candidate
+            } else {
+                lines.add(current)
+                current = word
+            }
+        }
+        if (current.isNotEmpty()) lines.add(current)
+        return lines
+    }
+
     private fun drawBubble(canvas: Canvas, now: Long) {
         val text = bubbleText ?: return
         if (now > bubbleUntil) {
@@ -500,10 +557,13 @@ class RMascotView(context: Context) : View(context) {
             return
         }
         val pad = 10f * density
-        val fm = textPaint.fontMetrics
-        val bw = textPaint.measureText(text) + pad * 2f
-        val bh = fm.descent - fm.ascent + pad * 1.4f
         val margin = 8f * density
+        val fm = textPaint.fontMetrics
+        val lineHeight = fm.descent - fm.ascent
+        val lines = wrap(text, min(width - margin * 2f - pad * 2f, 230f * density))
+        val textWidth = lines.maxOfOrNull { textPaint.measureText(it) } ?: return
+        val bw = textWidth + pad * 2f
+        val bh = lineHeight * lines.size + pad * 1.4f
 
         val left = (x - bw / 2f).coerceIn(margin, max(margin, width - bw - margin))
         var top = y - half - bh - 14f * density
@@ -525,7 +585,9 @@ class RMascotView(context: Context) : View(context) {
         bubblePath.close()
         canvas.drawPath(bubblePath, bubbleFill)
 
-        canvas.drawText(text, bubbleRect.centerX(), bubbleRect.top + pad * 0.7f - fm.ascent, textPaint)
+        lines.forEachIndexed { i, line ->
+            canvas.drawText(line, bubbleRect.centerX(), bubbleRect.top + pad * 0.7f - fm.ascent + lineHeight * i, textPaint)
+        }
     }
 
     private companion object {
@@ -538,5 +600,33 @@ class RMascotView(context: Context) : View(context) {
         val DIZZY_TALK = listOf("الدنيا بتلف بيا...", "أنا شايف نجوم!", "لفّلي دماغي!")
         val SAD_TALK = listOf("حرام عليك...", "ده أنا زعلان!", "كده يا صاحبي؟")
         val TAP = listOf("أيوه؟", "عايز إيه؟", "بس بتدغدغني!")
+
+        /** The wise old snake's advice: all of it true, none of it useful. On purpose. */
+        val ADVICE = listOf(
+            "نصيحة الحكيم: لو قرأت فصل، تكون قرأت فصل.",
+            "تذكّر دايماً: الصفحة الأخيرة بتيجي بعد الصفحة اللي قبلها.",
+            "لو الشاشة اتطفت، شغّلها. وده سر النجاح.",
+            "اللي بينام مش بيقرأ، واللي بيقرأ مش بينام. خد بالك.",
+            "الماية مبلولة. أنا قلت لك دلوقتي.",
+            "الأحسن تقلب الصفحة بإصبعك، مش بمناخيرك.",
+            "لو التطبيق مفتوح، فإنت جواه.",
+            "المانجا بتخلص لما تخلص.",
+            "الفصل الجاي بعد الفصل اللي فات، ودايماً كده.",
+            "لو جعت، الأكل ممكن يساعد.",
+            "الحكمة بتقول: اللي ما يعرفش، ما يعرفش.",
+            "السر في القراءة إنك تقرأ.",
+            "كل شيء بيبدأ بخطوة، وأحياناً بفصل.",
+            "الصبر مفتاح الفرج، ومفتاح الباب كمان.",
+            "النهاية السعيدة أحسن من النهاية الحزينة. في الغالب.",
+            "ما تقلقش على الأحداث الجاية، هتيجي لوحدها.",
+            "اللي يقرأ بسرعة يخلص بسرعة، واللي يقرأ ببطء يخلص ببطء.",
+            "اشرب ماية. مش لازم دلوقتي، بس في وقت ما.",
+            "لو غمّضت عينيك، الصفحات بتختفي. جرّب بنفسك.",
+            "لو الفصل طويل، اقرأه على مرتين. أو مرة. أو ما تقراهوش.",
+            "اقلب الموبايل مقلوب وهتشوف المانجا مقلوبة. دي نصيحة ذهب.",
+            "الأسبوع فيه سبع أيام، كلهم مناسبين للقراءة.",
+            "لو لقيت نفسك بتقرأ، يبقى إنت بتقرأ.",
+            "الصفحة اللي ما فتحتهاش، ما قرأتهاش. اتعلّم من الحكيم.",
+        )
     }
 }

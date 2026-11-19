@@ -86,7 +86,7 @@ class ReaderChapterSheet @JvmOverloads constructor(context: Context, attrs: Attr
             binding.chapterRecycler.isFocusable = sheetBehavior.isExpanded()
             val canShowNav = viewModel.getCurrentChapter()?.pages?.size ?: 1 > 1
             if (canShowNav) {
-                activity.binding.readerNav.root.isVisible = sheetBehavior.isCollapsed()
+                activity.readerNav.root.isVisible = sheetBehavior.isCollapsed()
             }
         }
 
@@ -96,7 +96,7 @@ class ReaderChapterSheet @JvmOverloads constructor(context: Context, attrs: Attr
                     binding.root.isVisible = true
                     binding.pill.alpha = (1 - max(0f, progress)) * 0.25f
                     val trueProgress = max(progress, 0f)
-                    activity.binding.readerNav.root.alpha = (1 - abs(progress)).coerceIn(0f, 1f)
+                    activity.readerNav.root.alpha = (1 - abs(progress)).coerceIn(0f, 1f)
                     backgroundTintList =
                         ColorStateList.valueOf(lerpColor(primary, fullPrimary, trueProgress))
                     binding.chapterRecycler.alpha = trueProgress
@@ -125,20 +125,20 @@ class ReaderChapterSheet @JvmOverloads constructor(context: Context, attrs: Attr
                             binding.chapterRecycler.height / 2 - 30.dpToPx,
                         )
                         if (canShowNav) {
-                            activity.binding.readerNav.root.isVisible = true
+                            activity.readerNav.root.isVisible = true
                         }
-                        activity.binding.readerNav.root.alpha = 1f
+                        activity.readerNav.root.alpha = 1f
                     }
                     if (state == BottomSheetBehavior.STATE_DRAGGING || state == BottomSheetBehavior.STATE_SETTLING) {
                         if (canShowNav) {
-                            activity.binding.readerNav.root.isVisible = true
+                            activity.readerNav.root.isVisible = true
                         }
                     }
                     if (state == BottomSheetBehavior.STATE_EXPANDED) {
                         if (canShowNav) {
-                            activity.binding.readerNav.root.isInvisible = true
+                            activity.readerNav.root.isInvisible = true
                         }
-                        activity.binding.readerNav.root.alpha = 0f
+                        activity.readerNav.root.alpha = 0f
                         binding.chapterRecycler.alpha = 1f
                         if (activity.sheetManageNavColor) {
                             activity.window.navigationBarColor =
@@ -146,9 +146,9 @@ class ReaderChapterSheet @JvmOverloads constructor(context: Context, attrs: Attr
                         }
                     }
                     if (state == BottomSheetBehavior.STATE_HIDDEN) {
-                        activity.binding.readerNav.root.alpha = 0f
+                        activity.readerNav.root.alpha = 0f
                         if (canShowNav) {
-                            activity.binding.readerNav.root.isInvisible = true
+                            activity.readerNav.root.isInvisible = true
                         }
                         binding.root.isInvisible = true
                     } else if (binding.root.isVisible) {
@@ -188,8 +188,8 @@ class ReaderChapterSheet @JvmOverloads constructor(context: Context, attrs: Attr
                 false
             } else {
                 if (item.chapter.id != viewModel.getCurrentChapter()?.chapter?.id) {
-                    activity.binding.readerNav.leftChapter.isInvisible = true
-                    activity.binding.readerNav.rightChapter.isInvisible = true
+                    activity.readerNav.leftChapter.isInvisible = true
+                    activity.readerNav.rightChapter.isInvisible = true
                     activity.isScrollingThroughPagesOrChapters = true
 
                     loadingPos = position

@@ -7,6 +7,9 @@ import java.util.concurrent.TimeUnit
 
 object StatsHelper {
 
+    private val rStatsMinutes: Boolean
+        get() = uy.kohesive.injekt.Injekt.get<eu.kanade.tachiyomi.data.preference.PreferencesHelper>().rStatsMinutes().get()
+
     private val STATUS_COLOR_LIST = arrayListOf(
         Color.parseColor("#3BAEEA"),
         Color.parseColor("#7BD555"),
@@ -91,7 +94,7 @@ object StatsHelper {
         return SpannableStringBuilder().apply {
             if (days != 0L) append("${days}d")
             if (hours != 0L) append("${hours}h")
-            if (minutes != 0L) append("${minutes}min")
+            if (minutes != 0L && (days == 0L || rStatsMinutes)) append("${minutes}min")
             if (seconds != 0L && days == 0L && hours == 0L) append("${seconds}s")
         }.replace(Regex("(\\D)(?=\\d)"), "$0 ").ifBlank { blankValue }
     }

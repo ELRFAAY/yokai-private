@@ -665,7 +665,7 @@ class LibraryPresenter(
         // Making sure `allCategories` is stable for `.sort()`
         val categoryOrderMap = allCategories.associate { it.id to it.order }
         // Pinned manga always come first, whatever the sort is.
-        val pinnedIds = libraryPreferences.pinnedManga().get()
+        val pinnedIds = if (PinnedManga.enabled) libraryPreferences.pinnedManga().get() else emptySet()
         fun LibraryMangaItem.isPinnedItem() = manga.manga.id?.toString() in pinnedIds
 
         val sortFn: (LibraryItem, LibraryItem) -> Int = { i1, i2 ->
@@ -1260,6 +1260,7 @@ class LibraryPresenter(
 
     /** Pins (or unpins) the given manga: pinned manga are listed first in the library. */
     fun setPinned(mangas: List<Manga>, pinned: Boolean) {
+        if (!PinnedManga.enabled) return
         val preference = libraryPreferences.pinnedManga()
         val ids = preference.get().toMutableSet()
         mangas.mapNotNull { it.id?.toString() }.forEach { if (pinned) ids.add(it) else ids.remove(it) }

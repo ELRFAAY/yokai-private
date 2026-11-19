@@ -70,20 +70,25 @@
         android:layout_height="match_parent"
         />
 
-    <!-- vertical bar on the right edge, sitting right above the bottom toolbar (its height is set in code) -->
+    <!-- the page bar container. R switch r_vertical_nav: ON = vertical bar on the right edge (sized in code),
+         OFF = the original horizontal bar. Both bars are inflated; the unused one is hidden in code. -->
     <FrameLayout
         android:id="@+id/nav_layout"
-        android:layout_width="wrap_content"
-        android:layout_height="380dp"
-        android:layout_marginLeft="6dp"
-        android:layout_marginRight="6dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
         android:paddingBottom="6dp"
         app:layout_anchorGravity="top"
-        android:layout_gravity="top|right"
+        android:layout_gravity="top"
         app:layout_anchor="@id/chapters_sheet" >
 
         <include layout="@layout/reader_nav"
             android:id="@+id/reader_nav" />
+
+        <include layout="@layout/reader_nav_vertical"
+            android:id="@+id/reader_nav_vertical"
+            android:visibility="gone" />
     </FrameLayout>
 
     <include layout="@layout/reader_chapters_sheet"

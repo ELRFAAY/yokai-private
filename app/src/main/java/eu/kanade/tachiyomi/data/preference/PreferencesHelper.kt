@@ -290,6 +290,27 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Language: open the app in Arabic unless another language was picked in Settings > General. */
     fun rForceArabic() = preferenceStore.getBoolean("r_force_arabic", true)
 
+    /** Reader: the page / chapter / auto-scroll bar is a vertical bar on the right edge (off = original horizontal bar). */
+    fun rVerticalNav() = preferenceStore.getBoolean("r_vertical_nav", true)
+
+    /** Reader: card with the time spent in the chapter you just finished, shown between chapters. */
+    fun rChapterTimeCard() = preferenceStore.getBoolean("r_chapter_time_card", true)
+
+    /** Library: pin manga to the top of their category (selection menu action, pin marker on the title). */
+    fun rPinManga() = preferenceStore.getBoolean("r_pin_manga", true)
+
+    /** Downloads: also find folders written by Mihon (hash suffix, non-ASCII characters written as hex). */
+    fun rMihonFolders() = preferenceStore.getBoolean("r_mihon_folders", true)
+
+    /** Statistics: show minutes in the reading time even when it is more than a day. */
+    fun rStatsMinutes() = preferenceStore.getBoolean("r_stats_minutes", true)
+
+    /** Mascot: the wise old snake sometimes shows up and gives useless advice (a joke). */
+    fun rMascotSage() = preferenceStore.getBoolean("r_mascot_sage", true)
+
+    /** Mascot: how often (percent of taps) the wise old snake shows up. */
+    fun rMascotSageChance() = preferenceStore.getInt("r_mascot_sage_chance", 35)
+
     fun downloadNewChapters() = preferenceStore.getBoolean(Keys.downloadNew, false)
 
     fun downloadNewChaptersInCategories() = preferenceStore.getStringSet("download_new_categories", emptySet())

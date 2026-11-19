@@ -73,7 +73,11 @@ class PagerTransitionHolder(
             transition,
             viewer.downloadManager,
             viewer.activity.viewModel.manga,
-            readMillis = { viewer.activity.viewModel.getChapterReadMillis(transition.from) },
+            readMillis = if (viewer.activity.preferences.rChapterTimeCard().get()) {
+                { viewer.activity.viewModel.getChapterReadMillis(transition.from) }
+            } else {
+                null
+            },
         )
 
         transition.to?.let { observeStatus(it) }

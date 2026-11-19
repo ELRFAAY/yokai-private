@@ -32,6 +32,8 @@ class DownloadProvider(private val context: Context) {
      */
     private val downloadPreferences: DownloadPreferences by injectLazy()
     private val storageManager: StorageManager by injectLazy()
+    private val rMihonFolders: Boolean
+        get() = uy.kohesive.injekt.Injekt.get<eu.kanade.tachiyomi.data.preference.PreferencesHelper>().rMihonFolders().get()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -225,12 +227,14 @@ class DownloadProvider(private val context: Context) {
      */
     fun getSourceDirNames(source: Source): List<String> {
         val raw = source.toString()
+        if (!rMihonFolders) return listOf(raw)
         return listOf(raw, DiskUtil.buildValidFilename(raw), asciiHexName(raw)).distinct()
     }
 
     /** Every name the manga folder may have on disk (plain, or Mihon's non-ASCII-as-hex form). */
     fun getMangaDirNames(manga: Manga): List<String> {
         val title = manga.originalTitle
+        if (!rMihonFolders) return listOf(DiskUtil.buildValidFilename(title))
         return listOf(DiskUtil.buildValidFilename(title), asciiHexName(title)).distinct()
     }
 
@@ -292,10 +296,13 @@ class DownloadProvider(private val context: Context) {
 
             // Mihon names folders "<scanlator>_<name>_<first 6 chars of md5(chapter url)>" when its
             // "chapter name hash" option is on, so look for those too (works for .cbz as well).
-            val hashSuffix = "_" + Hash.md5(chapter.url).take(6)
-            val baseNames = toList()
-            baseNames.forEach { add(it + hashSuffix) }
+            if (rMihonFolders) {
+                val hashSuffix = "_" + Hash.md5(chapter.url).take(6)
+                val baseNames = toList()
+                baseNames.forEach { add(it + hashSuffix) }
+            }
         }.let { names ->
+            if (!rMihonFolders) return@let names.distinct()
             // ...and the same names the way Mihon writes them with non-ASCII characters turned into hex
             (names + names.map { asciiHexName(it) }).distinct()
         }
