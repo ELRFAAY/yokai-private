@@ -285,6 +285,11 @@ In `Downloader.splitTallImageIfNeeded`, the "file not found" case does `throw Er
 - How to follow CI without downloading anything: Actions API for status; Gradle errors from check-run annotations (`build_r.yml` prints them). The sandbox cannot download artifacts; the owner downloads `yokai-r-release` himself from the run page.
 - Still open (reported by the previous session): manga-details crash `lateinit property manga has not been initialized` (likely `setCurrentExcludedScanlators` called before `refreshMangaFromDb()` in `MangaDetailsPresenter.onCreate`); the \"character judges a series\" idea (#17); owner decisions pending: approval of the phrases, whether to swap the old mascot faces for the new model images, Firebase/updater, and the app-name conflict \"Yokai\" vs \"Yokai Private\". Note: `feat/r-updater` stays parked (see change log).
 
+### Owner input #23 (2026-11-19, recorded before building): the snake falls asleep when the screen is idle
+- While the cobra build was running the owner said: continue with the characters. If the screen is not moved or touched for about **a minute**, the snake **brings a blanket and sleeps**, or does one of the two sleep reactions, e.g. says \"when you're ready, wake me up\" or something like that.
+- My reading: do both reactions as one sequence on the **home-screen mascot** (`RMascotView`): after 60 s without any touch in the app it says a going-to-sleep line, closes its eyes (existing `blink` face), a blanket slides up over it and \"z z z\" float above; any touch anywhere wakes it (blanket slides off, wake-up line). The blanket is **drawn in code** (no blanket picture exists; the owner can send one later). Detected with `Activity.onUserInteraction()` because the overlay itself only receives touches that land on the snake.
+- Planned: branch `feat/r-mascot-sleep` stacked on `feat/r-reader-cobra` (so it contains the compile fix `4604c1b`), a new R switch `r_mascot_sleep` (default on). Phrases are drafts, **not approved by the owner** (the first one follows his own wording).
+
 ## Planned changes (to be filled in as the owner decides)
 - [x] Change `applicationId` so it installs next to the original (`feat/r-branding`, not built)
 - [~] App name: placeholder "Yokai R" on `feat/r-branding`; final name pending
