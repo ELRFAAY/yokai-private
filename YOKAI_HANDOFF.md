@@ -49,6 +49,8 @@ NOT DONE / FOR THE NEXT ACCOUNT (owner message of 2026-11-21, relayed by him):
 - Not done: arrow opens a screen per list (no inline expand); app-wide animation polish (only Settings > R got icons: `rIcon` + new `ic_r_*` vectors). If compile fails, suspects: `OverflowDialog` (ArrayAdapter/TextViewCompat imports), `RecentsPresenter` rawReading/cReading rename, `SettingsRController.rIcon`.
 - Owner wants a build check ~every 20 min: Claude cannot run in the background (free plan, no scheduling); check the last build whenever he writes ("شيّك").
 - This file lives on `main`; the branch still has an old long copy.
+- Build 44899174925 (`d7467f1`: vault + icons) finished GREEN; owner has not reported yet.
+- Stick scene REWRITTEN (open item 2+3 done in code, owner said "next"): `RReaderCobraView.drawScene` draws both dragons together: little dragon LEFT (`r_mascot_happy`, then `r_stick_small_hit`), wise dragon mirrored, slides in from the RIGHT; frame is placed so the stick tip of `r_stick_wise_hit` (native 338,278 of 402x312, found by pixel analysis) lands on the small one's head; small is squashed (`squash`), then pulled into the wise one's coils (`grab`), wise (`walk_with_small`) exits right (`exitT`). Speaker bubbles sit to the right of whoever talks. Tap during the scene = silent dismiss. NOT compiled/tested; tune sizes (`s=118dp`, `k=150dp/402`) on the phone if the stick tip misses the head.
 
 ## Next steps
 1. Owner installs the APK from run 44889187381 (green) and reports what he sees on the phone.
