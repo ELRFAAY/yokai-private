@@ -134,6 +134,19 @@
                     app:iconTint="?attr/colorOnBackground" />
 
             </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/r_files_button"
+                style="@style/Theme.Widget.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:maxLines="1"
+                android:text="الملفات"
+                android:textColor="?attr/colorOnBackground"
+                android:visibility="gone"
+                app:icon="@drawable/ic_expand_more_24dp"
+                app:iconTint="#4CAF50" />
         </LinearLayout>
 
         <ImageView

@@ -24,6 +24,7 @@ import eu.kanade.tachiyomi.ui.library.LibraryController
 import eu.kanade.tachiyomi.ui.library.LibraryGroup
 import eu.kanade.tachiyomi.ui.library.LibraryMangaItem
 import eu.kanade.tachiyomi.ui.main.MainActivity
+import eu.kanade.tachiyomi.ui.more.RVault
 import eu.kanade.tachiyomi.util.system.dpToPx
 import eu.kanade.tachiyomi.util.system.launchUI
 import eu.kanade.tachiyomi.util.system.rootWindowInsetsCompat
@@ -158,6 +159,12 @@ class FilterBottomSheet @JvmOverloads constructor(context: Context, attrs: Attri
         }
         binding.viewOptions.setOnClickListener {
             onGroupClicked(ACTION_DISPLAY)
+        }
+
+        // R: hidden-files vault entry (fingerprint / pattern first). Hidden when the switch in Settings > R is off.
+        binding.rFilesButton.isVisible = preferences.rHideLists().get()
+        binding.rFilesButton.setOnClickListener {
+            (controller.activity as? MainActivity)?.let { RVault(it).open() }
         }
 
         sheetBehavior?.isGestureInsetBottomIgnored = true
