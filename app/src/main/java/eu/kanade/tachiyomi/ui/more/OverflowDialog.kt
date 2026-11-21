@@ -3,8 +3,13 @@ package eu.kanade.tachiyomi.ui.more
 import android.app.Dialog
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.TextView
+import androidx.biometric.BiometricPrompt
 import androidx.core.graphics.ColorUtils
+import androidx.core.widget.TextViewCompat
 import androidx.core.text.buildSpannedString
 import androidx.core.text.color
 import androidx.core.view.WindowInsetsControllerCompat
@@ -22,11 +27,16 @@ import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.databinding.TachiOverflowLayoutBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import eu.kanade.tachiyomi.ui.main.MainActivity
+import eu.kanade.tachiyomi.util.RHiddenLists
 import eu.kanade.tachiyomi.util.lang.addBetaTag
 import eu.kanade.tachiyomi.util.lang.withSubtitle
+import eu.kanade.tachiyomi.util.system.AuthenticatorUtil
+import eu.kanade.tachiyomi.util.system.AuthenticatorUtil.isAuthenticationSupported
+import eu.kanade.tachiyomi.util.system.AuthenticatorUtil.startAuthentication
 import eu.kanade.tachiyomi.util.system.dpToPx
 import eu.kanade.tachiyomi.util.system.getResourceColor
 import eu.kanade.tachiyomi.util.system.openInBrowser
+import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.launch
 import uy.kohesive.injekt.injectLazy
 import yokai.domain.category.interactor.GetCategories
@@ -126,17 +136,34 @@ class OverflowDialog(activity: MainActivity) : Dialog(activity, R.style.Overflow
             dismiss()
         }
 
-        // R: hide / show library lists (categories); a hidden list stays hidden until it is shown again here
+        // R: hidden files vault. The row has a neutral name and a green arrow so nobody guesses what it holds;
+        // it asks for fingerprint / the phone's pattern or PIN before showing anything.
         with(binding.hideListsItem) {
             isVisible = preferences.rHideLists().get()
-            val hiddenCount = preferences.rHiddenLists().get().size
-            text = "إخفاء / إظهار القوائم".withSubtitle(
-                context,
-                if (hiddenCount > 0) "مخفي حالياً: $hiddenCount" else "كل القوائم ظاهرة",
-            )
+            text = VAULT_NAME
+            setIcon(R.drawable.ic_expand_more_24dp)
+            setIconColor(VAULT_GREEN)
             setOnClickListener {
                 dismiss()
-                showHideListsDialog(activity)
+                if (!activity.isAuthenticationSupported()) {
+                    activity.toast("فعّل بصمة أو قفل شاشة (نمط / رقم) في الموبايل الأول")
+                    return@setOnClickListener
+                }
+                activity.startAuthentication(
+                    VAULT_NAME,
+                    "بالبصمة أو النمط",
+                    confirmationRequired = false,
+                    callback = object : AuthenticatorUtil.AuthenticationCallback() {
+                        override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                            super.onAuthenticationSucceeded(result)
+                            showVault(activity)
+                        }
+
+                        override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                            super.onAuthenticationError(errorCode, errString)
+                        }
+                    },
+                )
             }
         }
 
@@ -152,13 +179,48 @@ class OverflowDialog(activity: MainActivity) : Dialog(activity, R.style.Overflow
         }
     }
 
-    private fun showHideListsDialog(activity: MainActivity) {
+    /** The vault: every hidden list with a down arrow; tapping one opens its manga in the normal library look. */
+    private fun showVault(activity: MainActivity) {
+        activity.lifecycleScope.launch {
+            val all = getCategories.await().filter { it.id != null && it.id != 0 }
+            val hiddenIds = RHiddenLists.hiddenListIds(preferences)
+            val hiddenLists = all.filter { it.id in hiddenIds }
+            val builder = MaterialAlertDialogBuilder(activity).setTitle(VAULT_NAME)
+            if (hiddenLists.isEmpty()) {
+                builder.setMessage("مفيش حاجة هنا لسه. دوس \"اختيار التصنيفات\" عشان تخفي تصنيف.")
+            } else {
+                val adapter = object : ArrayAdapter<String>(
+                    activity,
+                    AR.layout.simple_list_item_1,
+                    hiddenLists.map { it.name },
+                ) {
+                    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                        val row = super.getView(position, convertView, parent) as TextView
+                        row.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_expand_more_24dp, 0)
+                        TextViewCompat.setCompoundDrawableTintList(row, ColorStateList.valueOf(VAULT_GREEN))
+                        return row
+                    }
+                }
+                builder.setAdapter(adapter) { _, which ->
+                    val list = hiddenLists[which]
+                    list.id?.let { activity.showRVaultList(list.name, it) }
+                }
+            }
+            builder
+                .setNeutralButton("اختيار التصنيفات") { _, _ -> showChooseListsDialog(activity) }
+                .setNegativeButton("إغلاق", null)
+                .show()
+        }
+    }
+
+    /** Check a list to hide it; un-check it to take it out (it comes back to the library, Updates and History). */
+    private fun showChooseListsDialog(activity: MainActivity) {
         activity.lifecycleScope.launch {
             val lists = getCategories.await().filter { it.id != null && it.id != 0 }
             if (lists.isEmpty()) {
                 MaterialAlertDialogBuilder(activity)
-                    .setTitle("إخفاء / إظهار القوائم")
-                    .setMessage("مفيش قوائم (تصنيفات) في المكتبة لسه.")
+                    .setTitle(VAULT_NAME)
+                    .setMessage("مفيش تصنيفات في المكتبة لسه.")
                     .setPositiveButton(android.R.string.ok, null)
                     .show()
                 return@launch
@@ -166,7 +228,7 @@ class OverflowDialog(activity: MainActivity) : Dialog(activity, R.style.Overflow
             val hidden = preferences.rHiddenLists().get()
             val checked = BooleanArray(lists.size) { lists[it].id.toString() in hidden }
             MaterialAlertDialogBuilder(activity)
-                .setTitle("القوائم المخفية")
+                .setTitle("علّم التصنيف عشان يتخفى")
                 .setMultiChoiceItems(lists.map { it.name }.toTypedArray(), checked) { _, which, isChecked ->
                     checked[which] = isChecked
                 }
@@ -177,7 +239,7 @@ class OverflowDialog(activity: MainActivity) : Dialog(activity, R.style.Overflow
                     val now = lists.filterIndexed { i, _ -> checked[i] }.map { it.id.toString() }
                     preferences.rHiddenLists().set((keep + now).toMutableSet())
                 }
-                .setNeutralButton("إظهار الكل") { _, _ ->
+                .setNeutralButton("إخراج الكل") { _, _ ->
                     preferences.rHiddenLists().set(mutableSetOf())
                 }
                 .setNegativeButton(android.R.string.cancel, null)
@@ -187,5 +249,7 @@ class OverflowDialog(activity: MainActivity) : Dialog(activity, R.style.Overflow
 
     private companion object {
         private const val URL_HELP = "https://tachiyomi.org/docs/guides/troubleshooting/"
+        private const val VAULT_NAME = "الملفات"
+        private val VAULT_GREEN = Color.rgb(76, 175, 80)
     }
 }

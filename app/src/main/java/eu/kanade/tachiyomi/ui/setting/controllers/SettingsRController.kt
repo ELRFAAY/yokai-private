@@ -8,13 +8,17 @@ import android.view.animation.AnimationSet
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.LayoutAnimationController
 import android.view.animation.TranslateAnimation
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.preference.Preference
 import androidx.preference.PreferenceScreen
+import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.preference.changesIn
 import eu.kanade.tachiyomi.ui.setting.SettingsLegacyController
 import eu.kanade.tachiyomi.ui.setting.bindTo
 import eu.kanade.tachiyomi.ui.setting.intListPreference
 import eu.kanade.tachiyomi.ui.setting.preferenceCategory
 import eu.kanade.tachiyomi.ui.setting.switchPreference
+import eu.kanade.tachiyomi.util.system.getResourceColor
 
 /**
  * "R" settings (تعديلات R): one switch per modification made in this fork, grouped by where it shows up.
@@ -44,6 +48,14 @@ class SettingsRController : SettingsLegacyController() {
         listView.layoutAnimation = LayoutAnimationController(enter, 0.09f)
     }
 
+    /** Every row gets a small icon in the accent color so the owner recognizes it without reading the text. */
+    private fun Preference.rIcon(res: Int) {
+        val ctx = this.context
+        icon = AppCompatResources.getDrawable(ctx, res)?.mutate()?.apply {
+            setTint(ctx.getResourceColor(R.attr.colorSecondary))
+        }
+    }
+
     override fun setupPreferenceScreen(screen: PreferenceScreen) = screen.apply {
         title = "تعديلات R"
 
@@ -53,6 +65,7 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rForceArabic())
                 title = "اللغة العربية دائماً"
+                rIcon(R.drawable.ic_language_24dp)
                 summary = "يفتح التطبيق بالعربية في كل مرة، إلا إذا اخترت لغة أخرى من الإعدادات العامة. " +
                     "عند الإيقاف: لغة النظام. يسري بعد إعادة تشغيل التطبيق."
             }
@@ -60,6 +73,7 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rSingleAppIcon())
                 title = "أيقونة واحدة للتطبيق"
+                rIcon(R.drawable.ic_appearance_outline_24dp)
                 summary = "يُخفي منتقي الأيقونات ويبقى شعار R فقط. عند الإيقاف: منتقي الأيقونات الأصلي."
             }
         }
@@ -70,6 +84,7 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rVerticalNav())
                 title = "شريط الصفحات الرأسي"
+                rIcon(R.drawable.ic_swap_vert_24dp)
                 summary = "شريط طولي على اليمين فوق شريط الأدوات: التقدم يمتلئ من الأسفل للأعلى، " +
                     "وأسفله زر التشغيل التلقائي. عند الإيقاف: الشريط الأفقي الأصلي. يسري عند فتح القارئ من جديد."
             }
@@ -77,6 +92,7 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rChapterTimeCard())
                 title = "بطاقة مدة الفصل"
+                rIcon(R.drawable.ic_progress_clock_24dp)
                 summary = "بين الفصول يظهر الثعبان ويقول كم قضيت من الوقت في الفصل الذي أنهيته. " +
                     "عند الإيقاف: بدون بطاقة."
             }
@@ -84,12 +100,14 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rAutoScroll())
                 title = "زر التمرير التلقائي"
+                rIcon(R.drawable.ic_play_arrow_24dp)
                 summary = "زر تشغيل في شريط القارئ يحرّك الصفحات تلقائياً (الوضع المستمر فقط). عند الإيقاف: بدون زر."
             }
 
             intListPreference(activity) {
                 bindTo(preferences.rAutoScrollSpeed())
                 title = "سرعة التمرير التلقائي"
+                rIcon(R.drawable.ic_tune_24dp)
                 entries = listOf("بطيئة جداً", "بطيئة", "عادية", "سريعة", "سريعة جداً")
                 entryValues = listOf(30, 60, 100, 150, 220)
                 preferences.rAutoScroll().changesIn(viewScope) { isEnabled = it }
@@ -102,6 +120,7 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rPinManga())
                 title = "تثبيت المانهوا"
+                rIcon(R.drawable.ic_pin_24dp)
                 summary = "اضغط مطوّلاً على مانهوا ثم من قائمة الثلاث نقاط اختر \"تثبيت / إلغاء التثبيت\". " +
                     "المثبّتة تظهر أولاً في فئتها وبجانب اسمها علامة 📌. عند الإيقاف: بدون تثبيت."
             }
@@ -109,8 +128,10 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rHideLists())
                 title = "إخفاء القوائم"
-                summary = "من قائمة الثلاث نقاط (أعلى اليمين) اختر \"إخفاء / إظهار القوائم\" وحدد القوائم (التصنيفات) اللي عايز تخفيها من المكتبة. " +
-                    "تفضل مخفية لحد ما ترجع تظهرها من نفس الخيار. عند الإيقاف: كل القوائم تظهر والخيار يختفي (اختياراتك تتحفظ)."
+                rIcon(R.drawable.ic_eye_off_24dp)
+                summary = "من قائمة الثلاث نقاط (أعلى اليمين) افتح \"الملفات\" (بالبصمة أو النمط) واختار التصنيفات اللي عايز تخفيها. " +
+                    "المانجا المخفية تختفي من المكتبة والتحديثات والسجل، وتفضل بتتحدّث مع ريفريش المكتبة، وتقراها من \"الملفات\". " +
+                    "لما تخرجها ترجع بتواريخها. عند الإيقاف: كل حاجة تظهر والخيار يختفي (اختياراتك تتحفظ)."
             }
         }
 
@@ -120,6 +141,7 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rFixSplitTallImageError())
                 title = "إصلاح تقسيم الصور الطويلة"
+                rIcon(R.drawable.ic_file_download_24dp)
                 summary = "ملفات الصفحات تُسمّى دائماً بالأرقام اللاتينية (0-9)، ولا تفشل الصفحة إذا غاب الملف أثناء التقسيم. " +
                     "يصلح خطأ \"لم يُعثر على الصفحة أثناء التقسيم\" على الهواتف العربية. عند الإيقاف: السلوك الأصلي."
             }
@@ -127,6 +149,7 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rMihonFolders())
                 title = "قراءة تنزيلات Mihon"
+                rIcon(R.drawable.ic_file_open_24dp)
                 summary = "يتعرّف على مجلدات Mihon حتى لو أضاف لاحقة (hash) إلى اسم الفصل، أو كتب الحروف غير " +
                     "اللاتينية بصيغة hex (مثل e28099). عند الإيقاف: أسماء المجلدات الأصلية فقط."
             }
@@ -138,6 +161,7 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rStatsMinutes())
                 title = "إظهار الدقائق في مدة القراءة"
+                rIcon(R.drawable.ic_query_stats_24dp)
                 summary = "تُعرض الدقائق حتى لو تجاوزت المدة يوماً. عند الإيقاف: أيام وساعات فقط (الأصلي)."
             }
         }
@@ -148,12 +172,14 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rMascot())
                 title = "شخصية الثعبان"
+                rIcon(R.drawable.ic_r_mood)
                 summary = "ثعبان صغير يطفو على شاشة المكتبة، أمسكه وارمِه. عند الإيقاف: بدون ثعبان (الأصلي)."
             }
 
             switchPreference {
                 bindTo(preferences.rMascotTransform())
                 title = "تحويل التنين الصغير"
+                rIcon(R.drawable.ic_r_swap)
                 summary = "الضغط عليه يحوّله بالدخان لشخصية عشوائية (فارس، نينجا، قرصان، محقق) وبعدها يرجع. عند الإيقاف: الضغط يعمل الحركة العادية."
                 preferences.rMascot().changesIn(viewScope) { isEnabled = it }
             }
@@ -161,6 +187,7 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rMascotSound())
                 title = "صوت التنين الصغير"
+                rIcon(R.drawable.ic_r_volume)
                 summary = "الكلام يظهر حرفاً حرفاً مع نقرات صغيرة، ويصمت إذا كان الهاتف صامتاً أو على الاهتزاز. عند الإيقاف: كلام بدون صوت."
                 preferences.rMascot().changesIn(viewScope) { isEnabled = it }
             }
@@ -168,6 +195,7 @@ class SettingsRController : SettingsLegacyController() {
             switchPreference {
                 bindTo(preferences.rMascotSage())
                 title = "الحكيم العجوز"
+                rIcon(R.drawable.ic_r_school)
                 summary = "أحياناً عند لمس الثعبان يتحوّل إلى الحكيم بقبّعته ولحيته ويعطيك نصيحة صحيحة تماماً " +
                     "ولا تفيدك بشيء، للمزاح فقط. عند الإيقاف: الثعبان العادي دائماً."
                 preferences.rMascot().changesIn(viewScope) { isEnabled = it }
@@ -176,6 +204,7 @@ class SettingsRController : SettingsLegacyController() {
             intListPreference(activity) {
                 bindTo(preferences.rMascotSageChance())
                 title = "كم مرة يظهر الحكيم"
+                rIcon(R.drawable.ic_tune_24dp)
                 entries = listOf("نادراً", "أحياناً", "كثيراً", "في كل لمسة")
                 entryValues = listOf(15, 35, 60, 100)
                 preferences.rMascotSage().changesIn(viewScope) { isEnabled = it }
@@ -185,6 +214,7 @@ class SettingsRController : SettingsLegacyController() {
         switchPreference {
             bindTo(preferences.rMascotSleep())
             title = "التنين الصغير: النوم"
+            rIcon(R.drawable.ic_r_hotel)
             summary = "بعد دقيقة بدون لمس الشاشة يقول تصبح على خير، ويسحب لحافاً فوقه وينام. " +
                 "أي لمسة توقظه. عند الإيقاف: لا ينام."
             preferences.rMascot().changesIn(viewScope) { isEnabled = it }
@@ -193,6 +223,7 @@ class SettingsRController : SettingsLegacyController() {
         switchPreference {
             bindTo(preferences.rMascotWelcome())
             title = "التنين الصغير: الترحيب عند فتح التطبيق"
+            rIcon(R.drawable.ic_r_home)
             summary = "عند فتح التطبيق ينزل التنين الصغير من أعلى اليمين ويقول لك كم من الوقت غبت عنه. " +
                 "عند الإيقاف: لا يظهر ترحيب."
             preferences.rMascot().changesIn(viewScope) { isEnabled = it }
@@ -201,6 +232,7 @@ class SettingsRController : SettingsLegacyController() {
         switchPreference {
             bindTo(preferences.rReaderCobra())
             title = "القارئ: التنين الصغير أثناء القراءة"
+            rIcon(R.drawable.ic_book_open_variant_24dp)
             summary = "مفعّل: التنين الصغير يطلع من جنب الشاشة وإنت بتقرا وتقولك كلمتين بالمصري. " +
                 "معطّل: القارئ الأصلي (بدون كوبرا). لا تظهر والقائمة مفتوحة، وتضغط عليها علشان تختفي."
         }
@@ -208,18 +240,21 @@ class SettingsRController : SettingsLegacyController() {
         switchPreference {
             bindTo(preferences.rReaderCobraSound())
             title = "التنين الصغير: الأصوات"
+            rIcon(R.drawable.ic_r_volume)
             summary = "مفعّل: صوت كتابة الكلام وصوت حركتها وهي داخلة وخارجة (بصوت الوسائط). معطّل: بدون أصوات."
         }
 
         switchPreference {
             bindTo(preferences.rReaderCobraNight())
             title = "التنين الصغير: وضع الليل"
+            rIcon(R.drawable.ic_r_bedtime)
             summary = "مفعّل: من 12 بالليل لحد 5 الصبح تيجي نعسانة وتقولك «خش نام يا عم». معطّل: نفس الكلام العادي طول اليوم."
         }
 
         intListPreference(activity) {
             bindTo(preferences.rReaderCobraInterval())
             title = "التنين الصغير: كل قد إيه يظهر"
+            rIcon(R.drawable.ic_progress_clock_24dp)
             entries = listOf("كل 3 دقايق", "كل 6 دقايق", "كل 10 دقايق", "كل 20 دقيقة", "كل 45 دقيقة")
             entryValues = listOf(3, 6, 10, 20, 45)
         }
@@ -227,12 +262,14 @@ class SettingsRController : SettingsLegacyController() {
         switchPreference {
             bindTo(preferences.rReaderCobraScene())
             title = "مشهد العصا: التنين الحكيم"
+            rIcon(R.drawable.ic_r_stick)
             summary = "مفعّل: التنين الصغير يطلع مرتين أو تلاتة ورا بعض، وبعدين يجي التنين الحكيم من اليمين ويضربه بالعصا على راسه ويسحبه معاه. معطّل: التنين الصغير بس."
         }
 
         intListPreference(activity) {
             bindTo(preferences.rReaderCobraSceneEvery())
             title = "مشهد العصا: كل كام زيارة"
+            rIcon(R.drawable.ic_progress_clock_24dp)
             entries = listOf("كل زيارة تالتة", "كل زيارة رابعة", "كل زيارة خامسة", "كل زيارة سابعة")
             entryValues = listOf(3, 4, 5, 7)
             preferences.rReaderCobraScene().changesIn(viewScope) { isEnabled = it }

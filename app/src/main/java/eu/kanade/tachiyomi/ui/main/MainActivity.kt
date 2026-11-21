@@ -86,6 +86,7 @@ import eu.kanade.tachiyomi.ui.base.SmallToolbarInterface
 import eu.kanade.tachiyomi.ui.base.activity.BaseActivity
 import eu.kanade.tachiyomi.ui.base.controller.BaseLegacyController
 import eu.kanade.tachiyomi.ui.base.controller.DialogController
+import eu.kanade.tachiyomi.ui.library.FilteredLibraryController
 import eu.kanade.tachiyomi.ui.library.LibraryController
 import eu.kanade.tachiyomi.ui.library.compose.LibraryComposeController
 import eu.kanade.tachiyomi.ui.manga.MangaDetailsController
@@ -1408,6 +1409,16 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
 
     fun showStats() {
         router.pushController(StatsController().withFadeTransaction())
+    }
+
+    /** R: opens one hidden list's manga in the normal library look (used by the hidden-files vault). */
+    fun showRVaultList(title: String, categoryId: Int) {
+        router.pushController(
+            FilteredLibraryController(
+                title = title,
+                filterCategories = arrayOf(categoryId),
+            ).withFadeTransaction(),
+        )
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
