@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-21 (end of the second account's session; its usage limit was at 95%).
+Last updated: 2026-11-21 (third account; see its section).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -40,7 +40,15 @@ NOT DONE / FOR THE NEXT ACCOUNT (owner message of 2026-11-21, relayed by him):
 3. **Direction**: the small dragon should be at the LEFT of the screen and the wise dragon must come in from the RIGHT and hit it on the left side (the owner said the green one comes out from the left; he wants the other from the right). Verify what the code does now (commit 50e5724 says \"from the right\") on the phone before changing. NOT DONE.
 4. The owner asked which AI tool can ANIMATE the model sheets so he can make it himself: answered in chat only (image-to-video tools give video with a background, not transparent frames; better: ask an image model for consistent frame sets of the same pose sheet, then animate in code). If he sends frames, record them in `branding/` first.
 5. Reader-open crash: root cause still NOT found by reading all our reader changes (ReaderActivity, nav wrapper, vertical slider, cobra, auto-scroll, read-time card, view model). Commit `f2cba35` makes the decorative parts unable to stop the reader opening (cobra creation in try/catch, vertical bar falls back to the original bar, read-time card timer guarded); logs go to logcat tag `YokaiR`. If it still crashes, the app's own crash screen (CrashActivity) has the stack trace: ask the owner to copy it.
-6. BUILD RUNNING: run 44897247105 (`f2cba35`: star + timing + hide-lists + reader guards), dispatched 2026-11-21 via REST (`POST /actions/workflows/build_r.yml/dispatches`, token works for it). Do NOT dispatch again while it runs. The owner installs artifact `yokai-r-release` and reports (hide-lists menu, reader opens, stick scene).
+6. Run 44897247105 (`f2cba35`) finished GREEN (13:14 Cairo, 2026-11-21). The owner installs `yokai-r-release` and reports (reader opens? stick scene? hide-lists).
+
+## Third account, 2026-11-21 (owner said "go"): hidden-files vault + R icons (branch `fix/stats-and-name`, commit `d7467f1`, NOT compiled, NOT built, NOT tested)
+
+- Owner's design for "hide lists" (Egyptian, his words): pick a library category to hide; all its manga disappear from Library, Updates and History (and search suggestions) but keep refreshing with library refresh and stay readable; "إخراج" brings them back with their ORIGINAL read/fetch dates (display filter only, nothing deleted). Entry is disguised: 3-dot menu row **"الملفات"** with a green arrow (name is my pick, he did not object); opens only after fingerprint OR the phone's pattern/PIN (`AuthenticatorUtil`, BIOMETRIC_WEAK + DEVICE_CREDENTIAL). No phone lock set = refuses with a toast.
+- Code: `util/RHiddenLists.kt`; `OverflowDialog` (vault dialog: hidden lists with green down arrow -> `MainActivity.showRVaultList` pushes `FilteredLibraryController(filterCategories=[id])`, so the grid is the normal library look and display options apply; button "اختيار التصنيفات": check = hide, un-check = إخراج); `RecentsPresenter.runRecents` filters hidden manga after the query (paging counts use raw rows); `LibraryPresenter` hides a manga in ANY hidden list even if also in a visible one (my choice, he never answered) and search suggestions skip them.
+- Not done: arrow opens a screen per list (no inline expand); app-wide animation polish (only Settings > R got icons: `rIcon` + new `ic_r_*` vectors). If compile fails, suspects: `OverflowDialog` (ArrayAdapter/TextViewCompat imports), `RecentsPresenter` rawReading/cReading rename, `SettingsRController.rIcon`.
+- Owner wants a build check ~every 20 min: Claude cannot run in the background (free plan, no scheduling); check the last build whenever he writes ("شيّك").
+- This file lives on `main`; the branch still has an old long copy.
 
 ## Next steps
 1. Owner installs the APK from run 44889187381 (green) and reports what he sees on the phone.
