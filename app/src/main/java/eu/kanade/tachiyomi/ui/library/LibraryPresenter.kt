@@ -35,6 +35,7 @@ import eu.kanade.tachiyomi.ui.library.filter.FilterBottomSheet.Companion.STATE_E
 import eu.kanade.tachiyomi.ui.library.filter.FilterBottomSheet.Companion.STATE_IGNORE
 import eu.kanade.tachiyomi.ui.library.filter.FilterBottomSheet.Companion.STATE_INCLUDE
 import eu.kanade.tachiyomi.ui.recents.RecentsPresenter
+import eu.kanade.tachiyomi.util.RHiddenLists
 import eu.kanade.tachiyomi.util.chapter.ChapterFilter
 import eu.kanade.tachiyomi.util.chapter.ChapterSort
 import eu.kanade.tachiyomi.util.isLocal
@@ -885,7 +886,17 @@ class LibraryPresenter(
             groupType = prefs.groupType
             val hide = if (controllerIsSubClass) emptySet() else hiddenLists
             val dbCategories = if (hide.isEmpty()) dbCategoriesAll else dbCategoriesAll.filter { c -> c.id?.let { it !in hide } ?: true }
-            val libraryMangaList = if (hide.isEmpty()) libraryMangaAll else libraryMangaAll.filter { it.category !in hide }
+            // a manga that is in any hidden list is hidden everywhere, even if it is also in a visible list
+            val hiddenMangaIds = if (hide.isEmpty()) {
+                emptySet()
+            } else {
+                libraryMangaAll.filter { it.category in hide }.mapNotNull { it.manga.id }.toSet()
+            }
+            val libraryMangaList = if (hide.isEmpty()) {
+                libraryMangaAll
+            } else {
+                libraryMangaAll.filter { it.category !in hide && it.manga.id !in hiddenMangaIds }
+            }
 
             val defaultCategory = createDefaultCategory()
 
@@ -1627,10 +1638,16 @@ class LibraryPresenter(
                 Random(cal.time.time)
             }
 
+            // R: never suggest anything from a hidden list
+            val hiddenIds = try {
+                RHiddenLists.hiddenMangaIds(preferences, getLibraryManga)
+            } catch (_: Exception) {
+                emptySet()
+            }
             preferences.librarySearchSuggestion().set(
                 when (val value = random.nextInt(0, 5)) {
                     randomSource -> {
-                        val distinctSources = getLibraryManga.await().distinctBy { it.manga.source }
+                        val distinctSources = getLibraryManga.await().filter { it.manga.id !in hiddenIds }.distinctBy { it.manga.source }
                         val randomSource =
                             sourceManager.get(
                                 distinctSources.randomOrNull(random)?.manga?.source ?: 0L,
@@ -1638,7 +1655,7 @@ class LibraryPresenter(
                         randomSource?.chopByWords(30)
                     }
                     randomTitle -> {
-                        getLibraryManga.await().randomOrNull(random)?.manga?.title?.chopByWords(30)
+                        getLibraryManga.await().filter { it.manga.id !in hiddenIds }.randomOrNull(random)?.manga?.title?.chopByWords(30)
                     }
                     in randomTags -> {
                         val tags = RecentsPresenter.getRecentManga(true)

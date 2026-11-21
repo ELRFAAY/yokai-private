@@ -13,6 +13,7 @@ import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.domain.manga.models.Manga
 import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.ui.base.presenter.BaseCoroutinePresenter
+import eu.kanade.tachiyomi.util.RHiddenLists
 import eu.kanade.tachiyomi.util.chapter.ChapterFilter
 import eu.kanade.tachiyomi.util.chapter.ChapterSort
 import eu.kanade.tachiyomi.util.system.launchIO
@@ -193,7 +194,7 @@ class RecentsPresenter(
         val isCustom = customViewType != null
         val isEndless = isUngrouped && limit != 0
         var extraCount = 0
-        val cReading: List<MangaChapterHistory> = when (viewType) {
+        val rawReading: List<MangaChapterHistory> = when (viewType) {
             RecentsViewType.GroupedAll, RecentsViewType.UngroupedAll -> {
                 getRecents.awaitAll(
                     showRead,
@@ -302,13 +303,26 @@ class RecentsPresenter(
                     }
             }
         }
-        val extraChapterCount = cReading.sumOf { it.extraChapters.size }
-        if (cReading.size + extraChapterCount + extraCount < ENDLESS_LIMIT) {
+        // paging counts use the raw rows so hiding items never breaks the offsets
+        val extraChapterCount = rawReading.sumOf { it.extraChapters.size }
+        if (rawReading.size + extraChapterCount + extraCount < ENDLESS_LIMIT) {
             finished = true
         }
 
         if (!isCustom && (pageOffset == 0 || updatePageCount)) {
-            pageOffset += cReading.size + extraChapterCount + extraCount
+            pageOffset += rawReading.size + extraChapterCount + extraCount
+        }
+
+        // R: manga in hidden lists never show in Updates / History (they come back when the list is un-hidden)
+        val hiddenMangaIds = try {
+            RHiddenLists.hiddenMangaIds()
+        } catch (_: Exception) {
+            emptySet()
+        }
+        val cReading = if (hiddenMangaIds.isEmpty()) {
+            rawReading
+        } else {
+            rawReading.filter { it.manga.id !in hiddenMangaIds }
         }
 
         if (query != oldQuery) return
