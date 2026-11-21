@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-21 (second session of the day, after the account hand-over; Cairo time not checked).
+Last updated: 2026-11-21 (end of the second account's session; its usage limit was at 95%).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -22,6 +22,12 @@ Last updated: 2026-11-21 (second session of the day, after the account hand-over
 - Workflow `build_r.yml` uses no `secrets.*`; it signs with `-PrDebugSign=true` and the in-repo keystore, so the repo transfer needed no secret re-adding. Artifact `yokai-r-release` (universal APK); `versionCode = 1000 + GITHUB_RUN_NUMBER`, so builds from any branch update each other.
 - Contents of the branch (newest last): crash fixes in `MangaDetailsPresenter.onCreate` (`manga`, `chapterSort`); reader cobra with poses from sheet 14; wise dragon art (sheet 15); home mascot = small dragon FULL BODY (sheets 16-19, cut-outs in `branding/mascot-models/cutouts/`, scripts in `branding/tools/`); typewriter bubble with blip sound (`r_mascot_sound`); stick scene in the reader (`RReaderCobraView`, `r_reader_cobra_scene` + frequency); tap transformation knight/ninja/pirate/detective (`r_mascot_transform`) with ninja "poof" sound; Settings > R crash fix (`a47021b`: never use `dependency =` in this repo's settings DSL, use `changesIn(viewScope) { isEnabled = it }`); welcome drop-in with time-away message (`58a4c3f`); sleep after a minute without touch with blanket (`e580e37`); Settings > R rows glide in (`b66284c`).
 - NOTHING from this line is tested on the owner's phone yet (Poco M2102J20SG). First thing after a green build: he installs it and reports.
+
+## FIRST THING FOR THE NEXT ACCOUNT
+1. Get access: the owner pastes a fine-grained GitHub token (repo `elrfaayr-ux/yokai-private`, Contents + Actions read/write); use it only per command (`git -c credential.helper= -c http.extraheader="Authorization: Basic <base64 x-access-token:TOKEN>" push ...`), never store it. The repo is PUBLIC right now on purpose (he will make it private after the work): it holds the signing key, so remind him to make it private again and consider the key exposed.
+2. Check build run 44897247105 (`f2cba35`) with `GET /repos/elrfaayr-ux/yokai-private/actions/runs/44897247105`. If it failed, read the annotations (see \"How to work\"). If green, the owner installs `yokai-r-release`.
+3. Wait for his report on: hide-lists menu, reader opening (crash?), stick scene. For a crash ask for the text of the app's crash screen.
+4. Then do the open items 2-4 below (coherent stick scene, direction, owner's animation frames).
 
 ## Session log 2026-11-21 (account hand-over: the previous account's last message was only a progress note, its code state is exactly origin `b66284c`)
 DONE (pushed, branch `fix/stats-and-name`, commit `0838801`, NOT built, NOT tested on the phone):
