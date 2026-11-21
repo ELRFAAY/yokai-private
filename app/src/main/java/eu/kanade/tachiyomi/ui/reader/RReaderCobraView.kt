@@ -112,7 +112,7 @@ class RReaderCobraView(
     }
     private val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFF1B1B1B.toInt()
-        textSize = 18f * density
+        textSize = 22f * density
         isFakeBoldText = true
     }
 
@@ -484,7 +484,7 @@ class RReaderCobraView(
         // the nodding pose swaps between its two frames while the text is being typed
         val res = if (pose == Pose.NOD && (typedChars / 5) % 2 == 1) R.drawable.r_cobra_nod2 else pose.res
         val bmp = bitmapFor(res) ?: return
-        val cobraW = (if (pose.peek) 112f else 120f) * density
+        val cobraW = (if (pose.peek) 94f else 100f) * density
         val cobraH = cobraW * bmp.height / bmp.width
         val top = (height - cobraH) * yFrac
         val restLeft = 0f
@@ -503,12 +503,12 @@ class RReaderCobraView(
      */
     private fun drawScene(canvas: Canvas) {
         val d = density
-        val s = 118f * d // little dragon size
-        val k = 150f * d / 402f // screen px per native pixel of the wise pictures
+        val s = 100f * d // little dragon size
+        val k = 128f * d / 402f // screen px per native pixel of the wise pictures
         val smallLeft = 4f * d
-        val stageH = 86f * d + s
+        val stageH = 73f * d + s
         val stageTop = ((height - stageH) * yFrac).coerceAtLeast(0f)
-        val smallTop = stageTop + 86f * d
+        val smallTop = stageTop + 73f * d
         // where the stick tip must land: on top of the little dragon's head
         val tipX = smallLeft + s * 0.50f
         val tipY = smallTop + s * 0.15f
@@ -576,7 +576,7 @@ class RReaderCobraView(
 
     private fun drawBubble(canvas: Canvas, bx: Float, by: Float, fromRight: Boolean) {
         val pad = 12f * density
-        val maxW = minOf(205f * density, (if (fromRight) bx else width - bx) - 12f * density)
+        val maxW = minOf(250f * density, (if (fromRight) bx else width - bx) - 12f * density)
         if (maxW < 110f * density) return
 
         // the full text decides the bubble size, so it does not grow while it is being typed
