@@ -71,7 +71,7 @@ class RMascotView(context: Context) : View(context) {
     }
 
     private val density = resources.displayMetrics.density
-    private val half = 42f * density // the snake is drawn 84dp wide
+    private val half = 34f * density // the little dragon is drawn 68dp wide (was 84)
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
     private fun load(id: Int): Bitmap? = try {
@@ -122,7 +122,7 @@ class RMascotView(context: Context) : View(context) {
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFF1B1B1B.toInt()
-        textSize = 14f * density
+        textSize = 19f * density
         textAlign = Paint.Align.CENTER
         isFakeBoldText = true
     }
@@ -865,7 +865,7 @@ class RMascotView(context: Context) : View(context) {
         val margin = 8f * density
         val fm = textPaint.fontMetrics
         val lineHeight = fm.descent - fm.ascent
-        val lines = wrap(text, min(width - margin * 2f - pad * 2f, 230f * density))
+        val lines = wrap(text, min(width - margin * 2f - pad * 2f, 250f * density))
         val textWidth = lines.maxOfOrNull { textPaint.measureText(it) } ?: return
         val bw = textWidth + pad * 2f
         val bh = lineHeight * lines.size + pad * 1.4f
