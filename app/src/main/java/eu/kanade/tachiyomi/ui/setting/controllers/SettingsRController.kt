@@ -171,6 +171,13 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rToolsBar())
+                title = "شريط أدوات القارئ"
+                rIcon(R.drawable.ic_tune_24dp)
+                summary = "أيقونات سرعة التمرير والسطوع والصوت والبطارية تحت الشريط العلوي. اسحب الشريط لأعلى للفصول، ويمين أو شمال للإعدادات. يسري عند فتح القارئ من جديد."
+            }
+
+            switchPreference {
                 bindTo(preferences.rClockBattery())
                 title = "الساعة والبطارية"
                 rIcon(R.drawable.ic_progress_clock_24dp)

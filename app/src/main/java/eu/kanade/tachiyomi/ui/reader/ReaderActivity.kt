@@ -139,6 +139,7 @@ import eu.kanade.tachiyomi.util.system.spToPx
 import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.system.withUIContext
 import eu.kanade.tachiyomi.util.view.collapse
+import eu.kanade.tachiyomi.util.view.expand
 import eu.kanade.tachiyomi.util.view.compatToolTipText
 import eu.kanade.tachiyomi.util.view.doOnApplyWindowInsetsCompat
 import eu.kanade.tachiyomi.util.view.hide
@@ -438,6 +439,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
 
         binding.chaptersSheet.chaptersBottomSheet.setup(this)
+        rSetupToolsBar()
         binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateNavHeight() }
         config = ReaderConfig()
         initializeMenu()
@@ -1295,6 +1297,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 binding.chaptersSheet.chaptersBottomSheet.sheetBehavior?.collapse()
             }
         } else {
+            rToolsBar?.close()
             if (preferences.fullscreen().get()) {
                 wic.hide(systemBars())
                 wic.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
@@ -1423,6 +1426,32 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 if (running) R.drawable.ic_pause_24dp else R.drawable.ic_play_arrow_24dp,
             )
         }
+    }
+
+    private var rToolsBar: RToolsBar? = null
+
+    /** R: the tools bar (speed / brightness / volume / battery) under the toolbar, with fling gestures. */
+    private fun rSetupToolsBar() {
+        if (!preferences.rToolsBar().get()) return
+        val bar = RToolsBar(
+            this,
+            preferences,
+            { rBatteryPercent },
+            { binding.chaptersSheet.chaptersBottomSheet.sheetBehavior?.expand() },
+            { TabbedReaderSettingsSheet(this@ReaderActivity).show() },
+            { rScheduleAutoHide() },
+        )
+        val styled = obtainStyledAttributes(intArrayOf(androidx.appcompat.R.attr.actionBarSize))
+        val barHeight = styled.getDimensionPixelSize(0, 56.dpToPx)
+        styled.recycle()
+        binding.appBar.addView(
+            bar,
+            android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = barHeight },
+        )
+        rToolsBar = bar
     }
 
     /** R: hides the tools by itself after the delay chosen in the reader settings (0 = never). */

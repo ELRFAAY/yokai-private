@@ -315,7 +315,8 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     fun rSettingsStyle() = preferenceStore.getBoolean("r_settings_style", true)
 
     /** Reader (webtoon): tap the bottom half of the screen to scroll; the side decides the direction. */
-    fun rTapScroll() = preferenceStore.getBoolean("r_tap_scroll", true)
+    // v2 key: the owner does not want tapping the top/bottom half to scroll (it swallowed the middle tap), so it starts OFF for everyone
+    fun rTapScroll() = preferenceStore.getBoolean("r_tap_scroll_v2", false)
 
     /** 0 = bottom right scrolls down / bottom left up, 1 = the opposite, 2 = both bottom halves scroll down. */
     fun rTapScrollSide() = preferenceStore.getInt("r_tap_scroll_side", 0)
@@ -334,6 +335,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
 
     /** Reader: small clock + battery level in the corner. */
     fun rClockBattery() = preferenceStore.getBoolean("r_clock_battery", false)
+
+    /** Reader tools bar under the toolbar: speed, brightness, volume, battery icons with small panels. */
+    fun rToolsBar() = preferenceStore.getBoolean("r_tools_bar", true)
 
     /** Reader: thin permanent progress bar at the bottom edge. */
     fun rProgressBar() = preferenceStore.getBoolean("r_progress_bar", false)
