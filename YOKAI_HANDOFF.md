@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-21 16:15 (see NEWEST-5).
+Last updated: 2026-11-21 (see NEWEST-6).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,12 @@ Last updated: 2026-11-21 16:15 (see NEWEST-5).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-6 2026-11-21 (owner at ~95% usage): READ FIRST, then NEWEST-5
+- Work branch `fix/stats-and-name-clean` @ `eb6f4c3`. **Build 51 (run 44917730814) = `eb6f4c3`, dispatched by me, includes `c9d166f` (colored cards, stats hero) + this batch; NOT compiled/tested until it finishes** (build 50 / `97bb667` was GREEN). Dispatching cancels a running build: do not dispatch while 51 runs. If CI fails: read the check-run annotations; suspects: `RMascotView` (`refreshSize`, `nextCostume`, `tfCostume` branch in `onDraw`), `RReaderCobraView` (new `Pose(res)` enum, `sizeDp` ctor arg, `sizeK` in `drawScene`), `SettingsRController` (new `intListPreference` for `rDragonSize`), plus the old suspects of NEWEST-5.
+- **Costumes** (owner's 4 sheets recorded in `branding/mascot-models/costumes-2026-11-21/`, cutter `branding/tools/make_costumes.py`): tapping the home dragon turns it (smoke as before) into a random one of **21 costumes** (`r_costume_*.webp`: knight, detective, pirate, guard, chef, astronaut, pharaoh, doctor, firefighter, explorer, magician, painter, rockstar, executive, pilot, builder, alchemist, opera, bonsai, steampunk, scribe). Repeats between the sheets were left out on purpose (noir detective, 2nd chef, entomologist); old knight/ninja/pirate/detective art and the ninja are no longer used. **No repeat until all 21 were shown**, then a new round (never starting with the last one): order saved in pref `r_mascot_tf_seen`. Each costume is scaled so its hood = the normal dragon's hood and is bottom-aligned on the same line (same size as the normal dragon; tall hats reach higher, the bubble goes above via `headroom`). Phrases are my drafts, NOT approved.
+- **One dragon size** (pref `r_dragon_size`, dp, default 72; Settings > R "حجم التنين الصغير": 48/60/72/88/110/140) used by the home dragon (`RMascotView.half`, refreshed each frame), the reader visits and the stick scene (`RReaderCobraView.sizeDp`). Reader visits now use the SAME full-body pictures as home (`r_mascot_happy/where/proud/open/yawn/tired/stretch/blink`) instead of the old close-up `r_cobra_peek_*` (now unused), so both are exactly the same size. Stick scene: small dragon height = size, wise dragon scales with it.
+- Not done: stats (the owner will send screenshots), colored cards in compact/list, wise dragon from p5. Ask him what he wanted to add after "و" in his cut message (colored cards). Remind him to delete the pasted GitHub token and make the repo private again. My sandbox has no `gh`: dispatch with REST `POST /repos/ELRFAAY/yokai-private/actions/workflows/build_r.yml/dispatches {"ref": ...}`.
 
 ## NEWEST-5 2026-11-21 16:15 Cairo (owner at 94% usage): READ FIRST (then NEWEST-4 for the rest)
 - **Repo is now `ELRFAAY/yokai-private`** (public only temporarily: remind him to make it private and delete the pasted token). Work branch `fix/stats-and-name-clean`. Session access: `add_repo` owner `ELRFAAY`; REST works with push; the Stop-hook "unpushed commits" warning is a false positive (shallow clone): check `git ls-remote --heads origin fix/stats-and-name-clean`.
