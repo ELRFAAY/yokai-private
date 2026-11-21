@@ -311,6 +311,12 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** When the app was last on screen (epoch ms), used by the welcome. */
     fun rLastOpenMs() = preferenceStore.getLong("r_last_open_ms", 0L)
 
+    /** Stats: extra sections (streak, weekly goal, top 5, hours, month comparison, genre/source donut). */
+    fun rStatsExtra() = preferenceStore.getBoolean("r_stats_extra", true)
+
+    /** Stats: weekly goal in chapters (0 = no goal set). */
+    fun rWeeklyGoal() = preferenceStore.getInt("r_weekly_goal", 0)
+
     /** Library: the 3-dot menu gets "hide / show lists"; lists (categories) he hides stay hidden until he shows them again. */
     fun rHideLists() = preferenceStore.getBoolean("r_hide_lists", true)
 

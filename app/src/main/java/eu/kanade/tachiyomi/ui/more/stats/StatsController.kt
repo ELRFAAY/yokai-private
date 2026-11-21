@@ -13,12 +13,14 @@ import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.database.models.LibraryManga
 import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.databinding.StatsControllerBinding
 import eu.kanade.tachiyomi.domain.manga.models.Manga
 import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.ui.base.controller.BaseLegacyController
 import eu.kanade.tachiyomi.ui.more.stats.details.StatsDetailsController
 import eu.kanade.tachiyomi.util.isLocal
@@ -29,6 +31,7 @@ import eu.kanade.tachiyomi.util.view.compatToolTipText
 import eu.kanade.tachiyomi.util.view.scrollViewWith
 import eu.kanade.tachiyomi.util.view.withFadeTransaction
 import kotlin.math.roundToInt
+import uy.kohesive.injekt.injectLazy
 import yokai.i18n.MR
 import yokai.util.lang.getString
 import android.R as AR
@@ -36,6 +39,8 @@ import android.R as AR
 class StatsController : BaseLegacyController<StatsControllerBinding>() {
 
     val presenter = StatsPresenter()
+    private val prefs: PreferencesHelper by injectLazy()
+    private var rData: RStatsData? = null
 
     private val mangaDistinct = presenter.mangaDistinct
     private var scoresList = emptyList<Double>()
@@ -52,6 +57,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
         scrollViewWith(binding.statsScrollView, true)
         handleGeneralStats()
         handleHero()
+        handleExtraSections()
         if (mangaDistinct.isNotEmpty()) {
             binding.viewDetailLayout.setOnClickListener {
                 router.pushController(StatsDetailsController().withFadeTransaction())
@@ -161,6 +167,52 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
                 Logger.e(e) { "Failed to show donut" }
             }
         }
+    }
+
+    /** R: streak, weekly goal, top 5, hours, month comparison, genre / source donut. */
+    private fun handleExtraSections() {
+        val ctx = activity ?: return
+        try {
+            val data = rData ?: presenter.getRData().also { rData = it }
+            binding.rHeroAvg.text = "%.1f".format(data.dailyAvg)
+            if (!prefs.rStatsExtra().get()) {
+                binding.rExtraStats.isVisible = false
+                return
+            }
+            binding.rExtraStats.isVisible = true
+            RStatsSections.build(ctx, binding.rExtraStats, data, prefs.rWeeklyGoal().get()) { showGoalDialog() }
+        } catch (e: Exception) {
+            Logger.e(e) { "Failed to build R stats sections" }
+            binding.rExtraStats.isVisible = false
+        }
+    }
+
+    private fun showGoalDialog() {
+        val ctx = activity ?: return
+        val input = android.widget.EditText(ctx).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText(prefs.rWeeklyGoal().get().takeIf { it > 0 }?.toString() ?: "")
+            hint = "عدد الشباتر في الأسبوع"
+        }
+        val pad = (20 * ctx.resources.displayMetrics.density).toInt()
+        val frame = android.widget.FrameLayout(ctx).apply {
+            setPadding(pad, pad / 2, pad, 0)
+            addView(input)
+        }
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("هدف الأسبوع")
+            .setView(frame)
+            .setPositiveButton(AR.string.ok) { _, _ ->
+                val n = input.text.toString().toIntOrNull()?.coerceIn(0, 9999) ?: 0
+                prefs.rWeeklyGoal().set(n)
+                handleExtraSections()
+            }
+            .setNeutralButton("إلغاء الهدف") { _, _ ->
+                prefs.rWeeklyGoal().set(0)
+                handleExtraSections()
+            }
+            .setNegativeButton(AR.string.cancel, null)
+            .show()
     }
 
     private fun getScoresList(mangaTracks: List<Pair<LibraryManga, MutableList<Track>>>): List<Double> {

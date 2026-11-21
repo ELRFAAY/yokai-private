@@ -112,6 +112,29 @@
                             android:textColor="?attr/colorOnSecondaryContainer"
                             android:alpha="0.8" />
                     </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/r_hero_avg"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="?attr/colorOnSecondaryContainer"
+                            android:textSize="28sp"
+                            android:textStyle="bold"
+                            tools:text="2.3" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="متوسط اليوم"
+                            android:textColor="?attr/colorOnSecondaryContainer"
+                            android:alpha="0.8" />
+                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -167,6 +190,13 @@
             android:gravity="center"
             android:textColor="?android:attr/textColorSecondary"
             tools:text="اتقرا 100 • لسه 200" />
+
+        <!-- R: extra stats sections are built in code (RStatsSections) -->
+        <LinearLayout
+            android:id="@+id/r_extra_stats"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
 
         <com.google.android.material.textview.MaterialTextView
             style="?textAppearanceLabelLarge"

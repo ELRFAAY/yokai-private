@@ -164,6 +164,13 @@ class SettingsRController : SettingsLegacyController() {
                 rIcon(R.drawable.ic_query_stats_24dp)
                 summary = "تُعرض الدقائق حتى لو تجاوزت المدة يوماً. عند الإيقاف: أيام وساعات فقط (الأصلي)."
             }
+
+            switchPreference {
+                bindTo(preferences.rStatsExtra())
+                title = "أقسام الإحصائيات الإضافية"
+                rIcon(R.drawable.ic_query_stats_24dp)
+                summary = "سلسلة الأيام، هدف الأسبوع، أكتر ٥ مانهوا، ساعات القراءة، مقارنة الشهر، ودونات الأنواع والمصادر. عند الإيقاف: الشاشة بدونها."
+            }
         }
 
         preferenceCategory {

@@ -111,6 +111,83 @@ class StatsPresenter(
         }
     }
 
+    /** R: everything the extra stats sections need, from one pass over the whole history (vault manga included). */
+    fun getRData(): RStatsData {
+        val now = System.currentTimeMillis()
+        val rows = runBlocking {
+            handler.awaitList { historyQueries.getPerPeriod(1L, now, MangaChapterHistory::mapper) }
+        }
+        val zone = java.time.ZoneId.systemDefault()
+        fun dayOf(ms: Long) = java.time.Instant.ofEpochMilli(ms).atZone(zone).toLocalDate()
+        val today = java.time.LocalDate.now()
+        val todayEpoch = today.toEpochDay()
+        val days = rows.map { dayOf(it.history.last_read).toEpochDay() }.toSortedSet()
+
+        var best = 0
+        var run = 0
+        var prev = Long.MIN_VALUE
+        for (d in days) {
+            run = if (d == prev + 1) run + 1 else 1
+            if (run > best) best = run
+            prev = d
+        }
+        var cur = 0
+        var d = if (todayEpoch in days) todayEpoch else todayEpoch - 1
+        while (d in days) {
+            cur++
+            d--
+        }
+
+        val byManga = rows.groupBy { it.manga.id }
+        val top = byManga.values.map { list ->
+            RTopManga(
+                list.first().manga,
+                list.mapNotNull { it.chapter.id }.distinct().size,
+                list.sumOf { it.history.time_read },
+            )
+        }.sortedWith(compareByDescending<RTopManga> { it.timeMs }.thenByDescending { it.chapters }).take(5)
+
+        val hours = IntArray(24)
+        rows.forEach { hours[java.time.Instant.ofEpochMilli(it.history.last_read).atZone(zone).hour]++ }
+
+        val thisMonth = java.time.YearMonth.from(today)
+        val lastMonth = thisMonth.minusMonths(1)
+        val monthNow = rows.count { java.time.YearMonth.from(dayOf(it.history.last_read)) == thisMonth }
+        val monthPrev = rows.count { java.time.YearMonth.from(dayOf(it.history.last_read)) == lastMonth }
+        val week = rows.count { dayOf(it.history.last_read).toEpochDay() >= todayEpoch - 6 }
+        val last30 = rows.count { dayOf(it.history.last_read).toEpochDay() >= todayEpoch - 29 }
+
+        val genreCount = HashMap<String, Int>()
+        val sourceCount = HashMap<String, Int>()
+        byManga.values.forEach { list ->
+            val weight = list.mapNotNull { it.chapter.id }.distinct().size.coerceAtLeast(1)
+            val manga = list.first().manga
+            manga.getGenres()?.map { it.trim() }?.filter { it.isNotEmpty() }?.distinct()?.forEach {
+                genreCount[it] = (genreCount[it] ?: 0) + weight
+            }
+            val src = runCatching { sourceManager.getOrStub(manga.source).name }.getOrDefault("?")
+            sourceCount[src] = (sourceCount[src] ?: 0) + weight
+        }
+        fun List<Map.Entry<String, Int>>.topWithRest(n: Int): List<Pair<String, Int>> {
+            val sorted = sortedByDescending { it.value }
+            val head = sorted.take(n).map { it.key to it.value }
+            val rest = sorted.drop(n).sumOf { it.value }
+            return if (rest > 0) head + ("غيرها" to rest) else head
+        }
+        return RStatsData(
+            streakNow = cur,
+            streakBest = best,
+            top = top,
+            hours = hours,
+            monthNow = monthNow,
+            monthPrev = monthPrev,
+            weekChapters = week,
+            genres = genreCount.entries.toList().topWithRest(6),
+            sources = sourceCount.entries.toList().topWithRest(6),
+            dailyAvg = last30 / 30f,
+        )
+    }
+
     fun getReadDuration(): String {
         val chaptersTime = runBlocking {
             handler.awaitOneOrNull { historyQueries.getTotalReadDuration() }?.sum?.toLong()
@@ -118,3 +195,18 @@ class StatsPresenter(
         return chaptersTime.getReadDuration(prefs.context.getString(MR.strings.none))
     }
 }
+
+class RTopManga(val manga: Manga, val chapters: Int, val timeMs: Long)
+
+class RStatsData(
+    val streakNow: Int,
+    val streakBest: Int,
+    val top: List<RTopManga>,
+    val hours: IntArray,
+    val monthNow: Int,
+    val monthPrev: Int,
+    val weekChapters: Int,
+    val genres: List<Pair<String, Int>>,
+    val sources: List<Pair<String, Int>>,
+    val dailyAvg: Float,
+)
