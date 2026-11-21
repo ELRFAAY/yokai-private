@@ -63,9 +63,9 @@ class StatsDetailsPresenter(
     var libraryMangas = runBlocking { getLibrary() }
         set(value) {
             field = value
-            mangasDistinct = field.distinct()
+            mangasDistinct = field.distinctBy { it.manga.id }
         }
-    private var mangasDistinct = libraryMangas.distinct()
+    private var mangasDistinct = libraryMangas.distinctBy { it.manga.id }
     val sources = getEnabledSources()
     val extensionManager by injectLazy<ExtensionManager>()
     val enabledLanguages = prefs.enabledLanguages().get()
@@ -474,7 +474,7 @@ class StatsDetailsPresenter(
         } else {
             libraryMangas.filter { manga ->
                 manga.category in selectedCategory.map { it.id }
-            }.distinct()
+            }.distinctBy { it.manga.id }
         }
     }
 

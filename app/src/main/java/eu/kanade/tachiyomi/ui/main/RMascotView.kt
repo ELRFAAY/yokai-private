@@ -171,7 +171,27 @@ class RMascotView(context: Context) : View(context) {
     private var enterStart = 0L // != 0: the little dragon is dropping in from the top right
     private var asleep = false
     private var lastActiveAt = SystemClock.uptimeMillis()
-    private var blanketT = 0f // 0 = no blanket, 1 = blanket fully up
+    private var blanketT = 0f // 0 = in bed with the blanket up, 1 = fully asleep; the bed pictures follow this value
+    private var yawnUntil = 0L
+    private var waveUntil = 0L
+    private var whereUntil = 0L
+
+    // pictures cut from the owner's sheets (rA2 tail wag, rB mouth, rC2 wave, rD poses, p3 bed); all keep the short wide body
+    private val wagFrames: List<Bitmap?> by lazy {
+        listOf(R.drawable.r_mascot_wag1, R.drawable.r_mascot_wag2, R.drawable.r_mascot_wag3, R.drawable.r_mascot_wag4, R.drawable.r_mascot_wag5).map { load(it) }
+    }
+    private val waveFrames: List<Bitmap?> by lazy {
+        listOf(
+            R.drawable.r_mascot_wave1, R.drawable.r_mascot_wave2, R.drawable.r_mascot_wave3,
+            R.drawable.r_mascot_wave4, R.drawable.r_mascot_wave5, R.drawable.r_mascot_wave6,
+        ).map { load(it) }
+    }
+    private val talkFrames: List<Bitmap?> by lazy { listOf(R.drawable.r_mascot_talk1, R.drawable.r_mascot_talk2).map { load(it) } }
+    private val yawnBmp: Bitmap? by lazy { load(R.drawable.r_mascot_yawn) }
+    private val whereBmp: Bitmap? by lazy { load(R.drawable.r_mascot_where) }
+    private val bedLie: Bitmap? by lazy { load(R.drawable.r_bed_lie) }
+    private val bedCover: Bitmap? by lazy { load(R.drawable.r_bed_cover) }
+    private val bedSleep: Bitmap? by lazy { load(R.drawable.r_bed_sleep) }
     private val blanketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF1F6F6B.toInt() }
     private val blanketStripe = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFF49B6A8.toInt()
@@ -202,6 +222,7 @@ class RMascotView(context: Context) : View(context) {
     // face crossfade
     private var shownMood = Mood.HAPPY
     private var shownSage = false
+    private var shownFrameSprite = false
     private var shownBitmap: Bitmap? = null
     private var fromBitmap: Bitmap? = null
     private var fade = 1f
@@ -282,6 +303,8 @@ class RMascotView(context: Context) : View(context) {
         prefs.rLastOpenMs().set(System.currentTimeMillis())
         if (state != State.IDLE || tfStart != 0L) return
         enterStart = now
+        waveUntil = now + 2400L
+        if (days >= 1) whereUntil = now + 4500L
         val text = when {
             days <= 0 -> "أهلاً من تاني! وحشتني."
             days == 1 -> "كنت فين؟ بقالي يوم مستنيك!"
@@ -474,19 +497,38 @@ class RMascotView(context: Context) : View(context) {
 
         val mood = currentMood(now, idle)
         val sage = now < sageUntil
-        val bitmap = (if (sage) sageFaces[mood] else null) ?: faces[mood] ?: faces[Mood.HAPPY]
+        var bitmap = (if (sage) sageFaces[mood] else null) ?: faces[mood] ?: faces[Mood.HAPPY]
+        var frameSprite = false
+        if (!sage && idle && !asleep && tfStart == 0L && mood == Mood.HAPPY) {
+            val extra: Bitmap? = when {
+                now < waveUntil -> waveFrames.getOrNull(((now / 130L) % waveFrames.size).toInt())
+                now < whereUntil -> whereBmp
+                now < yawnUntil || (prefs.rMascotSleep().get() && now - lastActiveAt >= SLEEP_AFTER_MS - 2500L) -> yawnBmp
+                bubbleText != null && now < bubbleUntil && bubbleShown < (bubbleText?.length ?: 0) ->
+                    talkFrames.getOrNull(bubbleShown % 3 - 1) // 0 = closed mouth, 1 and 2 = open
+                (now / 1000L) % 9L == 8L && now >= happyUntil ->
+                    wagFrames.getOrNull(WAG_ORDER[((now / 140L) % WAG_ORDER.size).toInt()])
+                else -> null
+            }
+            if (extra != null) {
+                bitmap = extra
+                frameSprite = true
+            }
+        }
         if (bitmap !== shownBitmap) {
             fromBitmap = shownBitmap
             fade = if (fromBitmap == null) 1f else 0f
             fadeSeconds = when {
                 sage != shownSage -> 0.25f // changing into / out of the wise old snake
                 mood == Mood.BLINK || shownMood == Mood.BLINK -> 0.05f
+                frameSprite || shownFrameSprite -> 0.04f
                 else -> 0.14f
             }
             shownBitmap = bitmap
         }
         shownMood = mood
         shownSage = sage
+        shownFrameSprite = frameSprite
         if (fade < 1f) fade = (fade + dt / fadeSeconds).coerceAtMost(1f)
     }
 
@@ -496,6 +538,7 @@ class RMascotView(context: Context) : View(context) {
         if (asleep) {
             asleep = false
             happyUntil = lastActiveAt + 1500
+            yawnUntil = lastActiveAt + 1300
             say(WAKE.random())
         }
     }
@@ -750,6 +793,15 @@ class RMascotView(context: Context) : View(context) {
             }
             if (id == 0) tfStart = 0L else tfBmp = tfBitmap(id)
         }
+        if (tfBmp == null && blanketT > 0f) {
+            // in bed: lie down -> blanket up -> asleep (the picture already has its zzz); waking shows the blanket picture
+            tfBmp = when {
+                !asleep -> bedCover
+                blanketT < 0.35f -> bedLie
+                blanketT < 0.8f -> bedCover
+                else -> bedSleep
+            }
+        }
         val current = tfBmp ?: shownBitmap ?: return
         val previous = if (tfBmp == null && fade < 1f) fromBitmap else null
 
@@ -780,10 +832,8 @@ class RMascotView(context: Context) : View(context) {
         bitmapPaint.alpha = (fade * 255f).toInt().coerceIn(0, 255)
         canvas.drawBitmap(current, null, dest, bitmapPaint)
         bitmapPaint.alpha = 255
-        if (blanketT > 0f) drawBlanket(canvas)
         canvas.restore()
 
-        if (asleep && blanketT > 0.85f) drawZzz(canvas, now)
         drawBubble(canvas, now)
     }
 
@@ -922,6 +972,7 @@ class RMascotView(context: Context) : View(context) {
         val GO_SLEEP = listOf("هنام شوية... صحّيني لما ترجع", "الدنيا هادية... هجيب اللحاف وأنام", "تصبح على خير، المانجا مش هتهرب")
         val WAKE = listOf("هاه؟ صحيت!", "كنت في أحلى حلم...", "خلاص خلاص، صاحي!")
         const val SLEEP_AFTER_MS = 60_000L
+        val WAG_ORDER = intArrayOf(0, 1, 2, 3, 4, 3, 2, 1)
         const val WELCOME_MIN_GAP_MS = 3L * 60 * 60 * 1000
         const val DAY_MS = 24L * 60 * 60 * 1000
         const val ENTER_MS = 800L

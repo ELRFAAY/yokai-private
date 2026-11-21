@@ -270,9 +270,16 @@ class LibraryPresenter(
 
                 currentLibrary = library
                 hiddenLibraryItems = hiddenItems
-                val mangaMap = library
+                var mangaMap = library
                     .applyFilters()
                     .applySort()
+                // R: a vault list shows only the lists the owner picked: no "Default" header, no other lists
+                val onlyLists = (view as? FilteredLibraryController)?.takeIf { it.isVaultList }
+                    ?.filterCategories?.takeIf { it.isNotEmpty() }
+                if (onlyLists != null) {
+                    categories = categories.filter { it.id in onlyLists }
+                    mangaMap = mangaMap.filterKeys { it.id in onlyLists }
+                }
                 val freshStart = libraryToDisplay.isEmpty()
                 sectionLibrary(mangaMap, freshStart)
             }

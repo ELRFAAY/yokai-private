@@ -9,10 +9,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bluelinelabs.conductor.ControllerChangeHandler
 import com.bluelinelabs.conductor.ControllerChangeType
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
 import eu.kanade.tachiyomi.ui.library.filter.FilterBottomSheet
 import eu.kanade.tachiyomi.ui.more.stats.details.StatsDetailsController
 import eu.kanade.tachiyomi.util.system.contextCompatDrawable
 import eu.kanade.tachiyomi.util.system.getResourceColor
+import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.view.hide
 import eu.kanade.tachiyomi.util.view.previousController
 
@@ -42,6 +44,10 @@ class FilteredLibraryController(bundle: Bundle? = null) : LibraryController(bund
 
     private var customTitle: String? = null
 
+    /** R: true when opened from the hidden-files vault: only the picked list, and pull-to-refresh updates it. */
+    var isVaultList = false
+        private set
+
     override fun getTitle(): String? {
         return customTitle ?: super.getTitle()
     }
@@ -60,7 +66,9 @@ class FilteredLibraryController(bundle: Bundle? = null) : LibraryController(bund
         filterTrackingScore: Int = 0,
         filterStartYear: Int = 0,
         filterLength: IntRange? = null,
+        vault: Boolean = false,
     ) : this() {
+        isVaultList = vault
         customTitle = title
         this.filterStatus = filterStatus
         this.filterLanguages = filterLanguages
@@ -81,25 +89,45 @@ class FilteredLibraryController(bundle: Bundle? = null) : LibraryController(bund
     override fun onViewCreated(view: View) {
         super.onViewCreated(view)
         binding.filterBottomSheet.root.sheetBehavior?.hide()
-        binding.swipeRefresh.isEnabled = false
+        binding.swipeRefresh.isEnabled = isVaultList
+        if (isVaultList) {
+            binding.swipeRefresh.setOnRefreshListener {
+                binding.swipeRefresh.isRefreshing = false
+                refreshVaultList()
+            }
+        }
         queryText?.let { search(it) }
+    }
+
+    /** R: refresh from inside the vault: updates only the manga of this list. */
+    private fun refreshVaultList() {
+        val ctx = view?.context ?: return
+        val catId = filterCategories.firstOrNull() ?: return
+        val category = presenter.categories.firstOrNull { it.id == catId } ?: return
+        if (LibraryUpdateJob.isRunning(ctx)) {
+            LibraryUpdateJob.startNow(ctx, category) // already running: this only queues the list
+            ctx.toast("اتضافت للتحديث الشغال")
+            return
+        }
+        LibraryUpdateJob.startNow(ctx, category)
+        ctx.toast("بحدّث \"${customTitle ?: category.name}\"...")
     }
 
     override fun showFloatingBar() = false
 
     override fun showCategories(show: Boolean, closeSearch: Boolean, category: Int) {
         super.showCategories(show, closeSearch, category)
-        binding.swipeRefresh.isEnabled = false
+        binding.swipeRefresh.isEnabled = isVaultList
     }
 
     override fun onActionStateChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
         super.onActionStateChanged(viewHolder, actionState)
-        binding.swipeRefresh.isEnabled = false
+        binding.swipeRefresh.isEnabled = isVaultList
     }
 
     override fun onItemReleased(position: Int) {
         super.onItemReleased(position)
-        binding.swipeRefresh.isEnabled = false
+        binding.swipeRefresh.isEnabled = isVaultList
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

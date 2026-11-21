@@ -39,7 +39,7 @@ class StatsPresenter(
     private val getTrack: GetTrack by injectLazy()
 
     private val libraryMangas = getLibrary()
-    val mangaDistinct = libraryMangas.distinct()
+    val mangaDistinct = libraryMangas.distinctBy { it.manga.id } // a manga in two lists must count once
 
     private fun getLibrary(): MutableList<LibraryManga> {
         return runBlocking { getLibraryManga.await() }.toMutableList()

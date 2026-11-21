@@ -1417,6 +1417,7 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
             FilteredLibraryController(
                 title = title,
                 filterCategories = arrayOf(categoryId),
+                vault = true,
             ).withFadeTransaction(),
         )
     }
