@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-21 11:40 (Cairo).
+Last updated: 2026-11-21 (second session of the day, after the account hand-over; Cairo time not checked).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -22,6 +22,19 @@ Last updated: 2026-11-21 11:40 (Cairo).
 - Workflow `build_r.yml` uses no `secrets.*`; it signs with `-PrDebugSign=true` and the in-repo keystore, so the repo transfer needed no secret re-adding. Artifact `yokai-r-release` (universal APK); `versionCode = 1000 + GITHUB_RUN_NUMBER`, so builds from any branch update each other.
 - Contents of the branch (newest last): crash fixes in `MangaDetailsPresenter.onCreate` (`manga`, `chapterSort`); reader cobra with poses from sheet 14; wise dragon art (sheet 15); home mascot = small dragon FULL BODY (sheets 16-19, cut-outs in `branding/mascot-models/cutouts/`, scripts in `branding/tools/`); typewriter bubble with blip sound (`r_mascot_sound`); stick scene in the reader (`RReaderCobraView`, `r_reader_cobra_scene` + frequency); tap transformation knight/ninja/pirate/detective (`r_mascot_transform`) with ninja "poof" sound; Settings > R crash fix (`a47021b`: never use `dependency =` in this repo's settings DSL, use `changesIn(viewScope) { isEnabled = it }`); welcome drop-in with time-away message (`58a4c3f`); sleep after a minute without touch with blanket (`e580e37`); Settings > R rows glide in (`b66284c`).
 - NOTHING from this line is tested on the owner's phone yet (Poco M2102J20SG). First thing after a green build: he installs it and reports.
+
+## Session log 2026-11-21 (account hand-over: the previous account's last message was only a progress note, its code state is exactly origin `b66284c`)
+DONE (pushed, branch `fix/stats-and-name`, commit `0838801`, NOT built, NOT tested on the phone):
+- Impact star back on `r_stick_wise_hit` (the cutter `branding/tools/make_small_dragon_fullbody.py` treated its black outline as a text label; new `STICK_KEEP` box protects it and closing+hole-fill makes the inside white). Cut-out `stick_wise_hit.png` and `r_stick_wise_hit.webp` regenerated (402x312, was 379x290: the star widened it).
+- Scene timing in `RReaderCobraView.SCENE`: hit hold 450 -> 850 ms, pause after the \"raise\" line 600 -> 300 ms.
+- Checked `MangaDetailsController.updateChapters`: it is safe (`view ?: return`, no lateinit). The only lateinit (`manga`, `chapterSort`) are in the Presenter and were already fixed in `onCreate`.
+NOT DONE / FOR THE NEXT ACCOUNT (owner message of 2026-11-21, relayed by him):
+1. **Hide a list**: in the main screen's top-right 3-dot menu add an option to hide a certain list/category (exact meaning: the owner said \"a certain list or something\"; ask him which list, probably a library category). It stays hidden until he taps the same option to bring it back. Needs a switch in Settings > R. NOT STARTED.
+2. **Stick scene does not look coherent** (the owner's words): the wise dragon swings at empty air, then the small dragon appears already hit; the blow on the head is never shown. Cause: the scene is a slideshow of single poses (`SCENE`, `RReaderCobraView`), no frame shows contact. Plan: draw both sprites on screen together, wise one swings the stick (rotate around the hand), small one gets a bump/squash + the star on contact, then the small one is shown hit. NOT DONE.
+3. **Direction**: the small dragon should be at the LEFT of the screen and the wise dragon must come in from the RIGHT and hit it on the left side (the owner said the green one comes out from the left; he wants the other from the right). Verify what the code does now (commit 50e5724 says \"from the right\") on the phone before changing. NOT DONE.
+4. The owner asked which AI tool can ANIMATE the model sheets so he can make it himself: answered in chat only (image-to-video tools give video with a background, not transparent frames; better: ask an image model for consistent frame sets of the same pose sheet, then animate in code). If he sends frames, record them in `branding/` first.
+5. Reader-open crash (open a chapter -> app closes): cause NOT found. Needs a stack trace/logcat from the owner. Suspect: `ReaderActivity.setupReaderNav()` inflates both navs and hides one; anything touching the hidden one too early. Not confirmed.
+6. Owner installs run 44889187381 (`b66284c`) and reports; the new commit `0838801` needs a new build (one dispatch only when none is running).
 
 ## Next steps
 1. Owner installs the APK from run 44889187381 (green) and reports what he sees on the phone.
