@@ -316,10 +316,11 @@ private val VerticalSpacerSize = 24.dp
 /** The little snake points at how long you spent in the chapter you just finished. */
 @Composable
 private fun ReadTimeCard(readMillis: () -> Long) {
-    var millis by remember { mutableStateOf(readMillis()) }
+    val safeMillis = { runCatching { readMillis() }.getOrDefault(0L) }
+    var millis by remember { mutableStateOf(safeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
-            millis = readMillis()
+            millis = safeMillis()
             delay(1000)
         }
     }

@@ -315,24 +315,30 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         setupReaderNav()
         setContentView(binding.root)
 
-        // R: green cobra that peeks in from the left edge while reading (Settings > R > reader cobra)
-        rCobra = RReaderCobraView(
-            this,
-            enabled = { preferences.rReaderCobra().get() },
-            canShow = { !menuVisible && viewer != null && !isFinishing && !isDestroyed },
-            soundOn = { preferences.rReaderCobraSound().get() },
-            nightOn = { preferences.rReaderCobraNight().get() },
-            intervalMinutes = { preferences.rReaderCobraInterval().get() },
-            sceneOn = { preferences.rReaderCobraScene().get() },
-            sceneEvery = { preferences.rReaderCobraSceneEvery().get() },
-        ).also { view ->
-            binding.root.addView(
-                view,
-                CoordinatorLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                ),
-            )
+        // R: green cobra that peeks in from the left edge while reading (Settings > R > reader cobra).
+        // It is decoration only: if anything in it fails, the reader must still open.
+        try {
+            rCobra = RReaderCobraView(
+                this,
+                enabled = { preferences.rReaderCobra().get() },
+                canShow = { !menuVisible && viewer != null && !isFinishing && !isDestroyed },
+                soundOn = { preferences.rReaderCobraSound().get() },
+                nightOn = { preferences.rReaderCobraNight().get() },
+                intervalMinutes = { preferences.rReaderCobraInterval().get() },
+                sceneOn = { preferences.rReaderCobraScene().get() },
+                sceneEvery = { preferences.rReaderCobraSceneEvery().get() },
+            ).also { view ->
+                binding.root.addView(
+                    view,
+                    CoordinatorLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    ),
+                )
+            }
+        } catch (e: Throwable) {
+            android.util.Log.e("YokaiR", "reader cobra failed to start, continuing without it", e)
+            rCobra = null
         }
 
         val a = obtainStyledAttributes(intArrayOf(AR.attr.windowLightStatusBar))
@@ -613,18 +619,31 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     private fun setupReaderNav() {
         verticalNav = preferences.rVerticalNav().get()
         if (verticalNav) {
-            readerNav = ReaderNavViews.of(binding.readerNavVertical)
-            readerNav.pageSeekbar.vertical = true
-            binding.readerNav.root.visibility = View.GONE
-            binding.readerNavVertical.root.visibility = View.VISIBLE
-            binding.navLayout.updateLayoutParams<CoordinatorLayout.LayoutParams> {
-                width = ViewGroup.LayoutParams.WRAP_CONTENT
-                height = 380.dpToPx
-                gravity = Gravity.TOP or Gravity.RIGHT
+            try {
+                readerNav = ReaderNavViews.of(binding.readerNavVertical)
+                readerNav.pageSeekbar.vertical = true
+                binding.readerNav.root.visibility = View.GONE
+                binding.readerNavVertical.root.visibility = View.VISIBLE
+                binding.navLayout.updateLayoutParams<CoordinatorLayout.LayoutParams> {
+                    width = ViewGroup.LayoutParams.WRAP_CONTENT
+                    height = 380.dpToPx
+                    gravity = Gravity.TOP or Gravity.RIGHT
+                }
+                return
+            } catch (e: Throwable) {
+                // R: never let the new bar stop the reader from opening: go back to the original bar
+                android.util.Log.e("YokaiR", "vertical page bar failed, using the original bar", e)
+                verticalNav = false
+                binding.readerNavVertical.root.visibility = View.GONE
+                binding.readerNav.root.visibility = View.VISIBLE
+                binding.navLayout.updateLayoutParams<CoordinatorLayout.LayoutParams> {
+                    width = ViewGroup.LayoutParams.MATCH_PARENT
+                    height = ViewGroup.LayoutParams.WRAP_CONTENT
+                    gravity = Gravity.TOP
+                }
             }
-        } else {
-            readerNav = ReaderNavViews.of(binding.readerNav)
         }
+        readerNav = ReaderNavViews.of(binding.readerNav)
     }
 
     /**
