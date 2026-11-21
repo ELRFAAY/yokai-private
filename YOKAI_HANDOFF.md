@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-21 (see NEWEST-8).
+Last updated: 2026-11-21 (see NEWEST-9).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,16 @@ Last updated: 2026-11-21 (see NEWEST-8).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-9 2026-11-21 18:40 (third account stopped here, owner at ~91%): READ FIRST, then NEWEST-8
+- Pushed: `f7af22d` (NEWEST-8 work, build 44923797319 GREEN, not tried on a phone yet) and the commit after it (stats opening fix, NOT compiled/dispatched yet). Branch `fix/stats-and-name-clean`.
+- **Stats open slowly (owner report)**: `StatsController.onViewCreated` now computes tracks, download count, global updates, read duration and weekly chapters inside `withContext(Dispatchers.IO)` (class `RStatsPre`), then fills the views. Unverified. Remaining main-thread work: `StatsPresenter.mangaDistinct` (one `runBlocking` library query when the presenter is created).
+- **Owner video bug (`c6dcc05b-564870.mp4`, reader, webtoon)**: long-press on a page opens the page sheet (share / save / set as cover) AND the page keeps scrolling behind it. Cause (found, NOT fixed): `WebtoonFrame.holdStart` is posted with `getLongPressTimeout()`, the same delay as the pages' long press, and the hold scroll loop (`holdFrame`) never stops when the sheet (a dialog) takes the window focus. Fix to do: stop the hold in `WebtoonFrame.onWindowFocusChanged(false)`, and start the hold a bit after the long press (or only after movement stopped), keeping the page sheet working in the bottom half.
+- **NEW owner wish (NOT done): tap the middle of the screen = show the reader tools, tap again = hide them** (a real toggle, like the video; he is not describing a freeze). Check `ReaderActivity.toggleMenu` / `setMenuVisibility` and the webtoon/pager tap handling, and that my `rScheduleAutoHide` does not fight it (a manual tap must cancel/restart the timer).
+- **NEW owner wish (NOT done): the reader toolbar like the video (`564846.mp4`)**: every button with an icon when possible, sizes that fit, and when there is no room show "…" instead of cut text. Then make ALL app settings look consistent (same cards, spacing, icons: check every `SettingsLegacyController` screen and Compose screen).
+- Still NOT started: the backup (all R settings as they are, owner's chosen items, full stats, and a stats option to add a picture/cover/banner at the end of the stats plus a name). Ask the owner what "الحاجات المقول لها بين" means before building it.
+- Owner's order: settings first, nothing else before; one dispatch on the last commit, never while a build runs; log every change here; reply in short Egyptian Arabic.
+- Reminder: repo is PUBLIC with the signing key: owner must make it private and delete any pasted token.
 
 ## NEWEST-8 2026-11-21 (third account, settings ONLY): READ FIRST, then NEWEST-7
 - Build 44921357959 (`532c7c8`) was GREEN. Branch `fix/stats-and-name-clean`; changes below NOT compiled until the next dispatch (no Android SDK here). If it fails: annotations (see archive), suspects: `SettingsCommonWidget.kt` (`itemsIndexed` cards), `ReaderActivity.kt` (`rClockReceiver`, `rScheduleAutoHide`, `rUpdateClock`), `ReaderGeneralView.kt` (`bindChoices`), `reader_general_layout.xml` (rewritten).
