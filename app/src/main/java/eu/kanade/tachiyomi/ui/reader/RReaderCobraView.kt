@@ -513,8 +513,8 @@ class RReaderCobraView(
 
         private val SCENE = listOf(
             Step(R.drawable.r_stick_wise_walk, "إنت تاني؟! تلات مرات في دقيقة! مفيش أدب!", 900),
-            Step(R.drawable.r_stick_wise_raise, "نصيحة من الحاج: اللي ما يسمعش الكلام... يتضرب!", 600, 1),
-            Step(R.drawable.r_stick_wise_hit, "", 450, 2),
+            Step(R.drawable.r_stick_wise_raise, "نصيحة من الحاج: اللي ما يسمعش الكلام... يتضرب!", 300, 1),
+            Step(R.drawable.r_stick_wise_hit, "", 850, 2),
             Step(R.drawable.r_stick_small_hit, "آآآي! دماغي!", 900),
             Step(R.drawable.r_stick_wise_walk_with_small, "يلا معايا. ونصيحة تانية: اشرب مية.", 700),
         )
