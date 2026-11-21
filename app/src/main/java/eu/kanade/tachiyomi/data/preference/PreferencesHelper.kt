@@ -329,6 +329,15 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Hold-scroll speed in tenths of a screen per second. */
     fun rHoldScrollSpeed() = preferenceStore.getInt("r_hold_scroll_speed", 10)
 
+    /** Reader: hide the toolbar by itself after N seconds (0 = never). */
+    fun rAutoHideTools() = preferenceStore.getInt("r_autohide_tools", 0)
+
+    /** Reader: small clock + battery level in the corner. */
+    fun rClockBattery() = preferenceStore.getBoolean("r_clock_battery", false)
+
+    /** Reader: thin permanent progress bar at the bottom edge. */
+    fun rProgressBar() = preferenceStore.getBoolean("r_progress_bar", false)
+
     /** Stats: extra sections (streak, weekly goal, top 5, hours, month comparison, genre/source donut). */
     fun rStatsExtra() = preferenceStore.getBoolean("r_stats_extra", true)
 

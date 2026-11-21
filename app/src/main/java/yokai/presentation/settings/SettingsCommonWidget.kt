@@ -1,12 +1,16 @@
 package yokai.presentation.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
@@ -14,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import eu.kanade.tachiyomi.core.storage.preference.collectAsState
@@ -101,6 +106,10 @@ fun PreferenceScreen(
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     val highlightKey = ComposableSettings.highlightKey
+    val rPreferences: PreferencesHelper by injectLazy()
+    // R: same theme-tinted rounded cards as the legacy settings (Settings > R > عام)
+    val cards = rPreferences.rSettingsStyle().get()
+    val cardColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.43f)
     if (highlightKey != null) {
         LaunchedEffect(Unit) {
             val i = items.findHighlightedIndex(highlightKey)
@@ -127,8 +136,26 @@ fun PreferenceScreen(
                             PreferenceGroupHeader(title = preference.title)
                         }
                     }
-                    items(preference.preferenceItems) { item ->
-                        PreferenceItem(item = item, highlightKey = highlightKey)
+                    itemsIndexed(preference.preferenceItems) { index, item ->
+                        if (cards) {
+                            val r = 18.dp
+                            val shape = RoundedCornerShape(
+                                topStart = if (index == 0) r else 0.dp,
+                                topEnd = if (index == 0) r else 0.dp,
+                                bottomStart = if (index == preference.preferenceItems.lastIndex) r else 0.dp,
+                                bottomEnd = if (index == preference.preferenceItems.lastIndex) r else 0.dp,
+                            )
+                            Column(
+                                Modifier
+                                    .padding(horizontal = 12.dp)
+                                    .clip(shape)
+                                    .background(cardColor),
+                            ) {
+                                PreferenceItem(item = item, highlightKey = highlightKey)
+                            }
+                        } else {
+                            PreferenceItem(item = item, highlightKey = highlightKey)
+                        }
                     }
                     item {
                         if (i < items.lastIndex) {

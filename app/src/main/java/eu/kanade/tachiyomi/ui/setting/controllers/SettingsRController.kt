@@ -161,6 +161,28 @@ class SettingsRController : SettingsLegacyController() {
                 entryValues = listOf(5, 10, 15, 25)
                 preferences.rHoldScroll().changesIn(viewScope) { isEnabled = it }
             }
+
+            intListPreference(activity) {
+                bindTo(preferences.rAutoHideTools())
+                title = "إخفاء الأدوات تلقائيًا"
+                rIcon(R.drawable.ic_tune_24dp)
+                entries = listOf("أبدًا", "بعد ٣ ثواني", "بعد ٥ ثواني", "بعد ٨ ثواني")
+                entryValues = listOf(0, 3, 5, 8)
+            }
+
+            switchPreference {
+                bindTo(preferences.rClockBattery())
+                title = "الساعة والبطارية"
+                rIcon(R.drawable.ic_progress_clock_24dp)
+                summary = "ساعة ونسبة البطارية صغيرة في ركن القارئ. عند الإيقاف: بدونها."
+            }
+
+            switchPreference {
+                bindTo(preferences.rProgressBar())
+                title = "شريط تقدم دائم"
+                rIcon(R.drawable.ic_swap_vert_24dp)
+                summary = "خط رفيع أسفل الشاشة يبيّن مكانك في الفصل طول الوقت. عند الإيقاف: بدونه."
+            }
         }
 
         preferenceCategory {
@@ -275,70 +297,74 @@ class SettingsRController : SettingsLegacyController() {
                 entryValues = listOf(15, 35, 60, 100)
                 preferences.rMascotSage().changesIn(viewScope) { isEnabled = it }
             }
+
+            switchPreference {
+                bindTo(preferences.rMascotSleep())
+                title = "التنين الصغير: النوم"
+                rIcon(R.drawable.ic_r_hotel)
+                summary = "بعد دقيقة بدون لمس الشاشة يقول تصبح على خير، ويسحب لحافاً فوقه وينام. " +
+                    "أي لمسة توقظه. عند الإيقاف: لا ينام."
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+            }
+
+            switchPreference {
+                bindTo(preferences.rMascotWelcome())
+                title = "التنين الصغير: الترحيب عند فتح التطبيق"
+                rIcon(R.drawable.ic_r_home)
+                summary = "عند فتح التطبيق ينزل التنين الصغير من أعلى اليمين ويقول لك كم من الوقت غبت عنه. " +
+                    "عند الإيقاف: لا يظهر ترحيب."
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+            }
         }
 
-        switchPreference {
-            bindTo(preferences.rMascotSleep())
-            title = "التنين الصغير: النوم"
-            rIcon(R.drawable.ic_r_hotel)
-            summary = "بعد دقيقة بدون لمس الشاشة يقول تصبح على خير، ويسحب لحافاً فوقه وينام. " +
-                "أي لمسة توقظه. عند الإيقاف: لا ينام."
-            preferences.rMascot().changesIn(viewScope) { isEnabled = it }
-        }
+        preferenceCategory {
+            title = "التنين في القارئ"
 
-        switchPreference {
-            bindTo(preferences.rMascotWelcome())
-            title = "التنين الصغير: الترحيب عند فتح التطبيق"
-            rIcon(R.drawable.ic_r_home)
-            summary = "عند فتح التطبيق ينزل التنين الصغير من أعلى اليمين ويقول لك كم من الوقت غبت عنه. " +
-                "عند الإيقاف: لا يظهر ترحيب."
-            preferences.rMascot().changesIn(viewScope) { isEnabled = it }
-        }
+            switchPreference {
+                bindTo(preferences.rReaderCobra())
+                title = "القارئ: التنين الصغير أثناء القراءة"
+                rIcon(R.drawable.ic_book_open_variant_24dp)
+                summary = "مفعّل: التنين الصغير يطلع من جنب الشاشة وإنت بتقرا وتقولك كلمتين بالمصري. " +
+                    "معطّل: القارئ الأصلي (بدون كوبرا). لا تظهر والقائمة مفتوحة، وتضغط عليها علشان تختفي."
+            }
 
-        switchPreference {
-            bindTo(preferences.rReaderCobra())
-            title = "القارئ: التنين الصغير أثناء القراءة"
-            rIcon(R.drawable.ic_book_open_variant_24dp)
-            summary = "مفعّل: التنين الصغير يطلع من جنب الشاشة وإنت بتقرا وتقولك كلمتين بالمصري. " +
-                "معطّل: القارئ الأصلي (بدون كوبرا). لا تظهر والقائمة مفتوحة، وتضغط عليها علشان تختفي."
-        }
+            switchPreference {
+                bindTo(preferences.rReaderCobraSound())
+                title = "التنين الصغير: الأصوات"
+                rIcon(R.drawable.ic_r_volume)
+                summary = "مفعّل: صوت كتابة الكلام وصوت حركتها وهي داخلة وخارجة (بصوت الوسائط). معطّل: بدون أصوات."
+            }
 
-        switchPreference {
-            bindTo(preferences.rReaderCobraSound())
-            title = "التنين الصغير: الأصوات"
-            rIcon(R.drawable.ic_r_volume)
-            summary = "مفعّل: صوت كتابة الكلام وصوت حركتها وهي داخلة وخارجة (بصوت الوسائط). معطّل: بدون أصوات."
-        }
+            switchPreference {
+                bindTo(preferences.rReaderCobraNight())
+                title = "التنين الصغير: وضع الليل"
+                rIcon(R.drawable.ic_r_bedtime)
+                summary = "مفعّل: من 12 بالليل لحد 5 الصبح تيجي نعسانة وتقولك «خش نام يا عم». معطّل: نفس الكلام العادي طول اليوم."
+            }
 
-        switchPreference {
-            bindTo(preferences.rReaderCobraNight())
-            title = "التنين الصغير: وضع الليل"
-            rIcon(R.drawable.ic_r_bedtime)
-            summary = "مفعّل: من 12 بالليل لحد 5 الصبح تيجي نعسانة وتقولك «خش نام يا عم». معطّل: نفس الكلام العادي طول اليوم."
-        }
+            intListPreference(activity) {
+                bindTo(preferences.rReaderCobraInterval())
+                title = "التنين الصغير: كل قد إيه يظهر"
+                rIcon(R.drawable.ic_progress_clock_24dp)
+                entries = listOf("كل 3 دقايق", "كل 6 دقايق", "كل 10 دقايق", "كل 20 دقيقة", "كل 45 دقيقة")
+                entryValues = listOf(3, 6, 10, 20, 45)
+            }
 
-        intListPreference(activity) {
-            bindTo(preferences.rReaderCobraInterval())
-            title = "التنين الصغير: كل قد إيه يظهر"
-            rIcon(R.drawable.ic_progress_clock_24dp)
-            entries = listOf("كل 3 دقايق", "كل 6 دقايق", "كل 10 دقايق", "كل 20 دقيقة", "كل 45 دقيقة")
-            entryValues = listOf(3, 6, 10, 20, 45)
-        }
+            switchPreference {
+                bindTo(preferences.rReaderCobraScene())
+                title = "مشهد العصا: التنين الحكيم"
+                rIcon(R.drawable.ic_r_stick)
+                summary = "مفعّل: التنين الصغير يطلع مرتين أو تلاتة ورا بعض، وبعدين يجي التنين الحكيم من اليمين ويضربه بالعصا على راسه ويسحبه معاه. معطّل: التنين الصغير بس."
+            }
 
-        switchPreference {
-            bindTo(preferences.rReaderCobraScene())
-            title = "مشهد العصا: التنين الحكيم"
-            rIcon(R.drawable.ic_r_stick)
-            summary = "مفعّل: التنين الصغير يطلع مرتين أو تلاتة ورا بعض، وبعدين يجي التنين الحكيم من اليمين ويضربه بالعصا على راسه ويسحبه معاه. معطّل: التنين الصغير بس."
-        }
-
-        intListPreference(activity) {
-            bindTo(preferences.rReaderCobraSceneEvery())
-            title = "مشهد العصا: كل كام زيارة"
-            rIcon(R.drawable.ic_progress_clock_24dp)
-            entries = listOf("كل زيارة تالتة", "كل زيارة رابعة", "كل زيارة خامسة", "كل زيارة سابعة")
-            entryValues = listOf(3, 4, 5, 7)
-            preferences.rReaderCobraScene().changesIn(viewScope) { isEnabled = it }
+            intListPreference(activity) {
+                bindTo(preferences.rReaderCobraSceneEvery())
+                title = "مشهد العصا: كل كام زيارة"
+                rIcon(R.drawable.ic_progress_clock_24dp)
+                entries = listOf("كل زيارة تالتة", "كل زيارة رابعة", "كل زيارة خامسة", "كل زيارة سابعة")
+                entryValues = listOf(3, 4, 5, 7)
+                preferences.rReaderCobraScene().changesIn(viewScope) { isEnabled = it }
+            }
         }
     }
 }

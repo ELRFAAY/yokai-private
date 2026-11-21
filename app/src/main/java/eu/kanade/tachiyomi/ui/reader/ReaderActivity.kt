@@ -4,9 +4,11 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityOptions
 import android.app.assist.AssistContent
+import android.content.BroadcastReceiver
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Bitmap
@@ -152,6 +154,7 @@ import java.io.ByteArrayOutputStream
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Collections
+import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
@@ -208,6 +211,18 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     private var menuTemporarilyVisible = false
 
     private var coroutine: Job? = null
+    private var rAutoHideJob: Job? = null
+    private var rBatteryPercent = -1
+    private val rClockReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_BATTERY_CHANGED) {
+                val level = intent.getIntExtra("level", -1)
+                val scale = intent.getIntExtra("scale", 100)
+                if (level >= 0 && scale > 0) rBatteryPercent = level * 100 / scale
+            }
+            rUpdateClock()
+        }
+    }
 
     private var fromUrl = false
 
@@ -1253,6 +1268,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         val oldVisibility = menuVisible
         menuVisible = visible
         if (visible) coroutine?.cancel()
+        rScheduleAutoHide()
         binding.viewerContainer.requestLayout()
         if (visible) {
             snackbar?.dismiss()
@@ -1409,7 +1425,34 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
     }
 
+    /** R: hides the tools by itself after the delay chosen in the reader settings (0 = never). */
+    private fun rScheduleAutoHide() {
+        rAutoHideJob?.cancel()
+        val seconds = preferences.rAutoHideTools().get()
+        if (!menuVisible || seconds <= 0 || menuTemporarilyVisible) return
+        rAutoHideJob = lifecycleScope.launch {
+            delay(seconds * 1000L)
+            val sheetOpen = binding.chaptersSheet.chaptersBottomSheet.sheetBehavior.isExpanded()
+            if (menuVisible && !menuTemporarilyVisible && !sheetOpen) setMenuVisibility(false)
+        }
+    }
+
+    /** R: clock + battery in the corner (switch in the reader settings). */
+    private fun rUpdateClock() {
+        val on = preferences.rClockBattery().get()
+        binding.rClockBattery.isVisible = on
+        if (!on) return
+        val time = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(Date())
+        val battery = if (rBatteryPercent >= 0) "  $rBatteryPercent%" else ""
+        binding.rClockBattery.text = time + battery
+    }
+
     override fun onPause() {
+        try {
+            unregisterReceiver(rClockReceiver)
+        } catch (_: Exception) {
+        }
+        rAutoHideJob?.cancel()
         (viewer as? WebtoonViewer)?.stopAutoScroll()
         rCobra?.onActivityPause()
         viewModel.flushReadTimer()
@@ -1418,6 +1461,15 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
     override fun onResume() {
         super.onResume()
+        val clockFilter = IntentFilter().apply {
+            addAction(Intent.ACTION_TIME_TICK)
+            addAction(Intent.ACTION_TIME_CHANGED)
+            addAction(Intent.ACTION_TIMEZONE_CHANGED)
+            addAction(Intent.ACTION_BATTERY_CHANGED)
+        }
+        ContextCompat.registerReceiver(this, rClockReceiver, clockFilter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        rUpdateClock()
+        rScheduleAutoHide()
         viewModel.restartReadTimer()
         rCobra?.onActivityResume()
     }
@@ -1611,6 +1663,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
 
         val totalPages = pages.size.toString()
+        if (pages.isNotEmpty()) binding.rProgress.progress = page.number * 100 / pages.size
         if (hingeGapSize > 0) {
             binding.pageNumber.updateLayoutParams<CoordinatorLayout.LayoutParams> {
                 marginStart = (binding.root.width) / 2 + hingeGapSize
@@ -2070,6 +2123,9 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 .launchIn(scope)
 
             preferences.showPageNumber().changesIn(scope) { setPageNumberVisibility(it) }
+            preferences.rClockBattery().changesIn(scope) { rUpdateClock() }
+            preferences.rProgressBar().changesIn(scope) { binding.rProgress.isVisible = it }
+            preferences.rAutoHideTools().changesIn(scope) { rScheduleAutoHide() }
 
             readerPreferences.cutoutShort().changesIn(scope) { setCutoutMode() }
 

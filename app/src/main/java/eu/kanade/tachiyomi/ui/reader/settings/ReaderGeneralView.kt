@@ -2,7 +2,14 @@ package eu.kanade.tachiyomi.ui.reader.settings
 
 import android.content.Context
 import android.util.AttributeSet
+import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.card.MaterialCardView
 import eu.kanade.tachiyomi.data.database.models.orientationType
 import eu.kanade.tachiyomi.data.database.models.readingModeType
 import eu.kanade.tachiyomi.databinding.ReaderGeneralLayoutBinding
@@ -10,6 +17,7 @@ import eu.kanade.tachiyomi.ui.reader.ReaderActivity
 import eu.kanade.tachiyomi.util.bindToPreference
 import eu.kanade.tachiyomi.util.lang.addBetaTag
 import eu.kanade.tachiyomi.util.system.DeviceUtil
+import eu.kanade.tachiyomi.util.system.getResourceColor
 import eu.kanade.tachiyomi.widget.BaseReaderSettingsView
 import yokai.util.lang.getString
 
@@ -64,22 +72,67 @@ class ReaderGeneralView @JvmOverloads constructor(context: Context, attrs: Attri
         binding.keepscreen.bindToPreference(preferences.keepScreenOn())
         binding.alwaysShowChapterTransition.bindToPreference(preferences.alwaysShowChapterTransition())
 
+        // R: cards tinted with the theme color, like the owner's video
+        val cardColor = ColorUtils.setAlphaComponent(
+            context.getResourceColor(com.google.android.material.R.attr.colorSecondaryContainer),
+            110,
+        )
+        for (i in 0 until binding.constraintLayout.childCount) {
+            (binding.constraintLayout.getChildAt(i) as? MaterialCardView)?.setCardBackgroundColor(cardColor)
+        }
+
+        // R: tools / bar options
+        val hideDelays = listOf(0, 3, 5, 8)
+        bindChoices(
+            binding.rAutohide,
+            listOf("أبدًا", "٣ ث", "٥ ث", "٨ ث"),
+            hideDelays.indexOf(preferences.rAutoHideTools().get()).coerceAtLeast(0),
+        ) { preferences.rAutoHideTools().set(hideDelays[it]) }
+        binding.rClockBattery.bindToPreference(preferences.rClockBattery())
+        binding.rProgressBar.bindToPreference(preferences.rProgressBar())
+        binding.rVolumeKeys.bindToPreference(preferences.readWithVolumeKeys())
+        binding.rVolumeInverted.bindToPreference(preferences.readWithVolumeKeysInverted())
+
         // R: tap / hold to scroll (same prefs as Settings > R > القارئ)
         binding.rTapScroll.bindToPreference(preferences.rTapScroll())
         binding.rHoldScroll.bindToPreference(preferences.rHoldScroll())
-        binding.rTapSide.setEntries(listOf("اليمين ينزّل واليسار يطلّع", "اليسار ينزّل واليمين يطلّع", "الاتنين ينزّلوا"))
-        binding.rTapSide.setSelection(preferences.rTapScrollSide().get().coerceIn(0, 2))
-        binding.rTapSide.onItemSelectedListener = { position -> preferences.rTapScrollSide().set(position) }
+        bindChoices(
+            binding.rTapSide,
+            listOf("اليمين ينزّل", "اليسار ينزّل", "الاتنين ينزّلوا"),
+            preferences.rTapScrollSide().get().coerceIn(0, 2),
+        ) { preferences.rTapScrollSide().set(it) }
         val jumps = listOf(50, 70, 85, 100)
-        binding.rTapJump.setEntries(jumps.map { "$it% من الشاشة" })
-        binding.rTapJump.setSelection(jumps.indexOf(preferences.rTapJump().get()).coerceAtLeast(0))
-        binding.rTapJump.onItemSelectedListener = { position -> preferences.rTapJump().set(jumps[position]) }
+        bindChoices(
+            binding.rTapJump,
+            jumps.map { "$it%" },
+            jumps.indexOf(preferences.rTapJump().get()).coerceAtLeast(0),
+        ) { preferences.rTapJump().set(jumps[it]) }
         val speeds = listOf(5, 10, 15, 25)
-        binding.rHoldSpeed.setEntries(listOf("بطيئة", "عادية", "سريعة", "سريعة جداً"))
-        binding.rHoldSpeed.setSelection(speeds.indexOf(preferences.rHoldScrollSpeed().get()).coerceAtLeast(0))
-        binding.rHoldSpeed.onItemSelectedListener = { position -> preferences.rHoldScrollSpeed().set(speeds[position]) }
+        bindChoices(
+            binding.rHoldSpeed,
+            listOf("بطيئة", "عادية", "سريعة", "أسرع"),
+            speeds.indexOf(preferences.rHoldScrollSpeed().get()).coerceAtLeast(0),
+        ) { preferences.rHoldScrollSpeed().set(speeds[it]) }
 
         updatePrefs()
+    }
+
+    /** R: fills a segmented button row with [labels], checks [selected] and reports taps. */
+    private fun bindChoices(group: MaterialButtonToggleGroup, labels: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+        group.removeAllViews()
+        val ids = labels.map { label ->
+            MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                id = View.generateViewId()
+                text = label
+                isCheckable = true
+                maxLines = 1
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            }.also { group.addView(it) }.id
+        }
+        group.check(ids[selected.coerceIn(0, ids.lastIndex)])
+        group.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) ids.indexOf(checkedId).takeIf { it >= 0 }?.let(onSelect)
+        }
     }
 
     /**
