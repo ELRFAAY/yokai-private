@@ -33,6 +33,7 @@ class LibraryDisplayView @JvmOverloads constructor(context: Context, attrs: Attr
             binding.staggeredGrid.isEnabled = !it
         }
         binding.outlineOnCovers.bindToPreference(uiPreferences.outlineOnCovers())
+        binding.rColorCards.bindToPreference(preferences.rColorCards())
         binding.staggeredGrid.text = context.getString(MR.strings.use_staggered_grid).addBetaTag(context)
         binding.staggeredGrid.isEnabled = !uiPreferences.uniformGrid().get()
         binding.staggeredGrid.bindToPreference(preferences.useStaggeredGrid())

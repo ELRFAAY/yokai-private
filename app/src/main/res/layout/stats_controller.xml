@@ -27,6 +27,147 @@
             android:text="@string/view_detailed_statistics"
             app:icon="@drawable/ic_brief" />
 
+        <!-- R: hero card, weekly chart and donut -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/r_hero_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/colorSecondaryContainer">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="وقت القراءة"
+                    android:textColor="?attr/colorOnSecondaryContainer"
+                    android:alpha="0.8"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/r_hero_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorOnSecondaryContainer"
+                    android:textSize="40sp"
+                    android:textStyle="bold"
+                    tools:text="3d 4h" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/r_hero_chapters"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="?attr/colorOnSecondaryContainer"
+                            android:textSize="28sp"
+                            android:textStyle="bold"
+                            tools:text="1234" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="شابتر اتقرا"
+                            android:textColor="?attr/colorOnSecondaryContainer"
+                            android:alpha="0.8" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/r_hero_titles"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="?attr/colorOnSecondaryContainer"
+                            android:textSize="28sp"
+                            android:textStyle="bold"
+                            tools:text="56" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="مانجا في المكتبة"
+                            android:textColor="?attr/colorOnSecondaryContainer"
+                            android:alpha="0.8" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?textAppearanceLabelLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="الشباتر اللي قريتها آخر ٧ أيام"
+            android:textColor="?android:attr/textColorSecondary" />
+
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/r_weekly_chart"
+            android:layout_width="match_parent"
+            android:layout_height="190dp"
+            android:layout_marginBottom="20dp" />
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?textAppearanceLabelLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="المقروء من الشباتر"
+            android:textColor="?android:attr/textColorSecondary" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="210dp"
+            android:layout_marginBottom="6dp">
+
+            <com.github.mikephil.charting.charts.PieChart
+                android:id="@+id/r_read_donut"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/r_donut_center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                tools:text="42%" />
+        </FrameLayout>
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/r_donut_legend"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="22dp"
+            android:gravity="center"
+            android:textColor="?android:attr/textColorSecondary"
+            tools:text="اتقرا 100 • لسه 200" />
+
         <com.google.android.material.textview.MaterialTextView
             style="?textAppearanceLabelLarge"
             android:layout_width="wrap_content"

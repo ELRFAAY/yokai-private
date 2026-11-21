@@ -343,6 +343,7 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
 
     /** Statistics: show minutes in the reading time even when it is more than a day. */
     fun rStatsMinutes() = preferenceStore.getBoolean("r_stats_minutes", true)
+    fun rColorCards() = preferenceStore.getBoolean("r_color_cards", false) // R: colored title strip under library covers
 
     /** Mascot: the wise old snake sometimes shows up and gives useless advice (a joke). */
     fun rMascotSage() = preferenceStore.getBoolean("r_mascot_sage", true)

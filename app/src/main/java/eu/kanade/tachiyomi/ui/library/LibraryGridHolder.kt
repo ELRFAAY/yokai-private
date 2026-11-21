@@ -1,7 +1,10 @@
 package eu.kanade.tachiyomi.ui.library
 
 import android.app.Activity
+import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
+import android.util.TypedValue
+import androidx.core.content.ContextCompat
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -36,11 +39,15 @@ import yokai.util.coil.loadManga
 class LibraryGridHolder(
     private val view: View,
     adapter: LibraryCategoryAdapter,
-    compact: Boolean,
+    private val compact: Boolean,
     val fixedSize: Boolean,
 ) : LibraryHolder(view, adapter) {
 
     private val binding = MangaGridItemBinding.bind(view)
+    private val rPrefs: eu.kanade.tachiyomi.data.preference.PreferencesHelper by uy.kohesive.injekt.injectLazy()
+    private val defaultCardShape = binding.card.shapeAppearanceModel
+    private var boundItem: LibraryMangaItem? = null
+
     init {
         binding.playLayout.setOnClickListener { playButtonClicked() }
         binding.playLayout.setOnLongClickListener { itemView.performLongClick() }
@@ -96,6 +103,8 @@ class LibraryGridHolder(
             binding.title.maxLines = if (hasAuthorInFilter) 1 else 2
         }
 
+        boundItem = item
+        applyColorCard(item)
         setUnreadBadge(binding.unreadDownloadBadge.badgeView, item)
         setReadingButton(item)
         setSelected(adapter.isSelected(flexibleAdapterPosition))
@@ -103,6 +112,43 @@ class LibraryGridHolder(
         // Update the cover.
         binding.coverThumbnail.dispose()
         setCover(item.manga.manga)
+    }
+
+    /**
+     * R: "colored card": in the comfortable grid the title strip under the cover takes the cover's dominant color
+     * (text in the matching contrast color) and the cover's bottom corners become square so cover and strip look like one card.
+     */
+    private fun applyColorCard(item: LibraryMangaItem) {
+        val ctx = itemView.context
+        val on = !compact && rPrefs.rColorCards().get() && item.manga.manga.id != Long.MIN_VALUE
+        val baseHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 31f, ctx.resources.displayMetrics).toInt()
+        with(binding) {
+            if (on) {
+                val colors = item.manga.manga.dominantCoverColors
+                val bg = colors?.first ?: ctx.getResourceColor(R.attr.background)
+                val fg = colors?.second ?: ctx.getResourceColor(R.attr.colorOnBackground)
+                val radius = 12.dpToPx.toFloat()
+                textLayout.background = GradientDrawable().apply {
+                    setColor(bg)
+                    cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, radius, radius, radius, radius)
+                }
+                textLayout.setPadding(8.dpToPx, 5.dpToPx, 8.dpToPx, 6.dpToPx)
+                textLayout.updateLayoutParams<ViewGroup.LayoutParams> { height = baseHeight + 11.dpToPx }
+                title.setTextColor(fg)
+                subtitle.setTextColor((fg and 0x00FFFFFF) or (0xB3 shl 24))
+                card.shapeAppearanceModel = defaultCardShape.toBuilder()
+                    .setBottomLeftCornerSize(0f)
+                    .setBottomRightCornerSize(0f)
+                    .build()
+            } else {
+                textLayout.background = null
+                textLayout.setPadding(0, 0, 0, 0)
+                textLayout.updateLayoutParams<ViewGroup.LayoutParams> { height = baseHeight }
+                title.setTextColor(ContextCompat.getColorStateList(ctx, R.color.library_comfortable_title_selector))
+                subtitle.setTextColor(ContextCompat.getColorStateList(ctx, R.color.library_comfortable_subtitle_selector))
+                card.shapeAppearanceModel = defaultCardShape
+            }
+        }
     }
 
     override fun toggleActivation() {
@@ -132,6 +178,7 @@ class LibraryGridHolder(
             }
             listener(
                 onSuccess = { _, _ ->
+                    boundItem?.takeIf { it.manga.manga.id == manga.id }?.let { applyColorCard(it) }
                     if (!fixedSize && !hasRatio && MangaCoverMetadata.getRatio(manga) != null) {
                         setFreeformCoverRatio(manga)
                     }

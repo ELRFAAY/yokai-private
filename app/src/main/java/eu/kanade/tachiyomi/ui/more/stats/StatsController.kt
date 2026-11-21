@@ -51,6 +51,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
         super.onViewCreated(view)
         scrollViewWith(binding.statsScrollView, true)
         handleGeneralStats()
+        handleHero()
         if (mangaDistinct.isNotEmpty()) {
             binding.viewDetailLayout.setOnClickListener {
                 router.pushController(StatsDetailsController().withFadeTransaction())
@@ -83,6 +84,82 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
             statsTrackersText.text = presenter.getLoggedTrackers().count().toString()
             statsReadDurationText.text = presenter.getReadDuration()
             statsReadDurationLayout.compatToolTipText = activity?.getString(MR.strings.read_duration_info)
+        }
+    }
+
+    /** R: big numbers on top, last-7-days chart and the read / unread donut. */
+    private fun handleHero() {
+        val ctx = activity ?: return
+        val read = mangaDistinct.sumOf { it.read }
+        val total = mangaDistinct.sumOf { it.totalChapters }
+        val unread = (total - read).coerceAtLeast(0)
+        val text = ctx.getResourceColor(R.attr.colorOnBackground)
+        with(binding) {
+            rHeroTime.text = presenter.getReadDuration()
+            rHeroChapters.text = read.toString()
+            rHeroTitles.text = mangaDistinct.size.toString()
+            try {
+                val week = presenter.getWeeklyChapters()
+                val palette = StatsHelper.PIE_CHART_COLOR_LIST
+                val set = BarDataSet(
+                    week.mapIndexed { i, (_, n) -> BarEntry(i.toFloat(), n.toFloat()) },
+                    "",
+                ).apply {
+                    this.colors = week.indices.map { palette[(it * 2) % palette.size] }
+                    valueTextColor = text
+                    valueTextSize = 11f
+                    valueFormatter = object : ValueFormatter() {
+                        override fun getFormattedValue(value: Float) = if (value > 0f) value.toInt().toString() else ""
+                    }
+                }
+                with(rWeeklyChart) {
+                    data = BarData(set).apply { barWidth = 0.6f }
+                    axisLeft.isEnabled = false
+                    axisRight.isEnabled = false
+                    axisLeft.axisMinimum = 0f
+                    description.isEnabled = false
+                    legend.isEnabled = false
+                    setTouchEnabled(false)
+                    xAxis.apply {
+                        setDrawGridLines(false)
+                        position = XAxis.XAxisPosition.BOTTOM
+                        textColor = text
+                        granularity = 1f
+                        valueFormatter = object : ValueFormatter() {
+                            override fun getFormattedValue(value: Float) = week.getOrNull(value.toInt())?.first ?: ""
+                        }
+                    }
+                    animateY(600)
+                    invalidate()
+                }
+            } catch (e: Exception) {
+                Logger.e(e) { "Failed to show weekly chart" }
+            }
+            try {
+                val entries = arrayListOf(PieEntry(read.toFloat(), "اتقرا"), PieEntry(unread.toFloat(), "لسه"))
+                val set = PieDataSet(entries, "").apply {
+                    this.colors = listOf(0xFF7BD555.toInt(), 0xFF3BAEEA.toInt())
+                    sliceSpace = 3f
+                }
+                with(rReadDonut) {
+                    data = PieData(set).apply { setDrawValues(false) }
+                    isDrawHoleEnabled = true
+                    holeRadius = 68f
+                    setHoleColor(ContextCompat.getColor(context, AR.color.transparent))
+                    setDrawEntryLabels(false)
+                    setTouchEnabled(false)
+                    description.isEnabled = false
+                    legend.isEnabled = false
+                    animateY(700)
+                    invalidate()
+                }
+                val pct = if (total > 0) (read * 100f / total).roundToInt() else 0
+                rDonutCenter.text = "$pct%"
+                rDonutCenter.setTextColor(text)
+                rDonutLegend.text = "اتقرا $read • لسه $unread"
+            } catch (e: Exception) {
+                Logger.e(e) { "Failed to show donut" }
+            }
         }
     }
 

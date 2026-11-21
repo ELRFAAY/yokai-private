@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.more.stats
 
 import eu.kanade.tachiyomi.data.database.models.LibraryManga
+import eu.kanade.tachiyomi.data.database.models.MangaChapterHistory
 import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.preference.MANGA_HAS_UNREAD
@@ -83,6 +84,31 @@ class StatsPresenter(
     fun get10PointScore(track: Track): Float? {
         val service = trackManager.getService(track.sync_id)
         return service?.get10PointScore(track.score)
+    }
+
+    /** R: chapters read per day for the last 7 days (today last), counted from the history, vault manga included. */
+    fun getWeeklyChapters(): List<Pair<String, Int>> {
+        val cal = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+            add(java.util.Calendar.DAY_OF_YEAR, -6)
+        }
+        val start = cal.timeInMillis
+        val end = System.currentTimeMillis()
+        val rows = runBlocking {
+            handler.awaitList { historyQueries.getPerPeriod(start, end, MangaChapterHistory::mapper) }
+        }
+        val fmt = java.text.SimpleDateFormat("EEE", java.util.Locale.getDefault())
+        return (0 until 7).map { i ->
+            val dayStart = cal.timeInMillis
+            val dayEnd = dayStart + 24L * 60 * 60 * 1000
+            val count = rows.count { it.history.last_read in dayStart until dayEnd }
+            val label = fmt.format(java.util.Date(dayStart))
+            cal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+            label to count
+        }
     }
 
     fun getReadDuration(): String {

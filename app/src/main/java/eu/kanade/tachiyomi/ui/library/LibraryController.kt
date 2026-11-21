@@ -1037,6 +1037,7 @@ open class LibraryController(
                 .launchIn(viewScope)
         }
         preferences.hideStartReadingButton().register()
+        preferences.rColorCards().register()
         uiPreferences.outlineOnCovers().register { adapter.showOutline = it }
         preferences.categoryNumberOfItems().register { adapter.showNumber = it }
     }
