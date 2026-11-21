@@ -311,6 +311,21 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** When the app was last on screen (epoch ms), used by the welcome. */
     fun rLastOpenMs() = preferenceStore.getLong("r_last_open_ms", 0L)
 
+    /** Reader (webtoon): tap the bottom half of the screen to scroll; the side decides the direction. */
+    fun rTapScroll() = preferenceStore.getBoolean("r_tap_scroll", true)
+
+    /** 0 = bottom right scrolls down / bottom left up, 1 = the opposite, 2 = both bottom halves scroll down. */
+    fun rTapScrollSide() = preferenceStore.getInt("r_tap_scroll_side", 0)
+
+    /** Jump per tap, percent of the screen height. */
+    fun rTapJump() = preferenceStore.getInt("r_tap_jump", 85)
+
+    /** Hold a finger in the bottom half to keep scrolling. */
+    fun rHoldScroll() = preferenceStore.getBoolean("r_hold_scroll", true)
+
+    /** Hold-scroll speed in tenths of a screen per second. */
+    fun rHoldScrollSpeed() = preferenceStore.getInt("r_hold_scroll_speed", 10)
+
     /** Stats: extra sections (streak, weekly goal, top 5, hours, month comparison, genre/source donut). */
     fun rStatsExtra() = preferenceStore.getBoolean("r_stats_extra", true)
 

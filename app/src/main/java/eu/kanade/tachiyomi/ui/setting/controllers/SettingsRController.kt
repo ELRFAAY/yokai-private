@@ -112,6 +112,48 @@ class SettingsRController : SettingsLegacyController() {
                 entryValues = listOf(30, 60, 100, 150, 220)
                 preferences.rAutoScroll().changesIn(viewScope) { isEnabled = it }
             }
+
+            switchPreference {
+                bindTo(preferences.rTapScroll())
+                title = "التمرير بلمس أسفل الشاشة"
+                rIcon(R.drawable.ic_play_arrow_24dp)
+                summary = "اضغط في النص السفلي من الشاشة (وضع الويبتون) عشان تنزّل أو تطلّع بقفزة. النص العلوي زي الأصلي. عند الإيقاف: اللمس الأصلي."
+            }
+
+            intListPreference(activity) {
+                bindTo(preferences.rTapScrollSide())
+                title = "جهتا التمرير"
+                rIcon(R.drawable.ic_tune_24dp)
+                entries = listOf("اليمين ينزّل واليسار يطلّع", "اليسار ينزّل واليمين يطلّع", "الاتنين ينزّلوا")
+                entryValues = listOf(0, 1, 2)
+                preferences.rTapScroll().changesIn(viewScope) { isEnabled = it }
+            }
+
+            intListPreference(activity) {
+                bindTo(preferences.rTapJump())
+                title = "مقدار القفز"
+                rIcon(R.drawable.ic_tune_24dp)
+                entries = listOf("٥٠٪ من الشاشة", "٧٠٪ من الشاشة", "٨٥٪ من الشاشة", "١٠٠٪ من الشاشة")
+                entryValues = listOf(50, 70, 85, 100)
+                preferences.rTapScroll().changesIn(viewScope) { isEnabled = it }
+            }
+
+            switchPreference {
+                bindTo(preferences.rHoldScroll())
+                title = "الضغط المطوّل للتمرير المستمر"
+                rIcon(R.drawable.ic_play_arrow_24dp)
+                summary = "سيب صباعك مضغوط في النص السفلي والصفحات تتحرك لحد ما تشيله. اليمين/اليسار زي إعداد جهتا التمرير."
+                preferences.rTapScroll().changesIn(viewScope) { isEnabled = it }
+            }
+
+            intListPreference(activity) {
+                bindTo(preferences.rHoldScrollSpeed())
+                title = "سرعة الضغط المطوّل"
+                rIcon(R.drawable.ic_tune_24dp)
+                entries = listOf("بطيئة (٠٫٥ شاشة/ث)", "عادية (١ شاشة/ث)", "سريعة (١٫٥ شاشة/ث)", "سريعة جداً (٢٫٥ شاشة/ث)")
+                entryValues = listOf(5, 10, 15, 25)
+                preferences.rHoldScroll().changesIn(viewScope) { isEnabled = it }
+            }
         }
 
         preferenceCategory {

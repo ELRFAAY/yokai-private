@@ -148,6 +148,12 @@ class WebtoonViewer(val activity: ReaderActivity, val hasMargins: Boolean = fals
                 (event.rawX - viewPosition[0] + viewPositionRelativeToWindow[0]) / recycler.width,
                 (event.rawY - viewPosition[1] + viewPositionRelativeToWindow[1]) / recycler.originalHeight,
             )
+            // R: bottom half taps scroll by a jump (Settings > R > القارئ)
+            val rDir = rZoneDirection(pos.x, pos.y)
+            if (rDir != 0) {
+                recycler.smoothScrollBy(0, rDir * rJumpPx())
+                return@f
+            }
             when (config.navigator.getAction(pos)) {
                 ViewerNavigation.NavigationRegion.MENU -> activity.toggleMenu()
                 ViewerNavigation.NavigationRegion.NEXT, ViewerNavigation.NavigationRegion.RIGHT -> moveToNext()
@@ -187,9 +193,27 @@ class WebtoonViewer(val activity: ReaderActivity, val hasMargins: Boolean = fals
         }
         config.navigationModeInvertedListener = { activity.binding.navigationOverlay.showNavigationAgain() }
 
+        // R: hold a finger in the bottom half to keep scrolling
+        frame.holdDirection = { x, y -> if (rPreferences.rHoldScroll().get()) rZoneDirection(x, y) else 0 }
+        frame.holdPxPerSecond = { recycler.height * rPreferences.rHoldScrollSpeed().get() / 10f }
+        frame.holdScrollBy = { px -> recycler.scrollBy(0, px) }
+
         frame.layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
         frame.addView(recycler)
     }
+
+    /** R: +1 = scroll down, -1 = scroll up, 0 = outside the tap-scroll zone. [x], [y] are 0..1 fractions of the screen. */
+    private fun rZoneDirection(x: Float, y: Float): Int {
+        if (!rPreferences.rTapScroll().get() || y < 0.5f) return 0
+        val right = x >= 0.5f
+        return when (rPreferences.rTapScrollSide().get()) {
+            1 -> if (right) -1 else 1
+            2 -> 1
+            else -> if (right) 1 else -1
+        }
+    }
+
+    private fun rJumpPx() = (recycler.height * rPreferences.rTapJump().get() / 100f).toInt().coerceAtLeast(1)
 
     private fun checkAllowPreload(page: ReaderPage?): Boolean {
         // Page is transition page - preload allowed
