@@ -101,12 +101,13 @@ class RMascotView(context: Context) : View(context) {
     // the wise old snake (hat and beard): sometimes shows up when you tap, and gives useless advice
     private val sageFaces: Map<Mood, Bitmap?> by lazy {
         mapOf(
-            Mood.HAPPY to load(R.drawable.r_sage_happy),
-            Mood.HURT to load(R.drawable.r_sage_hurt),
+            // calm / squint / side come from the owner's second wise-dragon sheet (r_sage2_*); scared and dizzy keep the old art
+            Mood.HAPPY to load(R.drawable.r_sage2_calm),
+            Mood.HURT to load(R.drawable.r_sage2_squint),
             Mood.SCARED to load(R.drawable.r_sage_scared),
             Mood.DIZZY to load(R.drawable.r_sage_dizzy),
-            Mood.SAD to load(R.drawable.r_sage_sad),
-            Mood.BLINK to load(R.drawable.r_sage_blink),
+            Mood.SAD to load(R.drawable.r_sage2_side),
+            Mood.BLINK to load(R.drawable.r_sage2_squint),
             // there is no sage back view: the normal one is used while flying away fast
         )
     }
@@ -197,6 +198,13 @@ class RMascotView(context: Context) : View(context) {
     private val talkFrames: List<Bitmap?> by lazy { listOf(R.drawable.r_mascot_talk1, R.drawable.r_mascot_talk2).map { load(it) } }
     private val yawnBmp: Bitmap? by lazy { load(R.drawable.r_mascot_yawn) }
     private val whereBmp: Bitmap? by lazy { load(R.drawable.r_mascot_where) }
+    private val cheerBmp: Bitmap? by lazy { load(R.drawable.r_mascot_cheer) } // arms up: after a landing
+    private val tongueBmp: Bitmap? by lazy { load(R.drawable.r_mascot_tongue) } // tongue out: when you tap him
+    private val sageTalkBmp: Bitmap? by lazy { load(R.drawable.r_sage2_talk) } // wise dragon, mouth open while he talks
+    private val sagePointBmp: Bitmap? by lazy { load(R.drawable.r_sage2_point) } // wise dragon points when he starts his advice
+    private var cheerUntil = 0L
+    private var tongueUntil = 0L
+    private var sageStart = 0L
     private val bedLie: Bitmap? by lazy { load(R.drawable.r_bed_lie) }
     private val bedCover: Bitmap? by lazy { load(R.drawable.r_bed_cover) }
     private val bedSleep: Bitmap? by lazy { load(R.drawable.r_bed_sleep) }
@@ -468,7 +476,7 @@ class RMascotView(context: Context) : View(context) {
                     }
                     else -> {
                         happyUntil = now + 1200
-                        say(LAND.random())
+                        run { cheerUntil = SystemClock.uptimeMillis() + 1800L; say(LAND.random()) }
                     }
                 }
                 bounces = 0
@@ -519,11 +527,25 @@ class RMascotView(context: Context) : View(context) {
             val extra: Bitmap? = when {
                 now < waveUntil -> waveFrames.getOrNull(((now / 130L) % waveFrames.size).toInt())
                 now < whereUntil -> whereBmp
+                now < cheerUntil -> cheerBmp
+                now < tongueUntil -> tongueBmp
                 now < yawnUntil || (prefs.rMascotSleep().get() && now - lastActiveAt >= SLEEP_AFTER_MS - 2500L) -> yawnBmp
                 bubbleText != null && now < bubbleUntil && bubbleShown < (bubbleText?.length ?: 0) ->
                     talkFrames.getOrNull(bubbleShown % 3 - 1) // 0 = closed mouth, 1 and 2 = open
                 (now / 1000L) % 9L == 8L && now >= happyUntil ->
                     wagFrames.getOrNull(WAG_ORDER[((now / 140L) % WAG_ORDER.size).toInt()])
+                else -> null
+            }
+            if (extra != null) {
+                bitmap = extra
+                frameSprite = true
+            }
+        }
+        if (sage && idle && !asleep && tfStart == 0L && mood == Mood.HAPPY) {
+            val typing = bubbleText != null && now < bubbleUntil && bubbleShown < (bubbleText?.length ?: 0)
+            val extra: Bitmap? = when {
+                now - sageStart < 1300L -> sagePointBmp // he starts by pointing at you
+                typing && (bubbleShown / 3) % 2 == 1 -> sageTalkBmp // the mouth opens and closes while he talks
                 else -> null
             }
             if (extra != null) {
@@ -696,6 +718,7 @@ class RMascotView(context: Context) : View(context) {
     /** The wise old snake takes over for a few seconds and says something that helps nobody. */
     private fun sageAdvice(now: Long) {
         sageUntil = now + 7500
+        sageStart = now
         happyUntil = now + 1200
         say(ADVICE.random(), 7000L)
     }
@@ -765,6 +788,7 @@ class RMascotView(context: Context) : View(context) {
                     } else if (prefs.rMascotSage().get() && Math.random() * 100.0 < chance) {
                         sageAdvice(now)
                     } else {
+                        tongueUntil = SystemClock.uptimeMillis() + 1500L
                         say(TAP.random())
                     }
                 } else if (speed > 350f * density) {
@@ -778,7 +802,7 @@ class RMascotView(context: Context) : View(context) {
                 } else {
                     state = State.IDLE
                     happyUntil = now + 900
-                    say(LAND.random())
+                    run { cheerUntil = SystemClock.uptimeMillis() + 1800L; say(LAND.random()) }
                 }
                 invalidate()
                 return true

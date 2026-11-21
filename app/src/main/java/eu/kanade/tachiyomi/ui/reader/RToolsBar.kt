@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.media.AudioManager
+import android.text.TextUtils
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -38,6 +39,9 @@ class RToolsBar(
     private val onFlingSide: () -> Unit,
     private val onInteract: () -> Unit,
     private val onLock: () -> Unit,
+    private val onPrevChapter: () -> Unit = {},
+    private val onNextChapter: () -> Unit = {},
+    private val onOpenChapters: () -> Unit = {},
 ) : LinearLayout(context) {
 
     private enum class Tool { SPEED, BRIGHTNESS, VOLUME, BATTERY, LOCK }
@@ -53,6 +57,26 @@ class RToolsBar(
     private val panelLabel = TextView(context)
     private val slider = Slider(context)
     private val batterySwitch = MaterialSwitch(context)
+    private val chapterTitle = TextView(context)
+    private val pageCounter = TextView(context)
+    private lateinit var prevButton: ImageButton
+    private lateinit var nextButton: ImageButton
+
+    /** The current chapter's name in the chapter row (tap it = the chapters list). */
+    fun setChapterTitle(text: CharSequence) {
+        chapterTitle.text = text
+    }
+
+    /** "5 / 14" in the page counter under the chapter row. */
+    fun setPageText(text: CharSequence) {
+        pageCounter.text = text
+    }
+
+    /** Dims the previous / next chapter button when there is no such chapter. */
+    fun setNavEnabled(hasPrev: Boolean, hasNext: Boolean) {
+        prevButton.alpha = if (hasPrev) 1f else 0.35f
+        nextButton.alpha = if (hasNext) 1f else 0.35f
+    }
 
     init {
         orientation = VERTICAL
@@ -65,6 +89,56 @@ class RToolsBar(
             cornerRadius = 28 * density
             setStroke((1 * density).toInt(), ColorUtils.setAlphaComponent(accent, 90))
         }
+
+        // chapter row (like the owner's reference): previous chapter | current chapter (tap = list) | next chapter,
+        // then the page counter
+        val navRow = LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        prevButton = navButton(R.drawable.ic_skip_previous_24, "الفصل السابق") { onPrevChapter() }
+        nextButton = navButton(R.drawable.ic_skip_next_24, "الفصل التالي") { onNextChapter() }
+        chapterTitle.apply {
+            setTextColor(onSurface)
+            textSize = 14f
+            maxLines = 1
+            ellipsize = TextUtils.TruncateAt.END
+            gravity = Gravity.CENTER
+            textDirection = TEXT_DIRECTION_FIRST_STRONG
+            background = pill(ColorUtils.setAlphaComponent(Color.WHITE, 18), 18f)
+            setPadding((12 * density).toInt(), (9 * density).toInt(), (8 * density).toInt(), (9 * density).toInt())
+            setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down_24dp, 0)
+            compoundDrawableTintList = android.content.res.ColorStateList.valueOf(onSurface)
+            setOnClickListener {
+                onInteract()
+                onOpenChapters()
+            }
+        }
+        navRow.addView(prevButton, LayoutParams((44 * density).toInt(), (44 * density).toInt()))
+        navRow.addView(
+            chapterTitle,
+            LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = (6 * density).toInt()
+                marginEnd = (6 * density).toInt()
+            },
+        )
+        navRow.addView(nextButton, LayoutParams((44 * density).toInt(), (44 * density).toInt()))
+        addView(navRow, LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        pageCounter.apply {
+            setTextColor(onSurface)
+            textSize = 13f
+            gravity = Gravity.CENTER
+            background = pill(ColorUtils.setAlphaComponent(accent, 50), 14f)
+            setPadding((14 * density).toInt(), (3 * density).toInt(), (14 * density).toInt(), (3 * density).toInt())
+        }
+        addView(
+            pageCounter,
+            LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+                topMargin = (4 * density).toInt()
+                bottomMargin = (4 * density).toInt()
+            },
+        )
 
         val row = LinearLayout(context).apply {
             orientation = HORIZONTAL
@@ -175,6 +249,20 @@ class RToolsBar(
     private fun pill(color: Int, radiusDp: Float) = GradientDrawable().apply {
         setColor(color)
         cornerRadius = radiusDp * density
+    }
+
+    /** Small round button of the chapter row. */
+    private fun navButton(icon: Int, description: String, action: () -> Unit) = ImageButton(context).apply {
+        setImageResource(icon)
+        setColorFilter(onSurface)
+        contentDescription = description
+        background = roundButton(false)
+        val pad = (10 * density).toInt()
+        setPadding(pad, pad, pad, pad)
+        setOnClickListener {
+            onInteract()
+            action()
+        }
     }
 
     private fun addTool(row: LinearLayout, tool: Tool, icon: Int, description: String) {

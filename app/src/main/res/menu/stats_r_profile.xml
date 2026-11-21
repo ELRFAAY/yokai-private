@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- R: the 3-dot menu of the statistics screen (profile picture and cover) -->
+    <item
+        android:id="@+id/action_r_avatar"
+        android:title="تعديل الصورة الشخصية"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_r_banner_edit"
+        android:title="تعديل الغلاف (استبدال الصور)"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_r_banner_add"
+        android:title="إضافة صورة للغلاف"
+        app:showAsAction="never" />
+</menu>

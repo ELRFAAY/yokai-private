@@ -1,6 +1,9 @@
 package eu.kanade.tachiyomi.ui.more.stats
 
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -95,6 +98,30 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
         profileView = pv
     }
 
+    /** R: true = the next picked banner images replace the old ones, false = they are added to them. */
+    private var replaceBanners = false
+
+    /** R: the 3-dot menu at the top: profile picture, cover (replace) and add a cover picture. */
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        if (prefs.rStatsProfile().get()) inflater.inflate(R.menu.stats_r_profile, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_r_avatar -> pickImages(REQ_AVATAR, false)
+            R.id.action_r_banner_edit -> {
+                replaceBanners = true
+                pickImages(REQ_BANNERS, true)
+            }
+            R.id.action_r_banner_add -> {
+                replaceBanners = false
+                pickImages(REQ_BANNERS, true)
+            }
+            else -> return super.onOptionsItemSelected(item)
+        }
+        return true
+    }
+
     private fun pickImages(code: Int, multiple: Boolean) {
         val intent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
             type = "image/*"
@@ -133,7 +160,8 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
                 prefs.rProfileAvatar().set(saved.first())
             } else {
                 val old = prefs.rProfileBanners().get().split('\n').filter { it.isNotBlank() }
-                prefs.rProfileBanners().set((old + saved).joinToString("\n"))
+                prefs.rProfileBanners().set(((if (replaceBanners) emptyList() else old) + saved).joinToString("\n"))
+                replaceBanners = false
             }
             profileView?.refresh()
         }

@@ -100,7 +100,25 @@ class RStatsProfileView(
             setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 50))
             setOnClickListener { showBannerMenu() }
         }
+        // a RecyclerView swallows touches, so the card's own click never fired: detect the tap on the pager itself
+        val tapDetector = android.view.GestureDetector(
+            context,
+            object : android.view.GestureDetector.SimpleOnGestureListener() {
+                override fun onSingleTapUp(e: android.view.MotionEvent): Boolean {
+                    showBannerMenu()
+                    return true
+                }
+            },
+        )
         pager.apply {
+            addOnItemTouchListener(
+                object : RecyclerView.SimpleOnItemTouchListener() {
+                    override fun onInterceptTouchEvent(rv: RecyclerView, e: android.view.MotionEvent): Boolean {
+                        tapDetector.onTouchEvent(e)
+                        return false
+                    }
+                },
+            )
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = this@RStatsProfileView.adapter
             snap.attachToRecyclerView(this)

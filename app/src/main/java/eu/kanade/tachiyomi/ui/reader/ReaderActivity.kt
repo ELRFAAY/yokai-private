@@ -1527,6 +1527,9 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             { TabbedReaderSettingsSheet(this@ReaderActivity).show() },
             { rScheduleAutoHide() },
             { rLock() },
+            { loadAdjacentChapter(viewer is R2LPagerViewer) }, // previous chapter
+            { loadAdjacentChapter(viewer !is R2LPagerViewer) }, // next chapter
+            { binding.chaptersSheet.chaptersBottomSheet.sheetBehavior?.expand() },
         )
         // R: floating card just above the page bar (anchored to the chapters sheet like the page bar itself)
         val lp = androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(
@@ -1656,6 +1659,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         val chapter = viewerChapters.currChapter.chapter
         binding.toolbar.subtitle =
             chapter.preferredChapterName(this, viewModel.manga!!, preferences)
+        rToolsBar?.setChapterTitle(chapter.preferredChapterName(this, viewModel.manga!!, preferences))
+        rToolsBar?.setNavEnabled(viewerChapters.prevChapter != null, viewerChapters.nextChapter != null)
 
         listOfNotNull(getTitleTextView(), getSubtitleTextView()).forEach { textView ->
             textView.ellipsize = TextUtils.TruncateAt.MARQUEE
@@ -1790,6 +1795,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             }
         }
         binding.pageNumber.text = if (resources.isLTR) "$currentPage/$totalPages" else "$totalPages/$currentPage"
+        rToolsBar?.setPageText("$currentPage / $totalPages")
         if (viewer is R2LPagerViewer) {
             readerNav.rightPageText.text = currentPage
             readerNav.leftPageText.text = totalPages
