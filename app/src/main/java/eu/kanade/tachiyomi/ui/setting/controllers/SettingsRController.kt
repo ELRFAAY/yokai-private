@@ -249,6 +249,13 @@ class SettingsRController : SettingsLegacyController() {
                 rIcon(R.drawable.ic_query_stats_24dp)
                 summary = "سلسلة الأيام، هدف الأسبوع، أكتر ٥ مانهوا، ساعات القراءة، مقارنة الشهر، ودونات الأنواع والمصادر. عند الإيقاف: الشاشة بدونها."
             }
+
+            switchPreference {
+                bindTo(preferences.rStatsProfile())
+                title = "بروفايل الإحصائيات"
+                rIcon(R.drawable.ic_r_mood)
+                summary = "صورة بروفايل دائرية صغيرة وبانر كبير بجانبها (أكتر من صورة تتقلب كل ٥ ثوانٍ، مع نقاط وسحب) واسمك، أعلى الإحصائيات. عند الإيقاف: بدونه."
+            }
         }
 
         preferenceCategory {

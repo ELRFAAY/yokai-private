@@ -336,6 +336,13 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Reader: small clock + battery level in the corner. */
     fun rClockBattery() = preferenceStore.getBoolean("r_clock_battery", false)
 
+    /** Stats profile: round picture + banners (flipping every few seconds) + name, at the top of the statistics. */
+    fun rStatsProfile() = preferenceStore.getBoolean("r_stats_profile", true)
+    fun rProfileName() = preferenceStore.getString("r_profile_name", "")
+    fun rProfileAvatar() = preferenceStore.getString("r_profile_avatar", "")
+    fun rProfileBanners() = preferenceStore.getString("r_profile_banners", "") // paths, one per line
+    fun rProfileInterval() = preferenceStore.getInt("r_profile_interval", 5)
+
     /** Reader tools bar under the toolbar: speed, brightness, volume, battery icons with small panels. */
     fun rToolsBar() = preferenceStore.getBoolean("r_tools_bar", true)
 

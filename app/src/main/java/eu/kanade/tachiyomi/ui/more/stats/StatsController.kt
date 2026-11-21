@@ -58,6 +58,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     override fun onViewCreated(view: View) {
         super.onViewCreated(view)
         scrollViewWith(binding.statsScrollView, true)
+        setupProfile()
         handleGeneralStats()
         handleHero()
         handleExtraSections()
@@ -68,6 +69,74 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
             handleStatusDistribution()
         }
         if (scoresList.isNotEmpty()) handleScoreDistribution()
+    }
+
+    private var profileView: RStatsProfileView? = null
+
+    private companion object {
+        const val REQ_AVATAR = 8811
+        const val REQ_BANNERS = 8812
+    }
+
+    /** R: profile (round picture + flipping banners + name) at the very top of the statistics. */
+    private fun setupProfile() {
+        profileView = null
+        if (!prefs.rStatsProfile().get()) return
+        val ctx = view?.context ?: return
+        val container = (binding.statsScrollView.getChildAt(0) as? android.widget.LinearLayout) ?: return
+        val pv = RStatsProfileView(
+            ctx,
+            prefs,
+            viewScope,
+            { pickImages(REQ_AVATAR, false) },
+            { pickImages(REQ_BANNERS, true) },
+        )
+        container.addView(pv, 0)
+        profileView = pv
+    }
+
+    private fun pickImages(code: Int, multiple: Boolean) {
+        val intent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
+            type = "image/*"
+            addCategory(android.content.Intent.CATEGORY_OPENABLE)
+            putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE, multiple)
+        }
+        startActivityForResult(android.content.Intent.createChooser(intent, "اختر صورة"), code)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != android.app.Activity.RESULT_OK || data == null) return
+        if (requestCode != REQ_AVATAR && requestCode != REQ_BANNERS) return
+        val ctx = activity ?: return
+        val uris = buildList {
+            data.data?.let { add(it) }
+            val clip = data.clipData
+            if (clip != null) for (i in 0 until clip.itemCount) add(clip.getItemAt(i).uri)
+        }.distinct()
+        if (uris.isEmpty()) return
+        viewScope.launch {
+            val saved = withContext(Dispatchers.IO) {
+                val dir = java.io.File(ctx.filesDir, "r_profile").apply { mkdirs() }
+                uris.mapNotNull { uri ->
+                    try {
+                        val out = java.io.File(dir, "img_${System.currentTimeMillis()}_${uri.hashCode().toUInt()}.jpg")
+                        ctx.contentResolver.openInputStream(uri)?.use { input -> out.outputStream().use { input.copyTo(it) } }
+                        out.absolutePath.takeIf { out.length() > 0 }
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+            }
+            if (saved.isEmpty()) return@launch
+            if (requestCode == REQ_AVATAR) {
+                prefs.rProfileAvatar().set(saved.first())
+            } else {
+                val old = prefs.rProfileBanners().get().split('\n').filter { it.isNotBlank() }
+                prefs.rProfileBanners().set((old + saved).joinToString("\n"))
+            }
+            profileView?.refresh()
+        }
     }
 
     private fun handleGeneralStats() {
