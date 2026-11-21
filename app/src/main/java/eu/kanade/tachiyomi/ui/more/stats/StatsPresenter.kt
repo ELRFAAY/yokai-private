@@ -121,7 +121,9 @@ class StatsPresenter(
         fun dayOf(ms: Long) = java.time.Instant.ofEpochMilli(ms).atZone(zone).toLocalDate()
         val today = java.time.LocalDate.now()
         val todayEpoch = today.toEpochDay()
-        val days = rows.map { dayOf(it.history.last_read).toEpochDay() }.toSortedSet()
+        // one conversion per row, reused by every count below
+        val rowDays = LongArray(rows.size) { dayOf(rows[it].history.last_read).toEpochDay() }
+        val days = rowDays.toSortedSet()
 
         var best = 0
         var run = 0
@@ -152,10 +154,12 @@ class StatsPresenter(
 
         val thisMonth = java.time.YearMonth.from(today)
         val lastMonth = thisMonth.minusMonths(1)
-        val monthNow = rows.count { java.time.YearMonth.from(dayOf(it.history.last_read)) == thisMonth }
-        val monthPrev = rows.count { java.time.YearMonth.from(dayOf(it.history.last_read)) == lastMonth }
-        val week = rows.count { dayOf(it.history.last_read).toEpochDay() >= todayEpoch - 6 }
-        val last30 = rows.count { dayOf(it.history.last_read).toEpochDay() >= todayEpoch - 29 }
+        val monthStartNow = thisMonth.atDay(1).toEpochDay()
+        val monthStartPrev = lastMonth.atDay(1).toEpochDay()
+        val monthNow = rowDays.count { it >= monthStartNow }
+        val monthPrev = rowDays.count { it >= monthStartPrev && it < monthStartNow }
+        val week = rowDays.count { it >= todayEpoch - 6 }
+        val last30 = rowDays.count { it >= todayEpoch - 29 }
 
         val genreCount = HashMap<String, Int>()
         val sourceCount = HashMap<String, Int>()

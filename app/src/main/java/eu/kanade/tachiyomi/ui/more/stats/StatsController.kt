@@ -27,6 +27,9 @@ import eu.kanade.tachiyomi.util.isLocal
 import eu.kanade.tachiyomi.util.mapStatus
 import eu.kanade.tachiyomi.util.system.getResourceColor
 import eu.kanade.tachiyomi.util.system.roundToTwoDecimal
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import eu.kanade.tachiyomi.util.view.compatToolTipText
 import eu.kanade.tachiyomi.util.view.scrollViewWith
 import eu.kanade.tachiyomi.util.view.withFadeTransaction
@@ -101,7 +104,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
         val unread = (total - read).coerceAtLeast(0)
         val text = ctx.getResourceColor(R.attr.colorOnBackground)
         with(binding) {
-            rHeroTime.text = presenter.getReadDuration()
+            rHeroTime.text = statsReadDurationText.text
             rHeroChapters.text = read.toString()
             rHeroTitles.text = mangaDistinct.size.toString()
             try {
@@ -172,18 +175,21 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     /** R: streak, weekly goal, top 5, hours, month comparison, genre / source donut. */
     private fun handleExtraSections() {
         val ctx = activity ?: return
-        try {
-            val data = rData ?: presenter.getRData().also { rData = it }
-            binding.rHeroAvg.text = "%.1f".format(data.dailyAvg)
-            if (!prefs.rStatsExtra().get()) {
-                binding.rExtraStats.isVisible = false
-                return
-            }
-            binding.rExtraStats.isVisible = true
-            RStatsSections.build(ctx, binding.rExtraStats, data, prefs.rWeeklyGoal().get()) { showGoalDialog() }
-        } catch (e: Exception) {
-            Logger.e(e) { "Failed to build R stats sections" }
+        if (!prefs.rStatsExtra().get()) {
             binding.rExtraStats.isVisible = false
+            return
+        }
+        // the history pass runs off the main thread so the screen opens at once
+        viewScope.launch {
+            try {
+                val data = rData ?: withContext(Dispatchers.IO) { presenter.getRData() }.also { rData = it }
+                binding.rHeroAvg.text = "%.1f".format(data.dailyAvg)
+                binding.rExtraStats.isVisible = true
+                RStatsSections.build(ctx, binding.rExtraStats, data, prefs.rWeeklyGoal().get()) { showGoalDialog() }
+            } catch (e: Exception) {
+                Logger.e(e) { "Failed to build R stats sections" }
+                binding.rExtraStats.isVisible = false
+            }
         }
     }
 

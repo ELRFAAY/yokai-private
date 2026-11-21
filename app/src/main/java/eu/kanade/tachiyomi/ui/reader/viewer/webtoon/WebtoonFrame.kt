@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.reader.viewer.webtoon
 
 import android.content.Context
+import android.os.SystemClock
 import android.view.Choreographer
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -68,11 +69,16 @@ class WebtoonFrame(context: Context) : FrameLayout(context) {
     private var holding = false
     private var holdDownX = 0f
     private var holdDownY = 0f
+    private var holdDownTime = 0L
     private var holdRemainder = 0f
     private var holdLastNanos = 0L
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
     private val holdStart = Runnable {
+        // cancel the touch for the pages so their own long-press (page actions sheet) does not open while we scroll
+        val cancel = MotionEvent.obtain(holdDownTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_CANCEL, holdDownX, holdDownY, 0)
+        dispatchToChildren(cancel)
+        cancel.recycle()
         holding = true
         holdLastNanos = 0L
         holdRemainder = 0f
@@ -96,6 +102,8 @@ class WebtoonFrame(context: Context) : FrameLayout(context) {
         }
     }
 
+    private fun dispatchToChildren(ev: MotionEvent) = super.dispatchTouchEvent(ev)
+
     private fun stopHold() {
         removeCallbacks(holdStart)
         holding = false
@@ -107,6 +115,7 @@ class WebtoonFrame(context: Context) : FrameLayout(context) {
                 stopHold()
                 holdDownX = ev.x
                 holdDownY = ev.y
+                holdDownTime = ev.downTime
                 val dir = if (width > 0 && height > 0) holdDirection?.invoke(ev.x / width, ev.y / height) ?: 0 else 0
                 if (dir != 0) {
                     holdDir = dir
