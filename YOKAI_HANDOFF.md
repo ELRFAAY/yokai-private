@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-21 (see NEWEST-9).
+Last updated: 2026-11-21 (see NEWEST-12).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,12 @@ Last updated: 2026-11-21 (see NEWEST-9).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-12 2026-11-21 (fifth account): READ FIRST, then NEWEST-11/10/9
+- Build 57 (run 44933979746, `e5f1744`) = GREEN. New commit `ef72a26` on `fix/stats-and-name-clean` (NOT compiled until its build; one dispatch per batch).
+- Owner reports (screenshots 20:38-20:44): (1) settings: the round icon badges were drawn at the LEFT edge of every row, not behind the icons: `RSettingsCardDecoration` used `icon.left` of a nested view; now `offsetDescendantRectToMyCoords`. (2) Updates empty + downloaded filter empty: NOT reproduced; likely `DownloadCache` scanned while `sourceManager.getOnlineSources()` was still empty and then trusted that empty scan (and saved it to disk) for 1 h. Fix: retry after 20 s when the scan is empty (`retrySoon`), empty disk index not trusted, cache file renamed `dl_index_cache_v4`. Updates itself = SQL `getRecents` (`chapters.sq`: favorite, `date_fetch > date_added`): if it is still empty after a library refresh, ask for logs / whether he restored a backup; hidden lists were never confirmed as the cause. (3) Stats profile: banner now FULL WIDTH (150dp) with dots on top, round picture sits half over the banner's bottom edge, name below (`RStatsProfileView`). (4) Reader tools bar overlapped the chapter title: its top margin now follows `binding.toolbar.bottom` (layout listener in `ReaderActivity.rSetupToolsBar`). (5) Mascot bubble cut at the top in the library: `RMascotView.drawBubble` now flips below when above the status bar inset.
+- Still open: rebuild the reader tools area as the owner wants (tap middle = tools, fling up = chapters, side = settings, consistent with new settings look; he will resend the video / screenshot), apply "…" ellipsis to the reader toolbar title, stats still heavy, backup (hidden lists by name, profile images), unify all settings look, sprites work (waits for his "ابدأ").
+- Reminder for owner: repo has the signing key and was public: make it private, delete any pasted token.
 
 ## NEWEST-11 2026-11-21 20:15 (fourth account stopped here, owner at ~91%): READ FIRST, then NEWEST-10/9
 - Repo `ELRFAAY/yokai-private`, work branch `fix/stats-and-name-clean` (tip = the commit of the last run below). Builds: 55 green `d0cd637` (webtoon middle tap toggle fix); 56 green `9a8b271` (reader tools bar, settings card restyle, tap-scroll off); **57 = run 44933979746 on `e5f1744` (stats profile) was IN PROGRESS at 20:12 Cairo: check it first, never dispatch while it runs, one dispatch per batch.**
