@@ -86,13 +86,16 @@ class DownloadCache(
     private var lastRenew = 0L
     private var renewalJob: Job? = null
 
+    /** R: true when the last scan found no sources (extensions not loaded yet) or mapped no folder: retry soon instead of in an hour. */
+    private var retrySoon = false
+
     private val _isInitializing = MutableStateFlow(false)
     val isInitializing = _isInitializing
         .debounce(1000L) // Don't notify if it finishes quickly enough
         .stateIn(scope, SharingStarted.WhileSubscribed(), false)
 
     private val diskCacheFile: File
-        get() = File(context.cacheDir, "dl_index_cache_v3")
+        get() = File(context.cacheDir, "dl_index_cache_v4")
 
     private val rootDownloadsDirLock = Mutex()
     private var rootDownloadsDir = RootDirectory(storageManager.getDownloadsDirectory())
@@ -107,7 +110,8 @@ class DownloadCache(
                             ProtoBuf.decodeFromByteArray<RootDirectory>(it.readBytes())
                         }
                         rootDownloadsDir = diskCache
-                        lastRenew = System.currentTimeMillis()
+                        // R: an empty saved index is not trusted (it was saved before the sources loaded)
+                        if (diskCache.sourceDirs.isNotEmpty()) lastRenew = System.currentTimeMillis()
                     }
                 } catch (e: Throwable) {
                     Logger.e(e) { "Failed to initialize disk cache" }
@@ -201,6 +205,7 @@ class DownloadCache(
 
             // FIXME: Wait for SourceManager to be initialized
             val sources = getSources()
+            retrySoon = sources.isEmpty()
 
             val sourceMap = sources
                 .flatMap { s -> provider.getSourceDirNames(s).map { it.lowercase() to s.id } }
@@ -218,6 +223,9 @@ class DownloadCache(
                     .toMap()
 
                 rootDownloadsDir.sourceDirs = sourceDirs
+                if (sourceDirs.isEmpty() && rootDownloadsDir.dir?.listFiles().orEmpty().any { it.isDirectory }) {
+                    retrySoon = true
+                }
 
                 sourceDirs.values
                     .map { sourceDir ->
@@ -255,7 +263,12 @@ class DownloadCache(
                 if (exception != null && exception !is CancellationException) {
                     Logger.e(exception) { "DownloadCache: failed to create cache" }
                 }
-                lastRenew = System.currentTimeMillis()
+                // R: an empty scan (sources not ready) must not stay cached for an hour: look again in 20 s
+                lastRenew = if (retrySoon) {
+                    System.currentTimeMillis() - renewInterval + TimeUnit.SECONDS.toMillis(20)
+                } else {
+                    System.currentTimeMillis()
+                }
                 notifyChanges()
             }
         }

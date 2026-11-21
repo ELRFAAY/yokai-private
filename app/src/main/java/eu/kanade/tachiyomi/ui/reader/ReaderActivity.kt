@@ -1451,6 +1451,13 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply { topMargin = barHeight },
         )
+        // R: keep the bar right under the toolbar even when the toolbar has the status-bar margin or two text lines
+        // (a fixed margin made the bar sit on top of the chapter title)
+        binding.toolbar.addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
+            if (bottom != oldBottom || (bar.layoutParams as ViewGroup.MarginLayoutParams).topMargin != bottom) {
+                bar.updateLayoutParams<ViewGroup.MarginLayoutParams> { topMargin = bottom }
+            }
+        }
         rToolsBar = bar
     }
 

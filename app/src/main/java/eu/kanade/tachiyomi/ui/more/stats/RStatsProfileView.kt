@@ -68,7 +68,8 @@ class RStatsProfileView(
         val pad = (4 * density).toInt()
         setPadding(0, pad, 0, (14 * density).toInt())
 
-        val row = LinearLayout(context).apply { gravity = Gravity.CENTER_VERTICAL }
+        // one frame: the banner takes the whole width, the round picture sits on its bottom edge, the name goes below
+        val row = FrameLayout(context).apply { clipChildren = false }
 
         // small round profile picture
         val size = (76 * density).toInt()
@@ -76,7 +77,7 @@ class RStatsProfileView(
             scaleType = ImageView.ScaleType.CENTER_CROP
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(ColorUtils.setAlphaComponent(accent, 60))
+                setColor(context.getResourceColor(MR.attr.colorSurface))
                 setStroke((3 * density).toInt(), accent)
             }
             outlineProvider = object : ViewOutlineProvider() {
@@ -91,7 +92,6 @@ class RStatsProfileView(
             contentDescription = "صورة البروفايل"
             setOnClickListener { onPickAvatar() }
         }
-        row.addView(avatar, LayoutParams(size, size))
 
         // big banner next to it
         val bannerCard = MaterialCardView(context).apply {
@@ -123,19 +123,27 @@ class RStatsProfileView(
             setOnClickListener { showBannerMenu() }
         }
         bannerCard.addView(bannerHint, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        row.addView(
-            bannerCard,
-            LayoutParams(0, (120 * density).toInt(), 1f).apply { marginStart = (12 * density).toInt() },
-        )
-        addView(row, LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-
-        // dots under the banner
+        val bannerH = (150 * density).toInt()
+        row.addView(bannerCard, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, bannerH))
+        // dots on the top of the banner
         dots.apply { gravity = Gravity.CENTER }
-        addView(
+        row.addView(
             dots,
-            LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                gravity = Gravity.TOP
                 topMargin = (8 * density).toInt()
             },
+        )
+        // the round picture half over the banner's bottom edge
+        row.addView(
+            avatar,
+            FrameLayout.LayoutParams(size, size).apply {
+                gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            },
+        )
+        addView(
+            row,
+            LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, bannerH + size / 2),
         )
 
         // name

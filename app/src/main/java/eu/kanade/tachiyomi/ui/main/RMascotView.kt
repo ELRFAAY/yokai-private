@@ -963,7 +963,13 @@ class RMascotView(context: Context) : View(context) {
 
         val left = (x - bw / 2f).coerceIn(margin, max(margin, width - bw - margin))
         var top = y - half - headroom - bh - 14f * density
-        val below = top < 4f * density
+        // R: stay under the status bar (the view can start behind it, which cut the bubble at the top)
+        val loc = IntArray(2)
+        getLocationOnScreen(loc)
+        val statusTop = androidx.core.view.ViewCompat.getRootWindowInsets(this)
+            ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())?.top ?: 0
+        val safeTop = max(4f * density, statusTop - loc[1] + 6f * density)
+        val below = top < safeTop
         if (below) top = y + half + 14f * density
         bubbleRect.set(left, top, left + bw, top + bh)
 

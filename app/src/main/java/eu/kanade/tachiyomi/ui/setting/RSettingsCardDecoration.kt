@@ -71,8 +71,11 @@ class RSettingsCardDecoration(context: Context) : RecyclerView.ItemDecoration() 
             // a soft round badge behind each row's icon, like a settings app icon
             val icon = child.findViewById<View>(android.R.id.icon)
             if (icon != null && icon.isShown && icon.width > 0) {
-                val cx = child.left + icon.left + icon.width / 2f
-                val cy = child.top + child.translationY + icon.top + icon.height / 2f
+                // the icon sits inside a nested frame: convert its box to the row's coordinates
+                val box = Rect(0, 0, icon.width, icon.height)
+                (child as? android.view.ViewGroup)?.offsetDescendantRectToMyCoords(icon, box)
+                val cx = child.left + box.exactCenterX()
+                val cy = child.top + child.translationY + box.exactCenterY()
                 c.drawCircle(cx, cy, iconRadius, iconBgPaint)
             }
 
