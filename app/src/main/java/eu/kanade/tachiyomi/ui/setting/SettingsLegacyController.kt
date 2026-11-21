@@ -45,6 +45,8 @@ abstract class SettingsLegacyController : PreferenceController(), SettingsContro
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         listView.layoutManager = LinearLayoutManagerAccurateOffset(view.context)
+        // R: grouped, theme-tinted cards for the settings (Settings > R > عام)
+        if (preferences.rSettingsStyle().get()) listView.addItemDecoration(RSettingsCardDecoration(view.context))
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle?): View {

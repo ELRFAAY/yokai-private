@@ -63,6 +63,13 @@ class SettingsRController : SettingsLegacyController() {
             title = "عام"
 
             switchPreference {
+                bindTo(preferences.rSettingsStyle())
+                title = "شكل الإعدادات الجديد"
+                rIcon(R.drawable.ic_tune_24dp)
+                summary = "كل مجموعة إعدادات في كارت بلون سيم التطبيق. يسري لما تفتح الشاشة من جديد. عند الإيقاف: الشكل الأصلي."
+            }
+
+            switchPreference {
                 bindTo(preferences.rForceArabic())
                 title = "اللغة العربية دائماً"
                 rIcon(R.drawable.ic_language_24dp)

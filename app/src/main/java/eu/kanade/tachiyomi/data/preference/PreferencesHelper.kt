@@ -311,6 +311,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** When the app was last on screen (epoch ms), used by the welcome. */
     fun rLastOpenMs() = preferenceStore.getLong("r_last_open_ms", 0L)
 
+    /** Settings screens drawn as theme-tinted rounded cards, one per category. */
+    fun rSettingsStyle() = preferenceStore.getBoolean("r_settings_style", true)
+
     /** Reader (webtoon): tap the bottom half of the screen to scroll; the side decides the direction. */
     fun rTapScroll() = preferenceStore.getBoolean("r_tap_scroll", true)
 
