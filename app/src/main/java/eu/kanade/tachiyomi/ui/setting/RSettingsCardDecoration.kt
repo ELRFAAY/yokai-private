@@ -20,13 +20,22 @@ import eu.kanade.tachiyomi.util.system.getResourceColor
 class RSettingsCardDecoration(context: Context) : RecyclerView.ItemDecoration() {
     private val density = context.resources.displayMetrics.density
     private val side = (12 * density).toInt()
-    private val corner = 18 * density
+    private val corner = 22 * density
+    private val secondary = context.getResourceColor(com.google.android.material.R.attr.colorSecondary)
+
+    // a calm, dark card with only a hint of the theme color (the old one was a flat saturated green block)
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ColorUtils.setAlphaComponent(
-            context.getResourceColor(com.google.android.material.R.attr.colorSecondaryContainer),
-            110,
-        )
+        color = ColorUtils.setAlphaComponent(secondary, 34)
     }
+    private val iconBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = ColorUtils.setAlphaComponent(secondary, 52)
+    }
+    private val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = ColorUtils.setAlphaComponent(secondary, 40)
+        strokeWidth = 1f * density
+    }
+    private val iconRadius = 19 * density
+    private val dividerInset = 72 * density
     private val path = Path()
     private val rect = RectF()
 
@@ -58,6 +67,25 @@ class RSettingsCardDecoration(context: Context) : RecyclerView.ItemDecoration() 
             path.reset()
             path.addRoundRect(rect, floatArrayOf(top, top, top, top, bottom, bottom, bottom, bottom), Path.Direction.CW)
             c.drawPath(path, paint)
+
+            // a soft round badge behind each row's icon, like a settings app icon
+            val icon = child.findViewById<View>(android.R.id.icon)
+            if (icon != null && icon.isShown && icon.width > 0) {
+                val cx = child.left + icon.left + icon.width / 2f
+                val cy = child.top + child.translationY + icon.top + icon.height / 2f
+                c.drawCircle(cx, cy, iconRadius, iconBgPaint)
+            }
+
+            // a thin divider between rows (not under the last one), starting after the icon
+            if (!last) {
+                val y = rect.bottom - dividerPaint.strokeWidth / 2f
+                val rtl = parent.layoutDirection == View.LAYOUT_DIRECTION_RTL
+                if (rtl) {
+                    c.drawLine(rect.left + 16 * density, y, rect.right - dividerInset, y, dividerPaint)
+                } else {
+                    c.drawLine(rect.left + dividerInset, y, rect.right - 16 * density, y, dividerPaint)
+                }
+            }
         }
     }
 }
