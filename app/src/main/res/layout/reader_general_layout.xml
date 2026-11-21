@@ -101,5 +101,53 @@
             android:layout_marginTop="16dp"
             android:text="@string/always_show_chapter_transition"
             android:textColor="?attr/colorOnBackground" />
+
+        <!-- R: tap / hold to scroll (webtoon), same options as Settings > R > القارئ -->
+        <com.google.android.material.textview.MaterialTextView
+            style="?textAppearanceTitleSmall"
+            android:textSize="15sp"
+            android:layout_width="match_parent"
+            android:textColor="?attr/colorSecondary"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="التمرير بلمس أسفل الشاشة (ويبتون)" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/r_tap_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="التمرير بلمس أسفل الشاشة"
+            android:textColor="?attr/colorOnBackground" />
+
+        <eu.kanade.tachiyomi.widget.MaterialSpinnerView
+            android:id="@+id/r_tap_side"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            app:title="جهتا التمرير" />
+
+        <eu.kanade.tachiyomi.widget.MaterialSpinnerView
+            android:id="@+id/r_tap_jump"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            app:title="مقدار القفز" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/r_hold_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="الضغط المطوّل للتمرير المستمر"
+            android:textColor="?attr/colorOnBackground" />
+
+        <eu.kanade.tachiyomi.widget.MaterialSpinnerView
+            android:id="@+id/r_hold_speed"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="16dp"
+            app:title="سرعة الضغط المطوّل" />
     </LinearLayout>
 </eu.kanade.tachiyomi.ui.reader.settings.ReaderGeneralView>

@@ -64,6 +64,21 @@ class ReaderGeneralView @JvmOverloads constructor(context: Context, attrs: Attri
         binding.keepscreen.bindToPreference(preferences.keepScreenOn())
         binding.alwaysShowChapterTransition.bindToPreference(preferences.alwaysShowChapterTransition())
 
+        // R: tap / hold to scroll (same prefs as Settings > R > القارئ)
+        binding.rTapScroll.bindToPreference(preferences.rTapScroll())
+        binding.rHoldScroll.bindToPreference(preferences.rHoldScroll())
+        binding.rTapSide.setEntries(listOf("اليمين ينزّل واليسار يطلّع", "اليسار ينزّل واليمين يطلّع", "الاتنين ينزّلوا"))
+        binding.rTapSide.setSelection(preferences.rTapScrollSide().get().coerceIn(0, 2))
+        binding.rTapSide.onItemSelectedListener = { position -> preferences.rTapScrollSide().set(position) }
+        val jumps = listOf(50, 70, 85, 100)
+        binding.rTapJump.setEntries(jumps.map { "$it% من الشاشة" })
+        binding.rTapJump.setSelection(jumps.indexOf(preferences.rTapJump().get()).coerceAtLeast(0))
+        binding.rTapJump.onItemSelectedListener = { position -> preferences.rTapJump().set(jumps[position]) }
+        val speeds = listOf(5, 10, 15, 25)
+        binding.rHoldSpeed.setEntries(listOf("بطيئة", "عادية", "سريعة", "سريعة جداً"))
+        binding.rHoldSpeed.setSelection(speeds.indexOf(preferences.rHoldScrollSpeed().get()).coerceAtLeast(0))
+        binding.rHoldSpeed.onItemSelectedListener = { position -> preferences.rHoldScrollSpeed().set(speeds[position]) }
+
         updatePrefs()
     }
 
