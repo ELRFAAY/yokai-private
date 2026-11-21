@@ -313,9 +313,17 @@ class RMascotView(context: Context) : View(context) {
         enterStart = now
         waveUntil = now + 2400L
         if (days >= 1) whereUntil = now + 4500L
+        val name = prefs.rProfileName().get().trim()
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val who = if (name.isNotEmpty()) " يا $name" else ""
         val text = when {
-            days <= 0 -> "أهلاً من تاني! وحشتني."
-            days == 1 -> "كنت فين؟ بقالي يوم مستنيك!"
+            days <= 0 -> when (hour) {
+                in 5..11 -> "صباح الفل$who!"
+                in 12..17 -> "نهارك فل$who!"
+                in 18..23 -> "مساء الخير$who!"
+                else -> "لسه صاحي$who؟ مش هتنام؟"
+            }
+            days == 1 -> "كنت فين$who؟ بقالي يوم مستنيك!"
             days == 2 -> "يومين! ما قريتش من يومين، كنت فين؟"
             days in 3..10 -> "بقالي $days أيام مستنيك! ما قريتش من فترة طويلة."
             else -> "بقالي $days يوم مستنيك! افتكرت إنك نسيتني."
@@ -1039,7 +1047,7 @@ class RMascotView(context: Context) : View(context) {
         val WAKE = listOf("هاه؟ صحيت!", "كنت في أحلى حلم...", "خلاص خلاص، صاحي!")
         const val SLEEP_AFTER_MS = 60_000L
         val WAG_ORDER = intArrayOf(0, 1, 2, 3, 4, 3, 2, 1)
-        const val WELCOME_MIN_GAP_MS = 3L * 60 * 60 * 1000
+        const val WELCOME_MIN_GAP_MS = 2 * 60_000L // R: greet after 2 minutes away (was 3 h)
         const val DAY_MS = 24L * 60 * 60 * 1000
         const val ENTER_MS = 800L
         val BLIP_RATES = floatArrayOf(1.0f, 1.18f, 0.9f, 1.32f, 1.08f)

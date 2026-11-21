@@ -37,9 +37,10 @@ class RToolsBar(
     private val onFlingUp: () -> Unit,
     private val onFlingSide: () -> Unit,
     private val onInteract: () -> Unit,
+    private val onLock: () -> Unit,
 ) : LinearLayout(context) {
 
-    private enum class Tool { SPEED, BRIGHTNESS, VOLUME, BATTERY }
+    private enum class Tool { SPEED, BRIGHTNESS, VOLUME, BATTERY, LOCK }
 
     private val density = resources.displayMetrics.density
     private val accent = context.getResourceColor(MR.attr.colorSecondary)
@@ -69,6 +70,7 @@ class RToolsBar(
         addTool(row, Tool.BRIGHTNESS, R.drawable.ic_brightness_day_24dp, "السطوع")
         addTool(row, Tool.VOLUME, R.drawable.ic_r_volume, "الصوت")
         addTool(row, Tool.BATTERY, R.drawable.ic_r_battery, "البطارية")
+        addTool(row, Tool.LOCK, R.drawable.ic_lock_24dp, "قفل الشاشة")
         addView(row, LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         panel.apply {
@@ -179,6 +181,11 @@ class RToolsBar(
 
     private fun toggle(tool: Tool) {
         onInteract()
+        if (tool == Tool.LOCK) {
+            close()
+            onLock()
+            return
+        }
         if (open == tool) {
             close()
             return
@@ -189,7 +196,7 @@ class RToolsBar(
             b.background = if (t == tool) pill(ColorUtils.setAlphaComponent(accent, 70), 22f) else null
         }
         panel.isVisible = true
-        slider.isVisible = tool != Tool.BATTERY
+        slider.isVisible = tool != Tool.BATTERY && tool != Tool.LOCK
         batterySwitch.isVisible = tool == Tool.BATTERY
         when (tool) {
             Tool.SPEED -> {
@@ -225,6 +232,7 @@ class RToolsBar(
                     onInteract()
                 }
             }
+            Tool.LOCK -> Unit
         }
     }
 

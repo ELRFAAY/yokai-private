@@ -1430,6 +1430,90 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
     private var rToolsBar: RToolsBar? = null
 
+    // ---- R: reader lock. Everything hides except a small lock at the top-left; tap it to bring everything back.
+    // While locked: long-press bottom-right = next chapter button, bottom-left = previous; double-tap top-right =
+    // show the app's normal tools (this unlocks). ----
+    private var rLocked = false
+    private var rLockIcon: android.widget.ImageButton? = null
+
+    private val rLockGestures by lazy {
+        android.view.GestureDetector(
+            this,
+            object : android.view.GestureDetector.SimpleOnGestureListener() {
+                private fun zone(e: MotionEvent): Int {
+                    val w = binding.root.width.toFloat().coerceAtLeast(1f)
+                    val h = binding.root.height.toFloat().coerceAtLeast(1f)
+                    return when {
+                        e.y > h * 0.72f && e.x > w * 0.6f -> 1 // bottom-right
+                        e.y > h * 0.72f && e.x < w * 0.4f -> 2 // bottom-left
+                        e.y < h * 0.22f && e.x > w * 0.6f -> 3 // top-right
+                        else -> 0
+                    }
+                }
+
+                override fun onLongPress(e: MotionEvent) {
+                    val z = zone(e)
+                    if (z != 1 && z != 2) return
+                    // cancel the touch so the page does not open its own long-press sheet
+                    val cancel = MotionEvent.obtain(e).apply { action = MotionEvent.ACTION_CANCEL }
+                    super@ReaderActivity.dispatchTouchEvent(cancel)
+                    cancel.recycle()
+                    loadAdjacentChapter(z == 1)
+                }
+
+                override fun onDoubleTap(e: MotionEvent): Boolean {
+                    if (zone(e) != 3) return false
+                    rUnlock()
+                    return true
+                }
+            },
+        )
+    }
+
+    private fun rLock() {
+        if (rLocked) return
+        rLocked = true
+        rAutoHideJob?.cancel()
+        setMenuVisibility(false)
+        binding.rClockBattery.isVisible = false
+        if (rLockIcon == null) {
+            val size = 44.dpToPx
+            val icon = android.widget.ImageButton(this).apply {
+                setImageResource(R.drawable.ic_lock_24dp)
+                setColorFilter(android.graphics.Color.WHITE)
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    shape = android.graphics.drawable.GradientDrawable.OVAL
+                    setColor(android.graphics.Color.argb(120, 0, 0, 0))
+                }
+                contentDescription = "فتح القفل"
+                setOnClickListener { rUnlock(showMenu = false) }
+            }
+            (binding.root as ViewGroup).addView(
+                icon,
+                androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(size, size).apply {
+                    gravity = android.view.Gravity.TOP or android.view.Gravity.LEFT
+                    leftMargin = 12.dpToPx
+                    topMargin = 40.dpToPx
+                },
+            )
+            rLockIcon = icon
+        }
+        rLockIcon?.isVisible = true
+    }
+
+    private fun rUnlock(showMenu: Boolean = true) {
+        if (!rLocked) return
+        rLocked = false
+        rLockIcon?.isVisible = false
+        rUpdateClock()
+        if (showMenu) setMenuVisibility(true)
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (rLocked) rLockGestures.onTouchEvent(ev)
+        return super.dispatchTouchEvent(ev)
+    }
+
     /** R: the tools bar (speed / brightness / volume / battery) under the toolbar, with fling gestures. */
     private fun rSetupToolsBar() {
         if (!preferences.rToolsBar().get()) return
@@ -1440,6 +1524,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             { binding.chaptersSheet.chaptersBottomSheet.sheetBehavior?.expand() },
             { TabbedReaderSettingsSheet(this@ReaderActivity).show() },
             { rScheduleAutoHide() },
+            { rLock() },
         )
         val styled = obtainStyledAttributes(intArrayOf(androidx.appcompat.R.attr.actionBarSize))
         val barHeight = styled.getDimensionPixelSize(0, 56.dpToPx)
@@ -1475,7 +1560,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
     /** R: clock + battery in the corner (switch in the reader settings). */
     private fun rUpdateClock() {
-        val on = preferences.rClockBattery().get()
+        val on = preferences.rClockBattery().get() && !rLocked
         binding.rClockBattery.isVisible = on
         if (!on) return
         val time = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(Date())
@@ -1832,6 +1917,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
      * viewer because each one implements its own touch and key events.
      */
     fun toggleMenu() {
+        if (rLocked) return
         setMenuVisibility(!menuVisible)
     }
 
@@ -1839,6 +1925,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
      * Called from the viewer to show the menu.
      */
     fun showMenu() {
+        if (rLocked) return
         if (!menuVisible) {
             setMenuVisibility(true)
         }
