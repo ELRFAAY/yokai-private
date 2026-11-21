@@ -57,6 +57,7 @@ class RReaderCobraView(
     private val intervalMinutes: () -> Int,
     private val sceneOn: () -> Boolean = { false },
     private val sceneEvery: () -> Int = { 3 },
+    private val sizeDp: () -> Int = { 72 },
 ) : View(context) {
 
     private val density = resources.displayMetrics.density
@@ -68,16 +69,19 @@ class RReaderCobraView(
         null
     }
 
-    /** Poses cut from the owner's model sheet (branding/mascot-models/14-...). Loaded lazily, kept in memory. */
-    private enum class Pose(val res: Int, val peek: Boolean) {
-        NORMAL(R.drawable.r_cobra_peek_normal, true),
-        LOOK(R.drawable.r_cobra_peek_look, true),
-        LAUGH(R.drawable.r_cobra_peek_laugh, true),
-        POINT(R.drawable.r_cobra_peek_point, true),
-        YAWN(R.drawable.r_cobra_yawn, false),
-        RUB(R.drawable.r_cobra_rub, false),
-        BORED(R.drawable.r_cobra_bored, false),
-        NOD(R.drawable.r_cobra_nod1, false),
+    /**
+     * The same full-body little dragon as on the home screen (same pictures, same pixel scale), so that both places show
+     * him at EXACTLY the same size (Settings > R > dragon size). Loaded lazily, kept in memory.
+     */
+    private enum class Pose(val res: Int) {
+        NORMAL(R.drawable.r_mascot_happy),
+        LOOK(R.drawable.r_mascot_where),
+        LAUGH(R.drawable.r_mascot_proud),
+        POINT(R.drawable.r_mascot_open),
+        YAWN(R.drawable.r_mascot_yawn),
+        RUB(R.drawable.r_mascot_tired),
+        BORED(R.drawable.r_mascot_stretch),
+        NOD(R.drawable.r_mascot_tired),
     }
 
     private class Line(val text: String, val pose: Pose)
@@ -482,9 +486,9 @@ class RReaderCobraView(
             return
         }
         // the nodding pose swaps between its two frames while the text is being typed
-        val res = if (pose == Pose.NOD && (typedChars / 5) % 2 == 1) R.drawable.r_cobra_nod2 else pose.res
+        val res = if (pose == Pose.NOD && (typedChars / 5) % 2 == 1) R.drawable.r_mascot_blink else pose.res
         val bmp = bitmapFor(res) ?: return
-        val cobraW = (if (pose.peek) 94f else 100f) * density
+        val cobraW = sizeDp().coerceIn(40, 160) * density // the same size as the home dragon
         val cobraH = cobraW * bmp.height / bmp.width
         val top = (height - cobraH) * yFrac
         val restLeft = 0f
@@ -503,12 +507,14 @@ class RReaderCobraView(
      */
     private fun drawScene(canvas: Canvas) {
         val d = density
-        val s = 100f * d // little dragon size
-        val k = 128f * d / 402f // screen px per native pixel of the wise pictures
+        val sizeK = sizeDp().coerceIn(40, 160) / 100f // the scene was drawn for a 100dp dragon; everything scales with the size setting
+        val s = 100f * d * sizeK // little dragon size (= the home dragon's size)
+        val k = 128f * d * sizeK / 402f // screen px per native pixel of the wise pictures
         val smallLeft = 4f * d
-        val stageH = 73f * d + s
+        val above = (278f * k - s * 0.15f).coerceAtLeast(0f) // how far the wise dragon reaches above the little one's head
+        val stageH = above + s
         val stageTop = ((height - stageH) * yFrac).coerceAtLeast(0f)
-        val smallTop = stageTop + 73f * d
+        val smallTop = stageTop + above
         // where the stick tip must land: on top of the little dragon's head
         val tipX = smallLeft + s * 0.50f
         val tipY = smallTop + s * 0.15f
@@ -521,7 +527,7 @@ class RReaderCobraView(
         val smallBmp = bitmapFor(smallRes)
         val hidden = grab >= 1f
         if (smallBmp != null && !hidden) {
-            val sh = s * 0.97f
+            val sh = s // hood width = the home dragon's hood width at the same size
             val sw = sh * smallBmp.width / smallBmp.height
             val slideX = -(1f - smallSlide) * (s + 16f * d)
             // being pulled in: moves toward the wise dragon's coils while shrinking
@@ -561,7 +567,7 @@ class RReaderCobraView(
         // ---- speech bubble, to the right of whoever is talking
         if (bubbleAlpha > 0f && typedChars > 0 && exitT == 0f) {
             if (speaker == WISE) {
-                drawBubble(canvas, frameLeft + 150f * d - 8f * d, frameTop + 312f * k * 0.18f, false)
+                drawBubble(canvas, frameLeft + 142f * d * sizeK, frameTop + 312f * k * 0.18f, false)
             } else {
                 drawBubble(canvas, smallLeft + s * 0.9f, smallTop + s * 0.30f, false)
             }

@@ -71,7 +71,15 @@ class RMascotView(context: Context) : View(context) {
     }
 
     private val density = resources.displayMetrics.density
-    private val half = 34f * density // the little dragon is drawn 68dp wide (was 84)
+    // half of the little dragon's size. Settings > R > size (r_dragon_size), the same value the reader uses; refreshed every frame
+    private var half = 36f * density
+
+    private fun refreshSize() {
+        half = prefs.rDragonSize().get().coerceIn(40, 160) / 2f * density
+    }
+
+    /** Extra height of the current costume above the normal dragon (tall hats): the speech bubble sits above it. */
+    private var headroom = 0f
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
     private fun load(id: Int): Bitmap? = try {
@@ -543,6 +551,24 @@ class RMascotView(context: Context) : View(context) {
         }
     }
 
+    /**
+     * A random costume that has not come out yet in this round. When all of them have come out, a new round starts
+     * (and the first costume of the new round is never the last one of the old round). Saved in r_mascot_tf_seen.
+     */
+    private fun nextCostume(): Int {
+        val pref = prefs.rMascotTfSeen()
+        var order = pref.get().split(',').mapNotNull { it.trim().toIntOrNull() }.filter { it in TF_FORMS.indices }.distinct()
+        var left = TF_FORMS.indices.filter { it !in order }
+        if (left.isEmpty()) {
+            val last = order.lastOrNull()
+            order = emptyList()
+            left = TF_FORMS.indices.filter { it != last }
+        }
+        val pick = left.random()
+        pref.set((order + pick).joinToString(","))
+        return pick
+    }
+
     private fun say(text: String, millis: Long = 2200L) {
         val now = SystemClock.uptimeMillis()
         bubbleText = text
@@ -724,7 +750,7 @@ class RMascotView(context: Context) : View(context) {
                     val chance = prefs.rMascotSageChance().get()
                     if (prefs.rMascotTransform().get()) {
                         tfStart = now
-                        tfForm = (Math.random() * TF_FORMS.size).toInt().coerceIn(0, TF_FORMS.size - 1)
+                        tfForm = nextCostume()
                         tfSpoke = false
                         tfPoofs = 0
                         if (soundPool == null && prefs.rMascotSound().get()) soundPool = createSoundPool() // load the poof early
@@ -770,7 +796,10 @@ class RMascotView(context: Context) : View(context) {
         // the shake fades out smoothly instead of stopping dead
         val shake = sin(now / 22f) * 5f * density * ((hurtUntil - now) / 450f).coerceIn(0f, 1f)
 
+        refreshSize()
         var tfBmp: Bitmap? = null
+        var tfCostume = false
+        headroom = 0f
         if (tfStart != 0L) {
             val t = now - tfStart
             val form = TF_FORMS[tfForm]
@@ -791,7 +820,12 @@ class RMascotView(context: Context) : View(context) {
                 t < TF_SEAL + TF_WRAP + TF_CLOUD + TF_HOLD + TF_CLOUD -> R.drawable.r_tf_cloud
                 else -> 0
             }
-            if (id == 0) tfStart = 0L else tfBmp = tfBitmap(id)
+            if (id == 0) {
+                tfStart = 0L
+            } else {
+                tfBmp = tfBitmap(id)
+                tfCostume = id == form.first
+            }
         }
         if (tfBmp == null && blanketT > 0f) {
             // in bed: lie down -> blanket up -> asleep (the picture already has its zzz); waking shows the blanket picture
@@ -816,7 +850,14 @@ class RMascotView(context: Context) : View(context) {
             canvas.rotate(-deg)
         }
         canvas.scale(scaleXSpring.value * (1f - breath * 0.5f), scaleYSpring.value * (1f + breath))
-        if (tfBmp != null) {
+        if (tfBmp != null && tfCostume) {
+            // a costume has the dragon's own pixel scale and bottom line: exactly the normal size, tall hats reach higher
+            val kk = half * 2f / 384f
+            val w2 = tfBmp.width * kk / 2f
+            val h = tfBmp.height * kk
+            dest.set(-w2, half - h, w2, half)
+            headroom = (h - half * 2f).coerceAtLeast(0f)
+        } else if (tfBmp != null) {
             val box = half * 2.3f
             val k = minOf(box / tfBmp.width, box / tfBmp.height)
             val w2 = tfBmp.width * k / 2f
@@ -921,7 +962,7 @@ class RMascotView(context: Context) : View(context) {
         val bh = lineHeight * lines.size + pad * 1.4f
 
         val left = (x - bw / 2f).coerceIn(margin, max(margin, width - bw - margin))
-        var top = y - half - bh - 14f * density
+        var top = y - half - headroom - bh - 14f * density
         val below = top < 4f * density
         if (below) top = y + half + 14f * density
         bubbleRect.set(left, top, left + bw, top + bh)
@@ -962,11 +1003,30 @@ class RMascotView(context: Context) : View(context) {
         const val TF_WRAP = 450L
         const val TF_CLOUD = 450L
         const val TF_HOLD = 4200L
+        // the costumes from the owner's sheets (branding/mascot-models/costumes-2026-11-21); the phrases are my drafts, NOT approved.
+        // One of each kind only: the sheets repeated a detective, a chef and an explorer, those repeats are left out.
         val TF_FORMS = listOf(
-            R.drawable.r_tf_knight to "أنا الفارس! محدش يقرب من المانجا دي!",
-            R.drawable.r_tf_ninja to "نينجا الشاشة... ما تشوفنيش!",
-            R.drawable.r_tf_pirate to "هاااار! المانجا دي كنزي أنا!",
-            R.drawable.r_tf_detective to "فيه شابتر ناقص... وأنا هاعرف مين خدّه!",
+            R.drawable.r_costume_knight to "أنا الفارس! محدش يقرب من المانجا دي!",
+            R.drawable.r_costume_detective to "فيه شابتر ناقص... وأنا هاعرف مين خدّه!",
+            R.drawable.r_costume_pirate to "هاااار! المانجا دي كنزي أنا!",
+            R.drawable.r_costume_guard to "حارس ملكي! ممنوع حرق الأحداث في حضرتي!",
+            R.drawable.r_costume_chef to "الطبخة جاهزة... والشابتر كمان!",
+            R.drawable.r_costume_astronaut to "هبوط على كوكب المانجا... خطوة صغيرة!",
+            R.drawable.r_costume_pharaoh to "أنا فرعون المانجا! اقرا واسكت!",
+            R.drawable.r_costume_doctor to "الوصفة: فصلين دلوقتي وفصل قبل النوم.",
+            R.drawable.r_costume_firefighter to "الأحداث ولّعت! هاتوا الخرطوم!",
+            R.drawable.r_costume_explorer to "بدوّر على فصل ضايع في الغابة...",
+            R.drawable.r_costume_magician to "أبرا كا دابرا! الشابتر اختفى!",
+            R.drawable.r_costume_painter to "أنا اللي رسمت الغلاف ده! صدّقني!",
+            R.drawable.r_costume_rockstar to "الفصل ده يستاهل حفلة!",
+            R.drawable.r_costume_executive to "اجتماع الساعة تسعة: قراءة المانجا.",
+            R.drawable.r_costume_pilot to "معاكم القبطان: اربطوا الأحزمة، الأحداث هتسخن!",
+            R.drawable.r_costume_builder to "بنيت لك مكتبة جديدة... لسه بتتبني!",
+            R.drawable.r_costume_alchemist to "الخلطة السرية: مانجا وسهر!",
+            R.drawable.r_costume_opera to "آآآآه! كمّل قراءة بهدوء بس!",
+            R.drawable.r_costume_bonsai to "الصبر يا صاحبي... زي صبر الفصل الجاي.",
+            R.drawable.r_costume_steampunk to "أقلعنا! وجهتنا الفصل المية!",
+            R.drawable.r_costume_scribe to "كتبت لك ملخص الفصل بالهيروغليفي.",
         )
         const val CHAR_MS = 38L // typing speed of the speech bubble
         val GO_SLEEP = listOf("هنام شوية... صحّيني لما ترجع", "الدنيا هادية... هجيب اللحاف وأنام", "تصبح على خير، المانجا مش هتهرب")

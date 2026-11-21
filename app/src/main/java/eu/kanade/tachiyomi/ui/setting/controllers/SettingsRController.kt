@@ -180,8 +180,18 @@ class SettingsRController : SettingsLegacyController() {
                 bindTo(preferences.rMascotTransform())
                 title = "تحويل التنين الصغير"
                 rIcon(R.drawable.ic_r_swap)
-                summary = "الضغط عليه يحوّله بالدخان لشخصية عشوائية (فارس، نينجا، قرصان، محقق) وبعدها يرجع. عند الإيقاف: الضغط يعمل الحركة العادية."
+                summary = "الضغط عليه يحوّله بالدخان لزيّ عشوائي من ٢١ زيّاً (فارس، قرصان، طيّار، طبّاخ...). " +
+                    "الزيّ الذي ظهر لا يعود حتى تظهر كل الأزياء، ثم تبدأ الدورة من جديد. عند الإيقاف: الضغط يعمل الحركة العادية."
                 preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+            }
+
+            intListPreference(activity) {
+                bindTo(preferences.rDragonSize())
+                title = "حجم التنين الصغير"
+                rIcon(R.drawable.ic_tune_24dp)
+                // one value for the home screen AND the reader (also the stick scene): always exactly the same size
+                entries = listOf("صغير جداً (٤٨)", "صغير (٦٠)", "متوسط (٧٢)", "كبير (٨٨)", "كبير جداً (١١٠)", "ضخم (١٤٠)")
+                entryValues = listOf(48, 60, 72, 88, 110, 140)
             }
 
             switchPreference {

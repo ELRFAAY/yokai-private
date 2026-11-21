@@ -291,6 +291,15 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Mascot: tapping the little dragon turns him into a random character (knight, ninja, pirate, detective) in a cloud of smoke. */
     fun rMascotTransform() = preferenceStore.getBoolean("r_mascot_transform", true)
 
+    /**
+     * The small dragon's size in dp. ONE value for the home screen and the reader (the dragon, the reader visits and
+     * the stick scene), so the two are always exactly the same size.
+     */
+    fun rDragonSize() = preferenceStore.getInt("r_dragon_size", 72)
+
+    /** Transformation costumes already shown in the current round (indexes, comma-separated, in order). */
+    fun rMascotTfSeen() = preferenceStore.getString("r_mascot_tf_seen", "")
+
     fun rMascotSound() = preferenceStore.getBoolean("r_mascot_sound", true)
 
     /** Mascot: after a minute without touching the phone the little dragon says goodnight, pulls a blanket up and sleeps. */
