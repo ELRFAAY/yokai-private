@@ -1276,6 +1276,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             snackbar?.dismiss()
             wic.show(systemBars())
             binding.appBar.isVisible = true
+            rToolsBar?.isVisible = true
 
             if (binding.chaptersSheet.chaptersBottomSheet.sheetBehavior.isExpanded()) {
                 binding.chaptersSheet.chaptersBottomSheet.sheetBehavior?.isHideable = false
@@ -1298,6 +1299,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             }
         } else {
             rToolsBar?.close()
+            rToolsBar?.isVisible = false
             if (preferences.fullscreen().get()) {
                 wic.hide(systemBars())
                 wic.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
@@ -1526,23 +1528,20 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             { rScheduleAutoHide() },
             { rLock() },
         )
-        val styled = obtainStyledAttributes(intArrayOf(androidx.appcompat.R.attr.actionBarSize))
-        val barHeight = styled.getDimensionPixelSize(0, 56.dpToPx)
-        styled.recycle()
-        binding.appBar.addView(
-            bar,
-            android.widget.FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            ).apply { topMargin = barHeight },
-        )
-        // R: keep the bar right under the toolbar even when the toolbar has the status-bar margin or two text lines
-        // (a fixed margin made the bar sit on top of the chapter title)
-        binding.toolbar.addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
-            if (bottom != oldBottom || (bar.layoutParams as ViewGroup.MarginLayoutParams).topMargin != bottom) {
-                bar.updateLayoutParams<ViewGroup.MarginLayoutParams> { topMargin = bottom }
-            }
+        // R: floating card just above the page bar (anchored to the chapters sheet like the page bar itself)
+        val lp = androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        ).apply {
+            anchorId = R.id.chapters_sheet
+            anchorGravity = android.view.Gravity.TOP
+            gravity = android.view.Gravity.BOTTOM
+            leftMargin = 10.dpToPx
+            rightMargin = 10.dpToPx
+            bottomMargin = 64.dpToPx // sits above the page bar
         }
+        bar.isVisible = menuVisible
+        (binding.root as ViewGroup).addView(bar, lp)
         rToolsBar = bar
     }
 

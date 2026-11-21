@@ -59,12 +59,17 @@ class RToolsBar(
         layoutDirection = LAYOUT_DIRECTION_LTR
         val side = (14 * density).toInt()
         setPadding(side, (6 * density).toInt(), side, (6 * density).toInt())
+        // R: a floating rounded card (like the owner's reference): dark, theme-tinted outline
+        background = GradientDrawable().apply {
+            setColor(ColorUtils.setAlphaComponent(Color.BLACK, 190))
+            cornerRadius = 28 * density
+            setStroke((1 * density).toInt(), ColorUtils.setAlphaComponent(accent, 90))
+        }
 
         val row = LinearLayout(context).apply {
             orientation = HORIZONTAL
             gravity = Gravity.CENTER
-            background = pill(ColorUtils.setAlphaComponent(accent, 44), 28f)
-            setPadding((6 * density).toInt())
+            setPadding((2 * density).toInt())
         }
         addTool(row, Tool.SPEED, R.drawable.ic_r_speed, "سرعة التمرير التلقائي")
         addTool(row, Tool.BRIGHTNESS, R.drawable.ic_brightness_day_24dp, "السطوع")
@@ -160,6 +165,13 @@ class RToolsBar(
         }
     }
 
+    /** Round button with a thin outline; filled with the accent tint while its panel is open. */
+    private fun roundButton(active: Boolean) = GradientDrawable().apply {
+        shape = GradientDrawable.OVAL
+        setColor(if (active) ColorUtils.setAlphaComponent(accent, 70) else ColorUtils.setAlphaComponent(Color.WHITE, 18))
+        setStroke((1 * density).toInt(), ColorUtils.setAlphaComponent(if (active) accent else Color.WHITE, 110))
+    }
+
     private fun pill(color: Int, radiusDp: Float) = GradientDrawable().apply {
         setColor(color)
         cornerRadius = radiusDp * density
@@ -170,13 +182,19 @@ class RToolsBar(
             setImageResource(icon)
             setColorFilter(onSurface)
             contentDescription = description
-            background = null
-            val pad = (10 * density).toInt()
+            background = roundButton(false)
+            val pad = (13 * density).toInt()
             setPadding(pad, pad, pad, pad)
             setOnClickListener { toggle(tool) }
         }
         buttons[tool] = button
-        row.addView(button, LayoutParams(0, (48 * density).toInt(), 1f))
+        row.addView(
+            button,
+            LayoutParams(0, (50 * density).toInt(), 1f).apply {
+                marginStart = (6 * density).toInt()
+                marginEnd = (6 * density).toInt()
+            },
+        )
     }
 
     private fun toggle(tool: Tool) {
@@ -193,7 +211,7 @@ class RToolsBar(
         open = tool
         buttons.forEach { (t, b) ->
             b.setColorFilter(if (t == tool) accent else onSurface)
-            b.background = if (t == tool) pill(ColorUtils.setAlphaComponent(accent, 70), 22f) else null
+            b.background = roundButton(t == tool)
         }
         panel.isVisible = true
         slider.isVisible = tool != Tool.BATTERY && tool != Tool.LOCK
@@ -242,7 +260,7 @@ class RToolsBar(
         panel.isVisible = false
         buttons.values.forEach {
             it.setColorFilter(onSurface)
-            it.background = null
+            it.background = roundButton(false)
         }
     }
 }
