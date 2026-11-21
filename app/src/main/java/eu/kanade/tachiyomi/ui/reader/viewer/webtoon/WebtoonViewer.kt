@@ -149,7 +149,8 @@ class WebtoonViewer(val activity: ReaderActivity, val hasMargins: Boolean = fals
                 (event.rawY - viewPosition[1] + viewPositionRelativeToWindow[1]) / recycler.originalHeight,
             )
             // R: bottom half taps scroll by a jump (Settings > R > القارئ)
-            val rDir = rZoneDirection(pos.x, pos.y)
+            // the middle (menu) region always toggles the tools; the jump zones only own the rest of the bottom half
+            val rDir = if (config.navigator.getAction(pos) == ViewerNavigation.NavigationRegion.MENU) 0 else rZoneDirection(pos.x, pos.y)
             if (rDir != 0) {
                 recycler.smoothScrollBy(0, rDir * rJumpPx())
                 return@f
