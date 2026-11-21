@@ -16,6 +16,10 @@ Last updated: 2026-11-21 (see NEWEST-9).
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
 
+## NEWEST-10 2026-11-21 (fourth account, short): READ FIRST, then NEWEST-9
+- Build 44925144801 (`7323623`) = GREEN. Commit `81a16f6`: **tap on the middle of the screen in the webtoon now always toggles the reader tools** (cause: the R tap-scroll zone `rZoneDirection` owned the whole bottom half and swallowed the menu region; `WebtoonViewer` now lets the navigator's MENU region win). `toggleMenu` is already a real toggle and `setMenuVisibility` restarts `rScheduleAutoHide` on every change, so a manual tap cancels/restarts the timer: no change needed there. One dispatch was made on `81a16f6` (see the run list). NOT tried on a phone.
+- Still NOT done: reader toolbar like video `564846.mp4` (the video is not readable from the repo: ask the owner for a screenshot of what he wants), unify all settings looks, the backup (ask what "الحاجات المقول لها بين" means), updates/new-chapters section vanished once (not investigated; reproduce first).
+
 ## NEWEST-9 2026-11-21 18:40 (third account stopped here, owner at ~91%): READ FIRST, then NEWEST-8
 - Pushed: `f7af22d` (NEWEST-8 work, build 44923797319 GREEN, not tried on a phone yet) and `7323623` (another session, same chat: hold-scroll no longer opens the page sheet over the owner video bug + stats history pass off the main thread; build 44925144801 was running on it at 18:40: CHECK ITS RESULT FIRST, do not dispatch while it runs). My own duplicate stats edit was reverted, so `7323623` is the only stats fix.
 - **Owner video bug (`c6dcc05b-564870.mp4`, reader, webtoon)**: long-press on a page opened the page sheet (share / save / set as cover) while the page kept scrolling behind it. `7323623` touches `WebtoonFrame.kt` for this; verify on the phone. Extra safety if it still happens: stop the hold in `WebtoonFrame.onWindowFocusChanged(false)`.
