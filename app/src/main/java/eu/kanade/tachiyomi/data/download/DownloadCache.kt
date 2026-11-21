@@ -142,11 +142,11 @@ class DownloadCache(
 
         val sourceDir = rootDownloadsDir.sourceDirs[manga.source]
         if (sourceDir != null) {
-            val mangaDir = sourceDir.mangaDirs.forManga(manga)
+            val mangaDir = sourceDir.dirFor(manga)
             if (mangaDir != null) {
-                return provider.getValidChapterDirNames(
-                    chapter,
-                ).any { it in mangaDir.chapterDirs }
+                val names = provider.getValidChapterDirNames(chapter)
+                return names.any { it in mangaDir.chapterDirs } ||
+                    names.any { mangaDir.hasChapterNormalized(it) }
             }
         }
         return false
@@ -174,7 +174,7 @@ class DownloadCache(
             return 0
         } else {
             if (sourceDir != null) {
-                val mangaDir = sourceDir.mangaDirs.forManga(manga)
+                val mangaDir = sourceDir.dirFor(manga)
                 if (mangaDir != null) {
                     return mangaDir.chapterDirs.size
                 }
@@ -210,6 +210,10 @@ class DownloadCache(
             val sourceMap = sources
                 .flatMap { s -> provider.getSourceDirNames(s).map { it.lowercase() to s.id } }
                 .toMap()
+            // R: also match source folders by letters/digits only (a renamed or re-cased source folder)
+            val sourceMapNorm = sources
+                .flatMap { s -> provider.getSourceDirNames(s).map { rNorm(it) to s.id } }
+                .toMap()
 
             rootDownloadsDirLock.withLock {
                 rootDownloadsDir = RootDirectory(storageManager.getDownloadsDirectory())
@@ -217,7 +221,7 @@ class DownloadCache(
                 val sourceDirs = rootDownloadsDir.dir?.listFiles().orEmpty()
                     .filter { it.isDirectory && !it.name.isNullOrBlank() }
                     .mapNotNull { dir ->
-                        val sourceId = sourceMap[dir.name!!.lowercase()]
+                        val sourceId = sourceMap[dir.name!!.lowercase()] ?: sourceMapNorm[rNorm(dir.name!!)]
                         sourceId?.let { it to SourceDirectory(dir) }
                     }
                     .toMap()
@@ -346,7 +350,7 @@ class DownloadCache(
     suspend fun removeChapters(chapters: List<Chapter>, manga: Manga) {
         rootDownloadsDirLock.withLock {
             val sourceDir = rootDownloadsDir.sourceDirs[manga.source] ?: return
-            val mangaDir = sourceDir.mangaDirs.forManga(manga) ?: return
+            val mangaDir = sourceDir.dirFor(manga) ?: return
             chapters.forEach { chapter ->
                 provider.getValidChapterDirNames(chapter).forEach {
                     if (it in mangaDir.chapterDirs) {
@@ -362,7 +366,7 @@ class DownloadCache(
     suspend fun removeChapterFolders(folders: List<String>, manga: Manga) {
         rootDownloadsDirLock.withLock {
             val sourceDir = rootDownloadsDir.sourceDirs[manga.source] ?: return
-            val mangaDir = sourceDir.mangaDirs.forManga(manga) ?: return
+            val mangaDir = sourceDir.dirFor(manga) ?: return
 
             folders.forEach { chapter ->
                 if (chapter in mangaDir.chapterDirs) {
@@ -419,6 +423,11 @@ class DownloadCache(
     private fun Map<String, MangaDirectory>.forManga(manga: Manga): MangaDirectory? =
         provider.getMangaDirNames(manga).firstNotNullOfOrNull { this[it] }
 
+    /** R: exact folder names first, then a tolerant match (case, spaces and punctuation ignored). */
+    private fun SourceDirectory.dirFor(manga: Manga): MangaDirectory? =
+        mangaDirs.forManga(manga)
+            ?: provider.getMangaDirNames(manga).firstNotNullOfOrNull { findNormalized(it) }
+
     private fun Map<String, MangaDirectory>.keyForManga(manga: Manga): String? =
         provider.getMangaDirNames(manga).firstOrNull { it in this }
 
@@ -461,7 +470,25 @@ private class SourceDirectory(
     @Serializable(with = UniFileAsStringSerializer::class)
     val dir: UniFile?,
     var mangaDirs: Map<String, MangaDirectory> = hashMapOf(),
-)
+) {
+    // R: tolerant lookup (case/punctuation/spaces ignored), rebuilt when [mangaDirs] is replaced or changes size
+    @kotlinx.serialization.Transient
+    private var normFor: Map<String, MangaDirectory>? = null
+    @kotlinx.serialization.Transient
+    private var normSize = -1
+    @kotlinx.serialization.Transient
+    private var normIndex: Map<String, MangaDirectory> = emptyMap()
+
+    fun findNormalized(name: String): MangaDirectory? {
+        val current = mangaDirs
+        if (normFor !== current || normSize != current.size) {
+            normIndex = current.entries.associate { rNorm(it.key) to it.value }
+            normFor = current
+            normSize = current.size
+        }
+        return normIndex[rNorm(name)]
+    }
+}
 
 /**
  * Class to store the files under a manga directory.
@@ -471,7 +498,31 @@ private class MangaDirectory(
     @Serializable(with = UniFileAsStringSerializer::class)
     val dir: UniFile?,
     var chapterDirs: MutableSet<String> = hashSetOf(),
-)
+) {
+    @kotlinx.serialization.Transient
+    private var normChapters: Set<String> = emptySet()
+    @kotlinx.serialization.Transient
+    private var normChaptersFor: Set<String>? = null
+    @kotlinx.serialization.Transient
+    private var normChaptersSize = -1
+
+    fun hasChapterNormalized(name: String): Boolean {
+        val current = chapterDirs
+        if (normChaptersFor !== current || normChaptersSize != current.size) {
+            normChapters = current.mapTo(hashSetOf()) { rNorm(it) }
+            normChaptersFor = current
+            normChaptersSize = current.size
+        }
+        return rNorm(name) in normChapters
+    }
+}
+
+/** R: lower-case letters and digits only, so "Tower of God_2" and "tower of god 2" match. */
+private fun rNorm(name: String): String {
+    val sb = StringBuilder(name.length)
+    name.forEach { if (Character.isLetterOrDigit(it)) sb.append(it.lowercaseChar()) }
+    return sb.toString()
+}
 
 private object UniFileAsStringSerializer : KSerializer<UniFile?> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UniFile", PrimitiveKind.STRING)
