@@ -302,6 +302,12 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** When the app was last on screen (epoch ms), used by the welcome. */
     fun rLastOpenMs() = preferenceStore.getLong("r_last_open_ms", 0L)
 
+    /** Library: the 3-dot menu gets "hide / show lists"; lists (categories) he hides stay hidden until he shows them again. */
+    fun rHideLists() = preferenceStore.getBoolean("r_hide_lists", true)
+
+    /** Ids (as strings) of the library lists the owner hid from the 3-dot menu. */
+    fun rHiddenLists() = preferenceStore.getStringSet("r_hidden_lists", mutableSetOf())
+
     /** Reader: the green cobra that peeks in from the left edge while you read. */
     fun rReaderCobra() = preferenceStore.getBoolean("r_reader_cobra", true)
 

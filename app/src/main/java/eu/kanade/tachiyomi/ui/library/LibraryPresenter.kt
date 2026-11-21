@@ -869,14 +869,23 @@ class LibraryPresenter(
      * If category id '-1' is not empty, it means the library not grouped by categories
      */
     private fun getLibraryFlow(): Flow<LibraryData> {
+        // R: lists (categories) the owner hid from the 3-dot menu; empty when the R switch is off
+        val hiddenListsFlow = combine(
+            preferences.rHideLists().changes(),
+            preferences.rHiddenLists().changes(),
+        ) { on, ids -> if (on) ids.mapNotNull { it.toIntOrNull() }.toSet() else emptySet<Int>() }
         val libraryFlow = combine(
             getCategories.subscribe(),
             // FIXME: Remove retry once a real solution is found
             getLibraryManga.subscribe().retry(1) { e -> e is NullPointerException },
             getPreferencesFlow(),
             forceUpdateEvent.receiveAsFlow(),
-        ) { dbCategories, libraryMangaList, prefs, _ ->
+            hiddenListsFlow,
+        ) { dbCategoriesAll, libraryMangaAll, prefs, _, hiddenLists ->
             groupType = prefs.groupType
+            val hide = if (controllerIsSubClass) emptySet() else hiddenLists
+            val dbCategories = if (hide.isEmpty()) dbCategoriesAll else dbCategoriesAll.filter { c -> c.id?.let { it !in hide } ?: true }
+            val libraryMangaList = if (hide.isEmpty()) libraryMangaAll else libraryMangaAll.filter { it.category !in hide }
 
             val defaultCategory = createDefaultCategory()
 
@@ -899,7 +908,7 @@ class LibraryPresenter(
                     groupType,
                     prefs.collapsedDynamicCategories,
                 )
-            } to listOf(defaultCategory) + dbCategories
+            } to listOf(defaultCategory) + dbCategoriesAll
         }
 
         return combine(
