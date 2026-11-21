@@ -58,44 +58,20 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     override fun onViewCreated(view: View) {
         super.onViewCreated(view)
         scrollViewWith(binding.statsScrollView, true)
-        // R: the heavy database / disk work runs off the main thread so the screen opens at once
-        viewScope.launch {
-            val pre = withContext(Dispatchers.IO) {
-                RStatsPre(
-                    tracks = mangaDistinct.map { it to presenter.getTracks(it.manga) },
-                    downloaded = mangaDistinct.sumOf { presenter.getDownloadCount(it) },
-                    updates = presenter.getGlobalUpdateManga().count(),
-                    duration = presenter.getReadDuration(),
-                    week = try {
-                        presenter.getWeeklyChapters()
-                    } catch (e: Exception) {
-                        emptyList()
-                    },
-                )
+        handleGeneralStats()
+        handleHero()
+        handleExtraSections()
+        if (mangaDistinct.isNotEmpty()) {
+            binding.viewDetailLayout.setOnClickListener {
+                router.pushController(StatsDetailsController().withFadeTransaction())
             }
-            handleGeneralStats(pre)
-            handleHero(pre.week)
-            handleExtraSections()
-            if (mangaDistinct.isNotEmpty()) {
-                binding.viewDetailLayout.setOnClickListener {
-                    router.pushController(StatsDetailsController().withFadeTransaction())
-                }
-                handleStatusDistribution()
-            }
-            if (scoresList.isNotEmpty()) handleScoreDistribution()
+            handleStatusDistribution()
         }
+        if (scoresList.isNotEmpty()) handleScoreDistribution()
     }
 
-    private class RStatsPre(
-        val tracks: List<Pair<LibraryManga, MutableList<Track>>>,
-        val downloaded: Int,
-        val updates: Int,
-        val duration: String,
-        val week: List<Pair<String, Int>>,
-    )
-
-    private fun handleGeneralStats(pre: RStatsPre) {
-        val mangaTracks = pre.tracks
+    private fun handleGeneralStats() {
+        val mangaTracks = mangaDistinct.map { it to presenter.getTracks(it.manga) }
         scoresList = getScoresList(mangaTracks)
         with(binding) {
             viewDetailLayout.isVisible = mangaDistinct.isNotEmpty()
@@ -109,19 +85,19 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
                 scoresList.average().roundToTwoDecimal().toString()
             }
             statsTrackedMangaText.text = mangaTracks.count { it.second.isNotEmpty() }.toString()
-            statsChaptersDownloadedText.text = pre.downloaded.toString()
+            statsChaptersDownloadedText.text = mangaDistinct.sumOf { presenter.getDownloadCount(it) }.toString()
             statsTotalTagsText.text = mangaDistinct.flatMap { it.manga.getTags() }.distinct().count().toString()
             statsMangaLocalText.text = mangaDistinct.count { it.manga.isLocal() }.toString()
-            statsGlobalUpdateMangaText.text = pre.updates.toString()
+            statsGlobalUpdateMangaText.text = presenter.getGlobalUpdateManga().count().toString()
             statsSourcesText.text = presenter.getSources().count().toString()
             statsTrackersText.text = presenter.getLoggedTrackers().count().toString()
-            statsReadDurationText.text = pre.duration
+            statsReadDurationText.text = presenter.getReadDuration()
             statsReadDurationLayout.compatToolTipText = activity?.getString(MR.strings.read_duration_info)
         }
     }
 
     /** R: big numbers on top, last-7-days chart and the read / unread donut. */
-    private fun handleHero(week: List<Pair<String, Int>>) {
+    private fun handleHero() {
         val ctx = activity ?: return
         val read = mangaDistinct.sumOf { it.read }
         val total = mangaDistinct.sumOf { it.totalChapters }
@@ -132,6 +108,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
             rHeroChapters.text = read.toString()
             rHeroTitles.text = mangaDistinct.size.toString()
             try {
+                val week = presenter.getWeeklyChapters()
                 val palette = StatsHelper.PIE_CHART_COLOR_LIST
                 val set = BarDataSet(
                     week.mapIndexed { i, (_, n) -> BarEntry(i.toFloat(), n.toFloat()) },
