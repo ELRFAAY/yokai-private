@@ -82,8 +82,17 @@ class RReaderCobraView(
 
     private class Line(val text: String, val pose: Pose)
 
-    /** One beat of the stick scene: which picture, what is said, how long it stays after the text is typed. */
-    private class Step(val res: Int, val text: String, val holdMs: Long, val sound: Int = 0)
+    /**
+     * One beat of the stick scene: which picture the wise dragon shows, what is said and by whom, how long it stays
+     * after the text is typed, and an optional sound (1 = swing whoosh, 2 = hit tick).
+     */
+    private class Step(
+        val wise: Int,
+        val text: String,
+        val holdMs: Long,
+        val sound: Int = 0,
+        val speaker: Int = WISE,
+    )
 
     private val bitmaps = HashMap<Int, Bitmap?>()
     private fun bitmapFor(res: Int): Bitmap? = bitmaps.getOrPut(res) { load(res) }
@@ -160,7 +169,14 @@ class RReaderCobraView(
     private var scenePending = false // the little dragon is making his quick visits; the wise dragon comes after them
     private var burstLeft = 0
     private var sceneIdx = -1 // -1 = normal visit, otherwise the current step of the stick scene
-    private var sceneRes = 0
+    private var wiseRes = 0 // picture of the wise dragon in the stick scene
+    private var smallRes = R.drawable.r_mascot_happy // picture of the little dragon in the stick scene
+    private var speaker = WISE
+    private var smallSlide = 0f // little dragon slides in from the left edge
+    private var wiseSlide = 0f // wise dragon slides in from the right edge
+    private var squash = 0f // the little dragon is squashed by the blow
+    private var grab = 0f // the little dragon is pulled into the wise dragon's coils
+    private var exitT = 0f // the wise dragon leaves to the right
     private var slideT = 0f // 0 = hidden behind the edge, 1 = fully peeking
     private var bubbleAlpha = 0f
     private var typedChars = 0
@@ -168,6 +184,7 @@ class RReaderCobraView(
     private var text = ""
     private var animator: ValueAnimator? = null
     private val cobraRect = RectF()
+    private val smallRect = RectF()
 
     private var cachedText = ""
     private var cachedWidth = 0
@@ -262,7 +279,6 @@ class RReaderCobraView(
 
     private fun appear() {
         sceneIdx = -1
-        sceneRes = 0
         val night0 = nightOn() && Calendar.getInstance().get(Calendar.HOUR_OF_DAY) in 0..4
         if (scenePending && (!sceneOn() || night0)) scenePending = false
         if (!scenePending) {
@@ -274,16 +290,24 @@ class RReaderCobraView(
         }
         if (scenePending && burstLeft <= 0) {
             scenePending = false
+            // both dragons are on screen together: the little one on the LEFT, the wise one comes from the RIGHT
             sceneIdx = 0
-            sceneRes = SCENE[0].res
+            wiseRes = SCENE[0].wise
+            smallRes = R.drawable.r_mascot_happy
+            speaker = WISE
+            smallSlide = 0f
+            wiseSlide = 0f
+            squash = 0f
+            grab = 0f
+            exitT = 0f
             typedChars = 0
             bubbleAlpha = 0f
             firstDone = true
             shown = true
-            slideT = 0f
-            yFrac = 0.30f + Random.nextFloat() * 0.25f
+            slideT = 1f
+            yFrac = 0.20f + Random.nextFloat() * 0.25f
             play(whooshIn, 0.5f)
-            run(420, 0f, 1f, DecelerateInterpolator(), { slideT = it }) { sceneStep(0) }
+            run(420, 0f, 1f, DecelerateInterpolator(), { smallSlide = it }) { sceneStep(0) }
             return
         }
         val night = nightOn() && Calendar.getInstance().get(Calendar.HOUR_OF_DAY) in 0..4
@@ -300,27 +324,70 @@ class RReaderCobraView(
         run(420, 0f, 1f, DecelerateInterpolator(), { slideT = it }) { typeText() }
     }
 
-    /** The stick scene: the wise dragon comes, raises the stick, hits the little dragon and drags him away. */
+    /**
+     * The stick scene, one beat at a time: the wise dragon slides in from the right, raises the stick, the stick comes
+     * down ON the little dragon's head (he is squashed and shows the dizzy picture), then the wise one pulls him into
+     * his coils and leaves to the right.
+     */
     private fun sceneStep(i: Int) {
         if (!running) return
         if (i >= SCENE.size) {
-            disappear() // keeps the last picture (mirrored, on the right) while it slides out
+            sceneExit()
             return
         }
         sceneIdx = i
         val st = SCENE[i]
-        sceneRes = st.res
+        wiseRes = st.wise
         text = st.text
+        speaker = st.speaker
         typedChars = 0
         bubbleAlpha = 0f
         if (st.sound == 1) play(whooshOut, 0.7f)
         if (st.sound == 2) play(tick1, 1f)
+        when (i) {
+            0 -> {
+                play(whooshIn, 0.5f)
+                run(650, 0f, 1f, DecelerateInterpolator(), { wiseSlide = it }) { afterBeat(st) }
+            }
+            2 -> {
+                // the contact: the stick tip is exactly on his head, he squashes and turns dizzy
+                smallRes = R.drawable.r_stick_small_hit
+                squash = 0f
+                run(420, 0f, 1f, LinearInterpolator(), { squash = it }) { }
+                afterBeat(st)
+            }
+            4 -> {
+                // keep the swing picture while he is pulled in, then show the wise dragon carrying him
+                wiseRes = SCENE[3].wise
+                run(380, 0f, 1f, AccelerateInterpolator(), { grab = it }) {
+                    wiseRes = st.wise
+                    afterBeat(st)
+                }
+            }
+            else -> afterBeat(st)
+        }
+    }
+
+    private fun afterBeat(st: Step) {
         if (st.text.isEmpty()) {
             invalidate()
             handler.postDelayed(stepRunnable, st.holdMs)
         } else {
             typeText()
         }
+    }
+
+    private fun sceneExit() {
+        play(whooshOut, 0.6f)
+        bubbleAlpha = 0f
+        run(600, 0f, 1f, AccelerateInterpolator(), { exitT = it }) { finishVisit() }
+    }
+
+    private fun finishVisit() {
+        shown = false
+        sceneIdx = -1
+        invalidate()
+        scheduleNext()
     }
 
     private fun typeText() {
@@ -377,7 +444,7 @@ class RReaderCobraView(
 
     private fun dismiss() {
         cancelAll()
-        disappear()
+        if (sceneIdx >= 0) hideNow() else disappear()
     }
 
     /** The reader menu opened (or the reader is closing) while the cobra is out: leave without a sound. */
@@ -410,30 +477,93 @@ class RReaderCobraView(
             post { if (shown) hideNow() }
             return
         }
+        if (sceneIdx >= 0) {
+            drawScene(canvas)
+            return
+        }
         // the nodding pose swaps between its two frames while the text is being typed
-        val res = if (sceneIdx >= 0) sceneRes else if (pose == Pose.NOD && (typedChars / 5) % 2 == 1) R.drawable.r_cobra_nod2 else pose.res
+        val res = if (pose == Pose.NOD && (typedChars / 5) % 2 == 1) R.drawable.r_cobra_nod2 else pose.res
         val bmp = bitmapFor(res) ?: return
-        val cobraW = (if (sceneIdx >= 0) 150f else if (pose.peek) 112f else 120f) * density
+        val cobraW = (if (pose.peek) 112f else 120f) * density
         val cobraH = cobraW * bmp.height / bmp.width
         val top = (height - cobraH) * yFrac
-        if (sceneIdx >= 0) {
-            // the wise dragon walks in from the RIGHT edge (pictures are mirrored so the stick points at the screen)
-            val left = width - cobraW + (1f - slideT) * (cobraW + 12f * density)
-            cobraRect.set(left, top, left + cobraW, top + cobraH)
+        val restLeft = 0f
+        val left = restLeft - (1f - slideT) * (cobraW + 12f * density)
+        cobraRect.set(left, top, left + cobraW, top + cobraH)
+        canvas.drawBitmap(bmp, null, cobraRect, bitmapPaint)
+        if (bubbleAlpha > 0f && typedChars > 0) {
+            drawBubble(canvas, restLeft + cobraW - 4f * density, top + cobraH * 0.30f, false)
+        }
+    }
+
+    /**
+     * Draws the stick scene. The little dragon sits at the left edge. The wise dragon's pictures are drawn mirrored
+     * (they face right) in a fixed frame placed so that, in the "hit" picture, the tip of the stick lands exactly on
+     * the little dragon's head. Native numbers: "hit" picture is 402x312 and its stick tip is at (338, 278).
+     */
+    private fun drawScene(canvas: Canvas) {
+        val d = density
+        val s = 118f * d // little dragon size
+        val k = 150f * d / 402f // screen px per native pixel of the wise pictures
+        val smallLeft = 4f * d
+        val stageH = 86f * d + s
+        val stageTop = ((height - stageH) * yFrac).coerceAtLeast(0f)
+        val smallTop = stageTop + 86f * d
+        // where the stick tip must land: on top of the little dragon's head
+        val tipX = smallLeft + s * 0.50f
+        val tipY = smallTop + s * 0.15f
+        val frameLeft = tipX - (402f - 338f) * k // mirrored: the tip is (402 - 338) native px from the left
+        val frameTop = tipY - 278f * k
+        val frameBottom = frameTop + 312f * k
+        val frameCx = frameLeft + 201f * k
+
+        // ---- little dragon
+        val smallBmp = bitmapFor(smallRes)
+        val hidden = grab >= 1f
+        if (smallBmp != null && !hidden) {
+            val sh = s * 0.97f
+            val sw = sh * smallBmp.width / smallBmp.height
+            val slideX = -(1f - smallSlide) * (s + 16f * d)
+            // being pulled in: moves toward the wise dragon's coils while shrinking
+            val pullX = grab * (frameCx - (smallLeft + s / 2f))
+            val pullY = grab * (frameBottom - 30f * d - (smallTop + sh / 2f))
+            val cx = smallLeft + s / 2f + slideX + pullX
+            val bottom = smallTop + s + pullY
+            val sc = 1f - 0.85f * grab
+            val sq = 1f - 0.20f * kotlin.math.sin(Math.PI.toFloat() * squash.coerceIn(0f, 1f))
+            smallRect.set(cx - sw / 2f, bottom - sh, cx + sw / 2f, bottom)
+            canvas.save()
+            canvas.scale(sc, sc * sq, cx, bottom)
+            canvas.drawBitmap(smallBmp, null, smallRect, bitmapPaint)
+            canvas.restore()
+        } else {
+            smallRect.setEmpty()
+        }
+
+        // ---- wise dragon (mirrored)
+        val wiseBmp = bitmapFor(wiseRes)
+        cobraRect.setEmpty()
+        if (wiseBmp != null) {
+            val offset = (1f - wiseSlide) * (width - frameLeft + 8f * d) + exitT * (width - frameLeft + 8f * d)
+            val ww = wiseBmp.width * k
+            val wh = wiseBmp.height * k
+            val cx = frameCx + offset
+            cobraRect.set(cx - ww / 2f, frameBottom - wh, cx + ww / 2f, frameBottom)
             canvas.save()
             canvas.scale(-1f, 1f, cobraRect.centerX(), cobraRect.centerY())
-            canvas.drawBitmap(bmp, null, cobraRect, bitmapPaint)
+            canvas.drawBitmap(wiseBmp, null, cobraRect, bitmapPaint)
             canvas.restore()
-            if (bubbleAlpha > 0f && typedChars > 0) {
-                drawBubble(canvas, left + 4f * density, top + cobraH * 0.30f, true)
-            }
-        } else {
-            val restLeft = 0f
-            val left = restLeft - (1f - slideT) * (cobraW + 12f * density)
-            cobraRect.set(left, top, left + cobraW, top + cobraH)
-            canvas.drawBitmap(bmp, null, cobraRect, bitmapPaint)
-            if (bubbleAlpha > 0f && typedChars > 0) {
-                drawBubble(canvas, restLeft + cobraW - 4f * density, top + cobraH * 0.30f, false)
+            if (!smallRect.isEmpty) cobraRect.union(smallRect)
+        } else if (!smallRect.isEmpty) {
+            cobraRect.set(smallRect)
+        }
+
+        // ---- speech bubble, to the right of whoever is talking
+        if (bubbleAlpha > 0f && typedChars > 0 && exitT == 0f) {
+            if (speaker == WISE) {
+                drawBubble(canvas, frameLeft + 150f * d - 8f * d, frameTop + 312f * k * 0.18f, false)
+            } else {
+                drawBubble(canvas, smallLeft + s * 0.9f, smallTop + s * 0.30f, false)
             }
         }
     }
@@ -511,11 +641,18 @@ class RReaderCobraView(
         private const val RETRY_MS = 15_000L
         private const val QUICK_MS = 12_000L // gap between the little dragon's quick visits before the scene
 
+        private const val WISE = 0
+        private const val SMALL = 1
+
+        /**
+         * 0 wise slides in and scolds, 1 raises the stick, 2 the blow lands on the little dragon's head (no text),
+         * 3 the little dragon complains, 4 the wise one pulls him in and carries him off.
+         */
         private val SCENE = listOf(
             Step(R.drawable.r_stick_wise_walk, "إنت تاني؟! تلات مرات في دقيقة! مفيش أدب!", 900),
             Step(R.drawable.r_stick_wise_raise, "نصيحة من الحاج: اللي ما يسمعش الكلام... يتضرب!", 300, 1),
-            Step(R.drawable.r_stick_wise_hit, "", 850, 2),
-            Step(R.drawable.r_stick_small_hit, "آآآي! دماغي!", 900),
+            Step(R.drawable.r_stick_wise_hit, "", 900, 2),
+            Step(R.drawable.r_stick_wise_hit, "آآآي! دماغي!", 900, 0, SMALL),
             Step(R.drawable.r_stick_wise_walk_with_small, "يلا معايا. ونصيحة تانية: اشرب مية.", 700),
         )
 
