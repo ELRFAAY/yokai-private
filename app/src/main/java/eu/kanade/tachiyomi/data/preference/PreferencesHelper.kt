@@ -308,6 +308,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Mascot: when the app is opened the little dragon drops in from the top right and says how long you were away. */
     fun rMascotWelcome() = preferenceStore.getBoolean("r_mascot_welcome", true)
 
+    /** Home welcome drop-in with the E2 sheet frames (falling, squash, bounce, waving); off = the previous wave. */
+    fun rWelcomeE2() = preferenceStore.getBoolean("r_welcome_e2", true)
+
     /** When the app was last on screen (epoch ms), used by the welcome. */
     fun rLastOpenMs() = preferenceStore.getLong("r_last_open_ms", 0L)
 

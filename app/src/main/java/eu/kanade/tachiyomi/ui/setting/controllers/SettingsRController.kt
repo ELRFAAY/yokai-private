@@ -336,6 +336,14 @@ class SettingsRController : SettingsLegacyController() {
                     "عند الإيقاف: لا يظهر ترحيب."
                 preferences.rMascot().changesIn(viewScope) { isEnabled = it }
             }
+
+            switchPreference {
+                bindTo(preferences.rWelcomeE2())
+                title = "نزول التنين الصغير بالحركة الجديدة"
+                rIcon(R.drawable.ic_r_home)
+                summary = "في الترحيب ينزل بحركات الشيت الجديدة: يقع، يتفلطح، يتنطط ثم يقعد ويلوّح. عند الإيقاف: التلويح القديم بس."
+                preferences.rMascotWelcome().changesIn(viewScope) { isEnabled = it }
+            }
         }
 
         preferenceCategory {

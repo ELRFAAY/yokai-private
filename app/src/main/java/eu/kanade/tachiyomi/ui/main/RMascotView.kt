@@ -185,6 +185,33 @@ class RMascotView(context: Context) : View(context) {
     private var waveUntil = 0L
     private var whereUntil = 0L
 
+    // R: the drop-in welcome with the E2 sheet (falling, squash, bounce, sitting and waving)
+    private var e2Start = 0L
+    private var e2LandAt = 0L
+    private val e2Frames: List<Bitmap?> by lazy {
+        listOf(
+            R.drawable.r_e2_0, R.drawable.r_e2_1, R.drawable.r_e2_2, R.drawable.r_e2_3,
+            R.drawable.r_e2_4, R.drawable.r_e2_5, R.drawable.r_e2_6, R.drawable.r_e2_7,
+        ).map { load(it) }
+    }
+
+    private fun e2Frame(now: Long): Bitmap? {
+        if (e2Start == 0L || state != State.IDLE) return null
+        if (enterStart != 0L) return e2Frames.getOrNull(((now / 120L) % 2L).toInt()) // falling, arms up / hood flapping
+        if (e2LandAt == 0L) return null
+        val t = now - e2LandAt
+        val idx = when {
+            t < 130L -> 2 // squash + dust
+            t < 270L -> 3 // max squash
+            t < 520L -> 4 // bounce, stretched, dizzy
+            t < 800L -> 5 // small bounce, relieved
+            t < 1300L -> 6 // settling, shaking his head
+            t < 2600L -> 7 // sitting, waving
+            else -> return null
+        }
+        return e2Frames.getOrNull(idx)
+    }
+
     // pictures cut from the owner's sheets (rA2 tail wag, rB mouth, rC2 wave, rD poses, p3 bed); all keep the short wide body
     private val wagFrames: List<Bitmap?> by lazy {
         listOf(R.drawable.r_mascot_wag1, R.drawable.r_mascot_wag2, R.drawable.r_mascot_wag3, R.drawable.r_mascot_wag4, R.drawable.r_mascot_wag5).map { load(it) }
@@ -324,6 +351,10 @@ class RMascotView(context: Context) : View(context) {
         if (state != State.IDLE || tfStart != 0L) return
         enterStart = now
         waveUntil = now + 2400L
+        if (prefs.rWelcomeE2().get()) {
+            e2Start = now
+            e2LandAt = 0L
+        }
         if (days >= 1) whereUntil = now + 4500L
         val name = prefs.rProfileName().get().trim()
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
@@ -396,6 +427,7 @@ class RMascotView(context: Context) : View(context) {
                 targetX = x
                 targetY = y
                 scaleYSpring.kick(-6f)
+                if (e2Start != 0L) e2LandAt = now
             }
         }
 
@@ -543,6 +575,16 @@ class RMascotView(context: Context) : View(context) {
             if (extra != null) {
                 bitmap = extra
                 frameSprite = true
+            }
+        }
+        if (!sage && tfStart == 0L && e2Start != 0L && !asleep) {
+            val f = e2Frame(now)
+            if (f != null) {
+                bitmap = f
+                frameSprite = true
+            } else if (e2LandAt != 0L || state != State.IDLE) {
+                e2Start = 0L
+                e2LandAt = 0L
             }
         }
         if (!sage && tfStart == 0L && state == State.GRABBED && !moved && !asleep) {

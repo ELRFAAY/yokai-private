@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-22 10:10 (see NEWEST-20).
+Last updated: 2026-11-22 (see NEWEST-21).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,14 @@ Last updated: 2026-11-22 10:10 (see NEWEST-20).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-21 2026-11-22 (eighth account = Claude in the chat app, not Claude Code): START HERE, then NEWEST-20
+- Owner said "ابدأ" and chose: use the new walk image (`G-wise-walk-4x2-USE-565706.jpg`, saved in `new-sheets-2026-11-22/`, 8 frames, still 3/4 front, frame 8 = coiled, NOT used) for the wise dragon's walk. Everything below is pushed on `fix/stats-and-name-clean`, NOT compiled (no SDK), NOT built (owner said he decides when; do not dispatch until he says so).
+- **Cutter** `branding/tools/make_sheets_2026_11_22.py` (run from the repo root; merge_dil 6 for H1/G/I2/J/J3b, 12 for E2): wise sheets on a 640 px canvas (hat width 240 px per sheet, coil centre at x=320, bottom aligned so frames never jump): `r_h1_00..14` (H1: 0 neutral, 1 hip, 2-4 cane up/behind/horizontal, 5 cane on shoulder, 6-9 swing, 10 IMPACT BURST (tip at x~76), 11 beard flying, 12 cane trembling, 13 cane raised, 14 neutral), `r_g_00..07` (walk), `r_i2_00..07` (wise faces RIGHT, drags the dazed small one; the coil holes show white, not transparent: cosmetic); small sheets on the 384 px home canvas: `r_j_0` peek, `r_j_1` notice, `r_j_3` HIT squash, `r_j_4` compress, `r_j_5` bounce (J2 skipped), `r_j3b_0..2` shocked no cane, `r_e2_0..7` drop-in/landing. PNG cut-outs in `branding/mascot-models/cutouts-2026-11-22/`.
+- **Stick scene v2** (`RReaderCobraView`, switch `r_scene_v2`, Settings > R, default ON; OFF = the old scene untouched): `SCENE2`, `sceneStepV2`, `drawSceneV2`, frame loops via `startCycle/stopCycle` (`Step.wiseFrames/smallFrames/frameMs/flip/small`). Little dragon LEFT, wise slides in from the RIGHT (G walk), raise cane (H1 1-4, small shocked J3b), swing (H1 5-9), impact (H1 10 + J3-J5), "آآآي! دماغي!" (S4 dizzy), lecture (H1 13-14), drag away (I2). Both dragons share the pixel scale (`kw = s/384`); the wise dragon stands 215 canvas px right of the small one's centre so the burst lands ON him (at the burst height = about his lower body, not his head: the H1 sheet hits at ground level). If the contact looks off on the phone, tune `215f` in `drawSceneV2` and the step timings. The text lines of beats 5 and 6 ("ده جزاء...", "يلا معايا يا شاطر...") are my drafts, NOT approved.
+- **Bubbles (both old and new scene and the normal cobra)**: new `drawBubble(canvas, ax, topY, bottomY)`: bubble sits ABOVE the speaker with the tail pointing DOWN at his head; if there is no room above it goes BELOW with the tail pointing UP; font 22 -> 26 dp; max width 290 dp. The home mascot's bubble was already above/below with a tail, untouched.
+- **Home drop-in** (`RMascotView`, switch `r_welcome_e2`, default ON): falling frames E2-0/1 while he drops in, then E2-2..7 (squash, bounce, relieved, shake, sit + wave) after landing (`e2Frame`, `e2Start/e2LandAt`); OFF = the old wave.
+- NOT done: sheet `G` as a true profile (still front), K/H2 sheets, the owner's ask about build 63 (he has not said yes), approval of all bubble phrases, reader top bar. Suspects if CI fails: `RReaderCobraView` (new `Step` params, `drawBubble` call sites, `cycleRunnable`), `RMascotView` (`e2Frame`).
 
 ## NEWEST-20 2026-11-22 10:10 (seventh account, owner at 96% credit): START HERE, then NEWEST-19/18/17/16/15
 - **State**: branch `fix/stats-and-name-clean`, last GREEN build 62 on `665f83e`. NOT built yet: `a9540fc` (switch `rOldToolbar` "شريط الصفحات القديم", default OFF, hides `binding.navLayout`; the new tools card keeps `rToolsBar`) and `668f940` (clock+battery overlay hardened, see NEWEST-17). Owner has NOT answered "build 63 now?": do not dispatch until he says so (he wants ONE build after the scene work).
