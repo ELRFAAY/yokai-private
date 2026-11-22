@@ -21,17 +21,19 @@ class RSettingsCardDecoration(context: Context) : RecyclerView.ItemDecoration() 
     private val density = context.resources.displayMetrics.density
     private val side = (12 * density).toInt()
     private val corner = 22 * density
-    private val secondary = context.getResourceColor(com.google.android.material.R.attr.colorSecondary)
+    // neutral grey tones from the text color (the theme green was too much); only the icon badge keeps a faint tint
+    private val secondary = context.getResourceColor(com.google.android.material.R.attr.colorOnSurface)
+    private val accent = context.getResourceColor(com.google.android.material.R.attr.colorSecondary)
 
     // a calm, dark card with only a hint of the theme color (the old one was a flat saturated green block)
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ColorUtils.setAlphaComponent(secondary, 34)
+        color = ColorUtils.setAlphaComponent(secondary, 16)
     }
     private val iconBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ColorUtils.setAlphaComponent(secondary, 52)
+        color = ColorUtils.setAlphaComponent(accent, 30)
     }
     private val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ColorUtils.setAlphaComponent(secondary, 40)
+        color = ColorUtils.setAlphaComponent(secondary, 22)
         strokeWidth = 1f * density
     }
     private val iconRadius = 19 * density

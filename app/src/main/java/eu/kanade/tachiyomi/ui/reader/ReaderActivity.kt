@@ -905,9 +905,15 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
 
         binding.toolbar.setOnClickListener {
+            // R: one tap = one details screen (repeated taps while it loads used to stack several heavy activities and hang)
+            val now = android.os.SystemClock.elapsedRealtime()
+            if (now - rLastDetailsTap < 2500) return@setOnClickListener
+            rLastDetailsTap = now
             viewModel.manga?.id?.let { id ->
                 val intent = SearchActivity.openMangaIntent(this, id)
+                    .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
                 startActivity(intent)
+                overridePendingTransition(0, 0)
             }
         }
 
@@ -1745,6 +1751,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     }
 
     private var rPositioning = false
+    private var rLastDetailsTap = 0L
 
     /** R: puts the tools card right above the page bar (or above the chapters sheet when the page bar is not shown). */
     private fun rPositionToolsBar() {
