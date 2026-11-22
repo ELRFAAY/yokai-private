@@ -90,7 +90,7 @@ class RStatsProfileView(
             imageTintList = android.content.res.ColorStateList.valueOf(accent)
             setPadding((18 * density).toInt(), (18 * density).toInt(), (18 * density).toInt(), (18 * density).toInt())
             contentDescription = "صورة البروفايل"
-            setOnClickListener { onPickAvatar() }
+            setOnClickListener { showAvatarMenu() }
         }
 
         // big banner next to it
@@ -197,9 +197,14 @@ class RStatsProfileView(
                     avatar.setImageBitmap(bmp)
                 }
             }
+        } else {
+            val p = (18 * density).toInt()
+            avatar.setImageResource(R.drawable.ic_r_mood)
+            avatar.imageTintList = android.content.res.ColorStateList.valueOf(accent)
+            avatar.setPadding(p, p, p, p)
         }
 
-        banners = prefs.rProfileBanners().get().split('\n').filter { it.isNotBlank() && File(it).exists() }
+        banners =prefs.rProfileBanners().get().split('\n').filter { it.isNotBlank() && File(it).exists() }
         adapter.submit(banners)
         bannerHint.isVisible = banners.isEmpty()
         pager.isVisible = banners.isNotEmpty()
@@ -262,6 +267,73 @@ class RStatsProfileView(
     /** A tap on the banner only adds the first picture; every other banner option lives in the 3-dot menu of the statistics. */
     private fun showBannerMenu() {
         if (banners.isEmpty()) onPickBanners()
+    }
+
+    private fun avatarFile(): File? = prefs.rProfileAvatar().get().takeIf { it.isNotBlank() && File(it).exists() }?.let { File(it) }
+
+    /** A tap on the round picture (or the menu entry): choose a new one, edit / crop the current one, or remove it. */
+    fun showAvatarMenu() {
+        val has = avatarFile() != null
+        if (!has) {
+            onPickAvatar()
+            return
+        }
+        val items = arrayOf("اختيار صورة جديدة", "تعديل / قص / تدوير الصورة الحالية", "حذف الصورة")
+        MaterialAlertDialogBuilder(context)
+            .setTitle("الصورة الشخصية")
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> onPickAvatar()
+                    1 -> editAvatar()
+                    2 -> {
+                        prefs.rProfileAvatar().set("")
+                        refresh()
+                    }
+                }
+            }
+            .show()
+    }
+
+    private fun editAvatar() {
+        val path = avatarFile()?.absolutePath ?: return
+        scope.launch {
+            val bmp = decode(path, 2048) ?: return@launch
+            val crop = RCropView(context, bmp, 1f, true)
+            val box = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(crop, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (300 * density).toInt()))
+                addView(
+                    com.google.android.material.button.MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                        text = "تدوير ٩٠°"
+                        setOnClickListener { crop.rotate() }
+                    },
+                    LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                        gravity = Gravity.CENTER_HORIZONTAL
+                        topMargin = (8 * density).toInt()
+                    },
+                )
+            }
+            MaterialAlertDialogBuilder(context)
+                .setTitle("تعديل وقص")
+                .setView(box)
+                .setPositiveButton("حفظ") { _, _ ->
+                    scope.launch {
+                        val newPath = withContext(Dispatchers.IO) {
+                            try {
+                                val out = File(File(context.filesDir, "r_profile").apply { mkdirs() }, "img_${System.currentTimeMillis()}_a.jpg")
+                                out.outputStream().use { crop.render(600).compress(Bitmap.CompressFormat.JPEG, 92, it) }
+                                out.absolutePath.takeIf { out.length() > 0 }
+                            } catch (_: Exception) {
+                                null
+                            }
+                        } ?: return@launch
+                        prefs.rProfileAvatar().set(newPath)
+                        refresh()
+                    }
+                }
+                .setNegativeButton("إلغاء", null)
+                .show()
+        }
     }
 
     fun editCurrentBanner() {

@@ -55,7 +55,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     /**
      * Returns the toolbar title to show when this controller is attached.
      */
-    override fun getTitle() = activity?.getString(MR.strings.statistics)
+    override fun getTitle() = if (prefs.rStatsProfile().get()) "بروفايل" else activity?.getString(MR.strings.statistics)
 
     override fun createBinding(inflater: LayoutInflater) = StatsControllerBinding.inflate(inflater)
 
@@ -129,7 +129,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.action_r_avatar -> pickImages(REQ_AVATAR, false)
+            R.id.action_r_avatar -> profileView?.showAvatarMenu() ?: pickImages(REQ_AVATAR, false)
             R.id.action_r_banner_edit -> {
                 replaceBanners = true
                 pickImages(REQ_BANNERS, true)
