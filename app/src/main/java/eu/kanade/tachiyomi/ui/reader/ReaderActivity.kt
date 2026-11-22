@@ -1132,8 +1132,9 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 leftMargin = 12.dpToPx + max(systemInsets.left, cutOutInsets?.safeInsetLeft ?: 0)
                 rightMargin = 12.dpToPx + max(systemInsets.right, cutOutInsets?.safeInsetRight ?: 0)
             }
+            // R: when the old bottom toolbar is hidden its 50dp of empty space is dropped, so the tools card and the page bar sit lower
             binding.chaptersSheet.root.sheetBehavior?.peekHeight =
-                peek + if (fullscreen) {
+                (if (rOldSheetHidden) 4.dpToPx else peek) + if (fullscreen) {
                 insets.getBottomGestureInsets()
             } else {
                 val rootInsets = binding.root.rootWindowInsetsCompat ?: insets
@@ -1580,6 +1581,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
     // ---- R: side tools (arrow on the side page bar -> the old toolbar as a glass strip beside it) ----
     private var rSideTools: RSideTools? = null
+    private var rOldSheetHidden = false
     private var rSideToolsOpen = false
     private var rSideToolsPositioning = false
 
@@ -1589,6 +1591,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         sheet.root.alpha = 0f
         sheet.topbarLayout.visibility = View.INVISIBLE
         sheet.root.sheetBehavior?.isDraggable = false
+        rOldSheetHidden = true
+        binding.root.requestApplyInsets()
 
         val strip = RSideTools(this) { rScheduleAutoHide() }
         strip.add("الشباتر", null, R.drawable.ic_format_list_numbered_24dp) { rShowChapterDialog() }
@@ -1777,16 +1781,30 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         if (!on) return
         rReadBattery()
         val time = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(Date())
-        val battery = if (rBatteryPercent >= 0) "  $rBatteryPercent%" else ""
-        binding.rClockBattery.text = time + battery
-        // green bolt while the phone is plugged in
-        binding.rClockBattery.setCompoundDrawablesRelativeWithIntrinsicBounds(
-            if (rCharging) R.drawable.ic_r_charging else 0,
-            0,
-            0,
-            0,
-        )
-        binding.rClockBattery.compoundDrawablePadding = 4.dpToPx
+        // time, then (while plugged in) the green bolt in the gap, then the percentage
+        val tv = binding.rClockBattery
+        val sb = android.text.SpannableStringBuilder(time)
+        if (rBatteryPercent >= 0) {
+            sb.append("  ")
+            if (rCharging) {
+                androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_r_charging)?.mutate()?.let { d ->
+                    val h = (tv.textSize * 1.15f).toInt()
+                    d.setBounds(0, 0, h, h)
+                    val start = sb.length
+                    sb.append(" ")
+                    sb.setSpan(
+                        android.text.style.ImageSpan(d, android.text.style.ImageSpan.ALIGN_BOTTOM),
+                        start,
+                        sb.length,
+                        android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                    )
+                    sb.append("  ")
+                }
+            }
+            sb.append("$rBatteryPercent%")
+        }
+        tv.text = sb
+        tv.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
         rPositionClock()
     }
 

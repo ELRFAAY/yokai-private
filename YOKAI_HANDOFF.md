@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-22 (see NEWEST-31).
+Last updated: 2026-11-22 (see NEWEST-32).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,14 @@ Last updated: 2026-11-22 (see NEWEST-31).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-32 2026-11-22 15:55 (thirteenth account = Claude in the chat app): START HERE, then NEWEST-31. STILL NO BUILD until the owner says "بيلد"
+- Owner's video `565940.mp4` (another app's little flame spirit): hovers with a slow bob + soft glow shadow, glides around with a trail of sparkles, bubble with a pointer above it. Applied to the small dragon in the two spots the owner named: the chapter-end card (`ChapterTransition.kt` `ReadTimeCard`) and the stats dragon lines (`RStatsSections.dragonLine`). New view `ui/main/RFloatDragonView.kt` (bob, tilt, squash, breathing glow shadow, a 0.9 s sideways glide every 7 s with fading sparkles, POINTING pose that pokes toward the text; mirrored by layout direction). Switch `r_dragon_float` (`rDragonFloat`, default ON, Settings > R "التنين الصغير: الطيران والإشارة"; OFF = the old still `r_mascot_happy`). Also stops when system animations are off.
+- New sprite `r_mascot_point.webp` cut from the owner's sheet p4 (bottom middle) with `branding/tools/make_small_dragon_point.py` (cut-outs `cutouts-new/p4_*.png`). CAUTION: that pose has a taller neck / 3/4 view than the short wide body of rB/rD; owner approved the pose ("تمام"), look at it on the phone.
+- Stats hero card (first card): the three numbers are spread: start corner / center / end corner (`stats_controller.xml` gravity), they were glued together.
+- Reader: the empty gap under the tools card was the hidden old bottom toolbar's 50dp peek space; `rOldSheetHidden` drops the sheet peek to 4dp so the card and the page bar sit ~46dp lower. Charging bolt now sits BETWEEN the time and the percentage (ImageSpan in `rUpdateClock`), not before the time.
+- ALL UNCOMPILED. Suspects: `RFloatDragonView` (RadialGradient/Settings.Global), `ReadTimeCard` (AndroidView, `LayoutDirection` import), `RStatsSections.dragonLine`, `rUpdateClock` spans, `ReaderActivity` peek expression.
+- Not done / owner said "I'll tell you another change after this": the bubble-with-pointer look and the dragon roaming around the screen like the video (only hover + glide in place for now).
 
 ## NEWEST-31 2026-11-22 (twelfth account = Claude in the chat app): START HERE, then NEWEST-30/29/28/27. STILL NO BUILD until the owner says "بيلد"
 - Branch audit (owner asked): everything on `fix/stats-and-name`, `feat/r-mascot-*`, `feat/r-mihon`, `build/r` is already in `fix/stats-and-name-clean` (by content; the mihon folders, sleep, typing bubbles are ported). Left out ON PURPOSE: `feat/r-updater` (parked), old `ELRFAAY-patch-*` (docs only). `fix/download-split-not-found` is already ported behind the switch `rFixSplitTallImageError`. So the one build must come from `fix/stats-and-name-clean`.

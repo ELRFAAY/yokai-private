@@ -306,6 +306,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     fun rMascotSleep() = preferenceStore.getBoolean("r_mascot_sleep", true)
     fun rMascotFall() = preferenceStore.getBoolean("r_mascot_fall", true)
 
+    /** The little dragon in the chapter-end card and in the statistics hovers (bob, glow shadow, sparkle trail) and points at its text. */
+    fun rDragonFloat() = preferenceStore.getBoolean("r_dragon_float", true)
+
     /** Mascot: when the app is opened the little dragon drops in from the top right and says how long you were away. */
     fun rMascotWelcome() = preferenceStore.getBoolean("r_mascot_welcome", true)
 

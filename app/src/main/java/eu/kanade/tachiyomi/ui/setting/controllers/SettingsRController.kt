@@ -336,6 +336,14 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rDragonFloat())
+                title = "التنين الصغير: الطيران والإشارة"
+                rIcon(R.drawable.ic_r_hotel)
+                summary = "في بطاقة آخر الفصل وفي الإحصائيات يطير في مكانه (طلوع ونزول وظل ملمّع ونقط وراه) " +
+                    "ويشاور على الكلام اللي بيقوله. عند الإيقاف: صورة ثابتة زي الأول."
+            }
+
+            switchPreference {
                 bindTo(preferences.rMascotSleep())
                 title = "التنين الصغير: النوم"
                 rIcon(R.drawable.ic_r_hotel)

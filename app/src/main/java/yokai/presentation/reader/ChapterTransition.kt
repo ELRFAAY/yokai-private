@@ -35,23 +35,30 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import dev.icerock.moko.resources.compose.pluralStringResource
 import dev.icerock.moko.resources.compose.stringResource
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.database.models.Chapter
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.domain.manga.models.Manga
+import eu.kanade.tachiyomi.ui.main.RFloatDragonView
 import eu.kanade.tachiyomi.ui.reader.model.ChapterTransition
 import eu.kanade.tachiyomi.ui.reader.viewer.missingChapterCount
 import eu.kanade.tachiyomi.util.chapter.ChapterUtil.Companion.preferredChapterName
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.delay
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import yokai.i18n.MR
 import yokai.util.secondaryItemAlpha
 
@@ -331,11 +338,26 @@ private fun ReadTimeCard(readMillis: () -> Long) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Image(
-            painter = painterResource(R.drawable.r_mascot_happy), // TODO: swap for the "pointing at the time" pose
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-        )
+        val floatOn = remember { runCatching { Injekt.get<PreferencesHelper>().rDragonFloat().get() }.getOrDefault(true) }
+        if (floatOn) {
+            // text is after the dragon in the row: it points toward it (right in LTR, left in RTL)
+            val textOnRight = LocalLayoutDirection.current == LayoutDirection.Ltr
+            AndroidView(
+                factory = { ctx ->
+                    RFloatDragonView(ctx).apply {
+                        sizeDp = 64
+                        pointing = true
+                    }
+                },
+                update = { it.pointRight = textOnRight },
+            )
+        } else {
+            Image(
+                painter = painterResource(R.drawable.r_mascot_happy),
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+            )
+        }
         Spacer(Modifier.width(12.dp))
         Text(
             text = "قعدت ${formatReadTime(millis)} في الفصل ده",

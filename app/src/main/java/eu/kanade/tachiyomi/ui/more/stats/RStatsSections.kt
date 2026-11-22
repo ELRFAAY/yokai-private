@@ -25,10 +25,14 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.textview.MaterialTextView
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import eu.kanade.tachiyomi.ui.main.RFloatDragonView
 import eu.kanade.tachiyomi.ui.more.stats.StatsHelper.getReadDuration
 import eu.kanade.tachiyomi.util.system.getResourceColor
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import yokai.util.coil.loadManga
 import android.R as AR
 
@@ -316,13 +320,25 @@ object RStatsSections {
     private fun dragonLine(ctx: Context, message: String): View = hRow(ctx).apply {
         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             .apply { topMargin = ctx.dp(6) }
-        addView(
-            ImageView(ctx).apply {
-                setImageResource(R.drawable.r_mascot_happy)
-                adjustViewBounds = true
-                layoutParams = LinearLayout.LayoutParams(ctx.dp(48), ctx.dp(48))
-            },
-        )
+        val floatOn = runCatching { Injekt.get<PreferencesHelper>().rDragonFloat().get() }.getOrDefault(true)
+        if (floatOn) {
+            // the text is after the dragon in the row: it points toward it (left in RTL, right in LTR)
+            addView(
+                RFloatDragonView(ctx).apply {
+                    sizeDp = 48
+                    pointing = true
+                    pointRight = ctx.resources.configuration.layoutDirection != View.LAYOUT_DIRECTION_RTL
+                },
+            )
+        } else {
+            addView(
+                ImageView(ctx).apply {
+                    setImageResource(R.drawable.r_mascot_happy)
+                    adjustViewBounds = true
+                    layoutParams = LinearLayout.LayoutParams(ctx.dp(48), ctx.dp(48))
+                },
+            )
+        }
         addView(
             text(ctx, message, 14f).apply {
                 setPadding(ctx.dp(10), 0, 0, 0)
