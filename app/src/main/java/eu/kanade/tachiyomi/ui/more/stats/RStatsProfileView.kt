@@ -260,18 +260,74 @@ class RStatsProfileView(
     }
 
     private fun showBannerMenu() {
-        val items = if (banners.isEmpty()) arrayOf("إضافة صور") else arrayOf("إضافة صور", "حذف كل البانرات")
+        if (banners.isEmpty()) {
+            onPickBanners()
+            return
+        }
+        val items = arrayOf("إضافة صور", "تعديل / قص / تدوير هذا البانر", "حذف هذا البانر", "حذف كل البانرات")
         MaterialAlertDialogBuilder(context)
             .setTitle("البانر")
             .setItems(items) { _, which ->
-                if (which == 0) {
-                    onPickBanners()
-                } else {
-                    prefs.rProfileBanners().set("")
-                    refresh()
+                val idx = current.coerceIn(0, banners.size - 1)
+                when (which) {
+                    0 -> onPickBanners()
+                    1 -> editBanner(idx)
+                    2 -> {
+                        prefs.rProfileBanners().set(banners.filterIndexed { i, _ -> i != idx }.joinToString("\n"))
+                        refresh()
+                    }
+                    else -> {
+                        prefs.rProfileBanners().set("")
+                        refresh()
+                    }
                 }
             }
             .show()
+    }
+
+    /** Crop / rotate a banner that is already saved (the shown one). */
+    private fun editBanner(idx: Int) {
+        val path = banners.getOrNull(idx) ?: return
+        scope.launch {
+            val bmp = decode(path, 2048) ?: return@launch
+            val crop = RCropView(context, bmp, 2.2f, false)
+            val box = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(crop, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (300 * density).toInt()))
+                addView(
+                    com.google.android.material.button.MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                        text = "تدوير ٩٠°"
+                        setOnClickListener { crop.rotate() }
+                    },
+                    LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                        gravity = Gravity.CENTER_HORIZONTAL
+                        topMargin = (8 * density).toInt()
+                    },
+                )
+            }
+            MaterialAlertDialogBuilder(context)
+                .setTitle("تعديل وقص")
+                .setView(box)
+                .setPositiveButton("حفظ") { _, _ ->
+                    scope.launch {
+                        val newPath = withContext(Dispatchers.IO) {
+                            try {
+                                val out = java.io.File(java.io.File(context.filesDir, "r_profile").apply { mkdirs() }, "img_${System.currentTimeMillis()}_e.jpg")
+                                out.outputStream().use { crop.render(1080).compress(Bitmap.CompressFormat.JPEG, 92, it) }
+                                out.absolutePath.takeIf { out.length() > 0 }
+                            } catch (_: Exception) {
+                                null
+                            }
+                        } ?: return@launch
+                        val list = banners.toMutableList()
+                        if (idx in list.indices) list[idx] = newPath
+                        prefs.rProfileBanners().set(list.joinToString("\n"))
+                        refresh()
+                    }
+                }
+                .setNegativeButton("إلغاء", null)
+                .show()
+        }
     }
 
     private fun editName() {
