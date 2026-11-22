@@ -364,12 +364,26 @@ class RStatsProfileView(
             override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
                 val img = ImageView(context).apply {
                     scaleType = ImageView.ScaleType.CENTER_CROP
-                    layoutParams = ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (84 * density).toInt()).apply {
-                        setMargins(0, (4 * density).toInt(), 0, (4 * density).toInt())
-                    }
+                    layoutParams = LinearLayout.LayoutParams(0, (56 * density).toInt(), 1f)
                 }
-                val h = object : RecyclerView.ViewHolder(img) {}
-                img.setOnTouchListener { _, e ->
+                val handle = ImageView(context).apply {
+                    setImageResource(R.drawable.ic_drag_handle_24dp)
+                    alpha = 0.7f
+                    setPadding((12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt())
+                    layoutParams = LinearLayout.LayoutParams((48 * density).toInt(), (56 * density).toInt())
+                }
+                val row = LinearLayout(context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    layoutParams = ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                        setMargins(0, (3 * density).toInt(), 0, (3 * density).toInt())
+                    }
+                    addView(img)
+                    addView(handle)
+                }
+                val h = object : RecyclerView.ViewHolder(row) {}
+                // the handle starts the drag on touch; a long press on the picture does the same
+                handle.setOnTouchListener { _, e ->
                     if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) helper.startDrag(h)
                     false
                 }
@@ -378,7 +392,7 @@ class RStatsProfileView(
 
             override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
                 val path = list[position]
-                val img = holder.itemView as ImageView
+                val img = (holder.itemView as LinearLayout).getChildAt(0) as ImageView
                 img.setImageDrawable(null)
                 img.tag = path
                 scope.launch {
@@ -392,7 +406,7 @@ class RStatsProfileView(
                 androidx.recyclerview.widget.ItemTouchHelper.UP or androidx.recyclerview.widget.ItemTouchHelper.DOWN,
                 0,
             ) {
-                override fun isLongPressDragEnabled() = false
+                override fun isLongPressDragEnabled() = true
                 override fun onMove(r: RecyclerView, a: RecyclerView.ViewHolder, b: RecyclerView.ViewHolder): Boolean {
                     val from = a.bindingAdapterPosition
                     val to = b.bindingAdapterPosition
@@ -408,7 +422,7 @@ class RStatsProfileView(
         rv.adapter = ad
         helper.attachToRecyclerView(rv)
         val hint = TextView(context).apply {
-            text = "اضغط على الصورة وحرّكها لفوق أو لتحت"
+            text = "اضغط ضغطة طويلة على الصورة (أو امسك المقبض على الجنب) وحرّكها لفوق أو لتحت"
             alpha = 0.7f
             setPadding((20 * density).toInt(), (8 * density).toInt(), (20 * density).toInt(), (8 * density).toInt())
         }

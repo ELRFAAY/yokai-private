@@ -1337,7 +1337,12 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             rToolsBar?.isVisible = false
             if (preferences.fullscreen().get()) {
                 wic.hide(systemBars())
-                wic.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+                // R: keep the swipe-up-from-the-bottom working while the menu is hidden
+                wic.systemBarsBehavior = if (preferences.rHideNavButtons().get()) {
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                } else {
+                    WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+                }
             }
 
             if (animate && binding.appBar.isVisible) {
@@ -2654,7 +2659,11 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
          */
         private fun setFullscreen(enabled: Boolean) {
             WindowCompat.setDecorFitsSystemWindows(window, !enabled || isSplitScreen)
-            wic.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+            wic.systemBarsBehavior = if (preferences.rHideNavButtons().get()) {
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            } else {
+                WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+            }
             binding.root.rootWindowInsetsCompat?.let { setNavColor(it) }
         }
 
