@@ -1,0 +1,61 @@
+FINAL MODEL SHEETS TO FINISH THE DRAGONS (2026-11-22)
+Needed: G, H1, I2 (wise dragon) and J, E2 (small dragon).
+How to use: attach the reference sheet (p5 for the wise dragon, p1 for the small dragon), paste the GLOBAL RULES first, then ONE sheet prompt per image. If a sheet comes out with wrong proportions or a drifting face, redo only that sheet. Name the images G, H1, I2, J, E2.
+
+==================================================
+GLOBAL RULES (paste at the start of EVERY prompt)
+==================================================
+Same character as the attached reference sheet, do not redesign. Flat-colour cartoon sticker style, thick dark-green outline (same line weight in every cell), glossy green skin, light-green belly scales. SMALL dragon: short, WIDE, chubby body, big hood, exactly TWO small hands (the body's own, never extra arms), tail curled. WISE dragon: same snake body type, straw conical hat, long white beard and white eyebrows, wooden cane. Pure white background (#FFFFFF), no ground shadow, no text, no numbers, no labels, no cell borders. All cells exactly the same size, character centred, the BASELINE (where the body touches the ground) on the same horizontal line in every cell, and the SAME SCALE in all cells (no zoom between frames). Effects must not touch the character unless stated. Read left to right, top to bottom = animation order.
+
+==================================================
+SHEET G - wise dragon slither walk (4 columns x 2 rows = 8 cells, loop)
+==================================================
+SHEET G, 4 columns x 2 rows, 8 cells. Wise dragon, pure SIDE view facing LEFT (profile). Right hand holds the cane ahead of him, slightly angled forward. He moves by slithering: the S-shaped wave travels from head to tail, advancing 45 degrees of wave phase per frame, so frame 9 would equal frame 1.
+Frame 1: wave phase 0, cane tip touching the ground (tap). Frame 2: phase 45, cane lifting 10 degrees. 3: phase 90, cane in the air. 4: phase 135, cane in the air, hat bobs 2% down. 5: phase 180, cane tip touches the ground again (tap). 6: phase 225. 7: phase 270. 8: phase 315.
+Tail tip swings the opposite way to the head every frame. Beard sways opposite to the direction of motion with a small delay. Head height changes at most 5% between frames. Hat bobs very slightly. Calm stern face, eyes open, mouth closed in all frames. Body length and thickness stay constant (no stretching).
+
+==================================================
+SHEET H1 - wise dragon stick hit (3 columns x 3 rows = 9 cells)
+==================================================
+SHEET H1, 3 columns x 3 rows, 9 cells. Wise dragon, 3/4 front view, facing LEFT toward an off-screen target on his left. Cane angle is measured from straight up (0 deg), clockwise positive, so +90 = horizontal behind him, negative = toward the left.
+1: neutral, cane held low in front, calm face.
+2: anticipation, body leans back 8 deg, cane lifts to +20 deg, eyebrows angled down (angry), mouth clenched.
+3: cane at +70 deg behind the head, hat tilts back, eyes narrowed.
+4: maximum wind-up, cane at +100 deg, body leaned back 15 deg, both eyebrows sharply down, teeth clenched.
+5: downward swing, cane at +40 deg, 3 white curved motion streaks behind the cane, mouth wide open shouting, body starting to lean forward.
+6: cane at -20 deg (past vertical toward the left), body leaning forward 10 deg, beard flying back.
+7: IMPACT, cane at -55 deg almost horizontal pointing left, stopped, a small white-yellow impact burst at the cane tip only, eyes shut tight, beard flying forward.
+8: hold, same pose as 7, cane trembling (a second faint outline offset 3 px), beard settling.
+9: recovery, cane back low, stern satisfied face, one eyebrow raised.
+Body baseline and feet position fixed, only the upper body and cane move.
+
+==================================================
+SHEET I2 - wise dragon dragging the small one (4 columns x 2 rows = 8 cells, loop)
+==================================================
+SHEET I2, 4 columns x 2 rows, 8 cells, seamless loop. SIDE view facing RIGHT. The wise dragon slithers to the right, cane in his LEFT hand tapping the ground on frames 1 and 5 only. With his RIGHT hand he holds the SMALL dragon by the tip of its tail. The small dragon is dazed: spiral eyes, tongue slightly out, arms limp, hood drooping, dragged on the ground behind him.
+Wise dragon wave phase advances 45 deg per frame like sheet G. The small dragon bounces to the same rhythm: frames 1 and 5 it touches the ground and is squashed 10%, frames 3 and 7 it is lifted about 15% of its height off the ground, the other frames in between. The tail between the hand and the small dragon stays taut. The small dragon is on the same baseline and the same scale as in the other sheets (wise dragon about 1.4x taller than the small one).
+
+==================================================
+SHEET J - small dragon being hit (3 columns x 2 rows = 6 cells)
+==================================================
+SHEET J, 3 columns x 2 rows, 6 cells. SMALL dragon, front view, the wise dragon is NOT in the image (only a cane tip may appear in cell 3).
+1: peeking happily, normal relaxed smile, hood up.
+2: notices something on his RIGHT, eyes wide and looking right, hood raised, body leaning back 5 deg.
+3: shocked, mouth open round "!", pupils tiny, a wooden cane tip entering from the top-right corner with 2 white motion lines, both hands up.
+4: HIT, head and body squashed down 25 percent (wider, flatter), eyes shut tight as two ">" "<" shapes, a small white impact burst ON TOP of the head.
+5: body compressed 35 percent, hood bent sideways, eyes shut, no stars yet.
+6: bounce up, stretched 15 percent taller and thinner, spiral eyes, tongue slightly out.
+Keep the body baseline fixed; the squash is downward from the head.
+
+==================================================
+SHEET E2 - small dragon drop-in and landing (4 columns x 2 rows = 8 cells)
+==================================================
+SHEET E2, 4 columns x 2 rows, 8 cells. SMALL dragon, front view.
+1: falling, both arms up and spread, mouth wide open "aaah", eyes wide, tail straight up above the head, body slightly above the baseline.
+2: still falling, hood flapping upward, tail bent, eyes wide.
+3: touching the ground, body squashed flat and wide, eyes shut tight, two small dust puffs at the sides.
+4: maximum squash, body very flat and wide, hood bent, no stars.
+5: bounce up, stretched tall and thin, eyes open and dizzy (small spirals).
+6: second small bounce, slightly stretched, relieved face.
+7: settling, normal body, shaking his head with a few small swirl lines above (far from the head).
+8: sitting normal, big smile, one hand waving.
