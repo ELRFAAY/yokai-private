@@ -101,13 +101,13 @@ class RMascotView(context: Context) : View(context) {
     // the wise old snake (hat and beard): sometimes shows up when you tap, and gives useless advice
     private val sageFaces: Map<Mood, Bitmap?> by lazy {
         mapOf(
-            // calm / squint / side come from the owner's second wise-dragon sheet (r_sage2_*); scared and dizzy keep the old art
-            Mood.HAPPY to load(R.drawable.r_sage2_calm),
-            Mood.HURT to load(R.drawable.r_sage2_squint),
+            // all from the owner's p5 wise-dragon sheet (branding/tools/make_sheets_2026_11_21b.py)
+            Mood.HAPPY to load(R.drawable.r_sage_happy),
+            Mood.HURT to load(R.drawable.r_sage_hurt),
             Mood.SCARED to load(R.drawable.r_sage_scared),
             Mood.DIZZY to load(R.drawable.r_sage_dizzy),
-            Mood.SAD to load(R.drawable.r_sage2_side),
-            Mood.BLINK to load(R.drawable.r_sage2_squint),
+            Mood.SAD to load(R.drawable.r_sage_sad),
+            Mood.BLINK to load(R.drawable.r_sage_blink),
             // there is no sage back view: the normal one is used while flying away fast
         )
     }
@@ -200,7 +200,11 @@ class RMascotView(context: Context) : View(context) {
     private val whereBmp: Bitmap? by lazy { load(R.drawable.r_mascot_where) }
     private val cheerBmp: Bitmap? by lazy { load(R.drawable.r_mascot_cheer) } // arms up: after a landing
     private val tongueBmp: Bitmap? by lazy { load(R.drawable.r_mascot_tongue) } // tongue out: when you tap him
-    private val sageTalkBmp: Bitmap? by lazy { load(R.drawable.r_sage2_talk) } // wise dragon, mouth open while he talks
+    private val sageTalkBmp: Bitmap? by lazy { load(R.drawable.r_sage2_laugh) } // wise dragon, mouth open while he talks
+    private val shockBmp: Bitmap? by lazy { load(R.drawable.r_mascot_shock) } // arms out, wide eyes: while he flies
+    private val fist1Bmp: Bitmap? by lazy { load(R.drawable.r_mascot_fist1) } // fists up: while you hold him still
+    private val fist2Bmp: Bitmap? by lazy { load(R.drawable.r_mascot_fist2) }
+    private var lastTapAt = 0L // two quick taps = the costume transformation
     private val sagePointBmp: Bitmap? by lazy { load(R.drawable.r_sage2_point) } // wise dragon points when he starts his advice
     private var cheerUntil = 0L
     private var tongueUntil = 0L
@@ -449,7 +453,7 @@ class RMascotView(context: Context) : View(context) {
             if ((hitWall || hitCeiling) && speed > 300f * density) {
                 hurtUntil = now + 450
                 bounces++
-                say(if (hitCeiling) CEILING else WALL.random())
+                say(if (hitCeiling) CEILING.random() else WALL.random())
             }
 
             if (hypot(x - lastDotX, y - lastDotY) >= 20f * density) {
@@ -540,6 +544,14 @@ class RMascotView(context: Context) : View(context) {
                 bitmap = extra
                 frameSprite = true
             }
+        }
+        if (!sage && tfStart == 0L && state == State.GRABBED && !moved && !asleep) {
+            bitmap = (if ((now / 200L) % 2L == 0L) fist1Bmp else fist2Bmp) ?: bitmap // angry fists while he is held
+            frameSprite = true
+        }
+        if (!sage && state == State.FLYING && mood == Mood.SCARED) {
+            bitmap = shockBmp ?: bitmap // shocked, arms out, while he flies
+            frameSprite = true
         }
         if (sage && idle && !asleep && tfStart == 0L && mood == Mood.HAPPY) {
             val typing = bubbleText != null && now < bubbleUntil && bubbleShown < (bubbleText?.length ?: 0)
@@ -779,7 +791,10 @@ class RMascotView(context: Context) : View(context) {
                     tiltSpring.kick(if (Math.random() < 0.5) -280f else 280f)
                     scaleYSpring.kick(-5f)
                     val chance = prefs.rMascotSageChance().get()
-                    if (prefs.rMascotTransform().get()) {
+                    val doubleTap = now - lastTapAt < DOUBLE_TAP_MS
+                    lastTapAt = now
+                    if (prefs.rMascotTransform().get() && doubleTap) {
+                        lastTapAt = 0L
                         tfStart = now
                         tfForm = nextCostume()
                         tfSpoke = false
@@ -1066,6 +1081,7 @@ class RMascotView(context: Context) : View(context) {
             R.drawable.r_costume_steampunk to "أقلعنا! وجهتنا الفصل المية!",
             R.drawable.r_costume_scribe to "كتبت لك ملخص الفصل بالهيروغليفي.",
         )
+        const val DOUBLE_TAP_MS = 700L // second tap within this = transformation
         const val CHAR_MS = 38L // typing speed of the speech bubble
         val GO_SLEEP = listOf("هنام شوية... صحّيني لما ترجع", "الدنيا هادية... هجيب اللحاف وأنام", "تصبح على خير، المانجا مش هتهرب")
         val WAKE = listOf("هاه؟ صحيت!", "كنت في أحلى حلم...", "خلاص خلاص، صاحي!")
@@ -1075,14 +1091,35 @@ class RMascotView(context: Context) : View(context) {
         const val DAY_MS = 24L * 60 * 60 * 1000
         const val ENTER_MS = 800L
         val BLIP_RATES = floatArrayOf(1.0f, 1.18f, 0.9f, 1.32f, 1.08f)
-        val GRAB = listOf("سيبني بقى!", "إنت ماسكني ليه؟", "هششش! أنا التعبان!")
-        val THROW = listOf("آآآآه!", "ارمي براحة!", "للانهاية وما بعدها!")
-        val WALL = listOf("آي! الحيطة!", "كده هتكسر دماغي!", "بيوجع والله!")
-        const val CEILING = "خد بالك من السقف!"
-        val LAND = listOf("كان ممتع! تاني!", "تاني تاني!", "أنا لسه بخير")
-        val DIZZY_TALK = listOf("الدنيا بتلف بيا...", "أنا شايف نجوم!", "لفّلي دماغي!")
-        val SAD_TALK = listOf("حرام عليك...", "ده أنا زعلان!", "كده يا صاحبي؟")
-        val TAP = listOf("أيوه؟", "عايز إيه؟", "بس بتدغدغني!")
+        val GRAB = listOf(
+            "سيبني بقى!", "إنت ماسكني ليه؟", "هششش! أنا التعبان!",
+            "إنزلني! عندي مواعيد!", "إيدك دافية... بس سيبني", "أنا مش لعبة! أنا تنين!",
+        )
+        val THROW = listOf(
+            "آآآآه!", "ارمي براحة!", "للانهاية وما بعدها!",
+            "أنا بطير! شايف؟!", "قول لأمي إني بحبها!", "ثبّتوا الحزام!",
+        )
+        val WALL = listOf(
+            "آي! الحيطة!", "كده هتكسر دماغي!", "بيوجع والله!",
+            "الحيطة دي مين حطها هنا؟!", "آخ! ده كان تحت الحساب!", "هاخد إجازة مرضي",
+        )
+        val CEILING = listOf("خد بالك من السقف!", "السقف ده واطي أوي!", "آي! نسيت إني بطير")
+        val LAND = listOf(
+            "كان ممتع! تاني!", "تاني تاني!", "أنا لسه بخير",
+            "هبوط ناعم... تقريبًا", "يلا مرة كمان؟", "٩ من ١٠ من الحكام!",
+        )
+        val DIZZY_TALK = listOf(
+            "الدنيا بتلف بيا...", "أنا شايف نجوم!", "لفّلي دماغي!",
+            "الأرض بتتحرك ولا أنا؟", "شايف ٣ مانجا بدل واحدة!", "استنى... أنا مين؟",
+        )
+        val SAD_TALK = listOf(
+            "حرام عليك...", "ده أنا زعلان!", "كده يا صاحبي؟",
+            "ماشي... أنا هقعد لوحدي", "كنت فاكرك صاحبي...", "هقول للتنين الحكيم عليك",
+        )
+        val TAP = listOf(
+            "أيوه؟", "عايز إيه؟", "بس بتدغدغني!",
+            "هيهي! بتدغدغني!", "أنا مش مدغدغ... ههه", "تاني؟ طيب!",
+        )
 
         /** The wise old snake's advice: all of it true, none of it useful. On purpose. */
         val ADVICE = listOf(

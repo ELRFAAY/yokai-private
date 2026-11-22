@@ -42,9 +42,33 @@ def run():
     m.save(m.place(p2[4], k2), 'r_mascot_tongue')
     m.save(m.place(p2[1], k2), 'r_mascot_fist1')
     m.save(m.place(p2[2], k2), 'r_mascot_fist2')
-    for i, name in enumerate(['back', 'calm', 'side', 'talk', 'squint', 'point']):
-        m.save(m.place(p1[i], k1), 'r_sage2_' + name)
+    # S1's wise poses are only kept as cut-outs: every wise dragon sprite comes from p5 so his proportions never mix
+
+
+def run_p5():
+    """The wise dragon's main sheet p5 (4x3): calm, eyes shut, hit (stick dropped), crying, scared, dizzy, laughing,
+    finger up (advice), angry, thinking, asleep, annoyed. Scaled so his hat is about as wide as the small dragon's hood."""
+    import numpy as np
+    from PIL import Image
+    m.BASE = 'branding/mascot-models/new-sheets-2026-11-21/'
+    pics, k = m.load('p5-wise-main-sheet-564640.jpg', rows=3, merge_dil=12)
+    assert len(pics) == 12, len(pics)
+    os.makedirs(m.CUT, exist_ok=True)
+    for i, p in enumerate(pics):
+        p.save(m.CUT + 'p5_%02d.png' % i)
+
+    def hat_w(img):
+        a = np.array(img.getchannel('A')) > 128
+        xs = np.where(a[: int(a.shape[0] * 0.22)].any(axis=0))[0]
+        return xs.max() - xs.min()
+
+    k = 240.0 / hat_w(pics[0])  # his hat as wide as the small dragon's hood (about 250 px on the 384 px canvas)
+    names = {0: 'r_sage_happy', 1: 'r_sage_blink', 2: 'r_sage_hurt', 3: 'r_sage_sad', 4: 'r_sage_scared', 5: 'r_sage_dizzy',
+             6: 'r_sage2_laugh', 7: 'r_sage2_point', 8: 'r_sage2_angry', 9: 'r_sage2_think'}
+    for i, name in names.items():
+        m.save(m.place(pics[i], k), name)
 
 
 if __name__ == '__main__':
     run()
+    run_p5()
