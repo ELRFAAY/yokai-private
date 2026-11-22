@@ -1,0 +1,29 @@
+Use the attached H3 sheet as the exact reference (same characters, same art style, same 8 poses, same order, same colours,
+same line weight). Redraw the SAME sheet with ONLY these corrections:
+
+1. SIZE OF THE LITTLE COBRA (the main fix). The little cobra must be 3/4 of the wise cobra's height. If the wise cobra
+   (straw hat top to the floor) is 312 px tall, the little cobra (hood top to the floor, tail included) is about 235 px tall
+   and about 190 px wide. In the reference he is only 179 px tall: make him clearly BIGGER, with a bigger head and hood,
+   but keep his round, cute proportions. Do NOT make the wise cobra smaller. The little cobra stands in front of the wise
+   one's coil, on the same floor line.
+2. THE WISE COBRA IS A FIXED CAMERA. In all 8 cells the wise cobra has exactly the same size (312 px, hat top to floor),
+   the same floor line and the same position: the right edge of his big bottom coil is at the same x in every cell (about
+   x = 340 inside a 344 px cell). Only his arms, head, cane and expression change. Row 2 must be the same size as row 1
+   (in the reference row 2 is about 3% smaller).
+3. LAYOUT. 1376 x 768 px, 4 columns x 2 rows, every cell 344 x 384 px, pure white background (#FFFFFF). The floor line of
+   both dragons is at y = 358 in row 1 and y = 742 in row 2. Leave at least 20 px of empty white between neighbouring cells:
+   nothing may touch or cross a cell border (in the reference the cane tip of cell 6 crosses into cell 7: shorten or tilt
+   it so it stays inside its cell). Stars, motion lines and the impact burst also stay inside their cell.
+4. CLEAN WHITE. No white gaps filled with white between the cane, the hand and the beard (keep the background white only
+   outside the characters), no ground shadow, no floor line, no frame, no text, no labels, no numbers.
+
+Keep these 8 poses, left to right, top row then bottom row (both dragons in every cell, wise faces LEFT, little one on the
+LEFT of the cell):
+ 1 calm: the wise holds the cane upright beside him, the little one stands with his hands together.
+ 2 wind-up: the wise raises the cane over his head, the little one is shocked, hands up, mouth open.
+ 3 swing: the cane comes down fast (3 motion arcs), the little one covers his head with both hands, eyes shut.
+ 4 IMPACT: the cane tip is ON the little one's head with a yellow-white burst, his eyes are X X.
+ 5 bump: a red bump on his head, stars and spirals around it, tongue out; the wise stands with the cane upright.
+ 6 bounce-back dizzy: spiral eyes, stars circling his head, arms out; the wise holds the cane horizontally in front of him.
+ 7 lecture: the wise lifts one finger and speaks; the little one holds his cheek, eyes closed, sad.
+ 8 sad end: the little one with the bump, teary eyes looking up; the wise stands with the cane beside him.
