@@ -359,6 +359,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** R: side page bar back (no auto-scroll button), arrow that opens the old toolbar as a strip, old bottom bar hidden. */
     fun rSideTools() = preferenceStore.getBoolean("r_side_tools", true)
 
+    /** Reader: tapping the middle shows only the app's bars; the phone's 3 buttons come only with a swipe up from the bottom edge. */
+    fun rHideNavButtons() = preferenceStore.getBoolean("r_hide_nav_buttons", true)
+
     fun rOldToolbar() = preferenceStore.getBoolean("r_old_toolbar", false)
 
     /** Reader: thin permanent progress bar at the bottom edge. */

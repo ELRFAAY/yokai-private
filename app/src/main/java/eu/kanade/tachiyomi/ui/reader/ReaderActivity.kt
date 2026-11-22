@@ -52,6 +52,7 @@ import androidx.core.transition.addListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsCompat.Type.navigationBars
 import androidx.core.view.WindowInsetsCompat.Type.statusBars
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
 import androidx.core.view.WindowInsetsControllerCompat
@@ -1100,7 +1101,11 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 firstPass = false
                 lastVis = vis
             }
-            wic.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+            wic.systemBarsBehavior = if (preferences.rHideNavButtons().get()) {
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            } else {
+                WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+            }
             if (!fullscreen && sheetManageNavColor) {
                 window.navigationBarColor = getResourceColor(R.attr.colorSurface)
             }
@@ -1290,7 +1295,14 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         binding.viewerContainer.requestLayout()
         if (visible) {
             snackbar?.dismiss()
-            wic.show(systemBars())
+            if (preferences.rHideNavButtons().get()) {
+                // R: the phone's 3 buttons (back / home / recents) stay hidden; they come only with a swipe up from the bottom edge
+                wic.show(statusBars())
+                wic.hide(navigationBars())
+                wic.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            } else {
+                wic.show(systemBars())
+            }
             binding.appBar.isVisible = true
             rToolsBar?.isVisible = true
 

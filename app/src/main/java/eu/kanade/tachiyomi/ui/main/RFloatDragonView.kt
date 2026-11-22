@@ -10,18 +10,27 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.os.SystemClock
 import android.provider.Settings
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import eu.kanade.tachiyomi.R
 import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.exp
 import kotlin.math.max
+import kotlin.math.pow
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * R: the small dragon of the chapter-end card and of the statistics.
- * It hovers like the little spirit in the owner's video: slow bob, a soft tilt, a glowing shadow that breathes with the bob
- * and, every few seconds, a short glide to the side that leaves a trail of fading sparkles.
+ * Idle: it hovers like the little spirit in the owner's video (slow bob, soft tilt, breathing glow shadow, two glowing
+ * orbs around it, a short glide with a sparkle trail every few seconds).
+ * Touch: you can grab it and THROW it, like the home dragon: it flies over the screen (spinning, scared face, sparkle
+ * trail), bounces off the screen edges, gets dizzy for a moment and glides back to its place.
  * With [pointing] it uses the pointing pose and pokes toward its text ([pointRight] = the text is on the right of the dragon).
- * With [floating] = false (switch off in Settings > R) it is the plain still picture again.
+ * With [floating] = false (switch off in Settings > R) it is the plain still picture again and cannot be touched.
  */
 class RFloatDragonView(context: Context) : View(context) {
 
@@ -44,18 +53,46 @@ class RFloatDragonView(context: Context) : View(context) {
 
     private val density = resources.displayMetrics.density
     private val slack get() = (14 * density).toInt()
-    private val still: Bitmap? by lazy { load(RES_STILL) }
-    private val point: Bitmap? by lazy { load(RES_POINT) }
+    private val still: Bitmap? by lazy { load(R.drawable.r_mascot_happy) }
+    private val point: Bitmap? by lazy { load(R.drawable.r_mascot_point) }
+    private val scared: Bitmap? by lazy { load(R.drawable.r_mascot_scared) }
+    private val dizzy: Bitmap? by lazy { load(R.drawable.r_mascot_dizzy) }
 
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = GLOW }
+    private val orbPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val dst = RectF()
 
+    /** Sparkle in "home" coordinates (the view's own spot without the throw offset), so it stays where it was left. */
     private class Dot(val x: Float, val y: Float, val born: Long)
     private val dots = ArrayList<Dot>()
     private var lastDotAt = 0L
     private var running = false
+
+    private enum class Mode { HOME, DRAG, FLY, DIZZY, RETURN }
+    private var mode = Mode.HOME
+    private var offX = 0f
+    private var offY = 0f
+    private var vx = 0f
+    private var vy = 0f
+    private var spin = 0f
+    private var lastFrame = 0L
+    private var dizzyUntil = 0L
+    private var downRawX = 0f
+    private var downRawY = 0f
+    private var offStartX = 0f
+    private var offStartY = 0f
+    private var lastMoveAt = 0L
+    private var estVx = 0f
+    private var estVy = 0f
+    private var moved = false
+    private var minX = 0f
+    private var maxX = 0f
+    private var minY = 0f
+    private var maxY = 0f
+    private val unclipped = ArrayList<Triple<ViewGroup, Boolean, Boolean>>()
+
     private val animationsOn: Boolean
         get() = runCatching {
             Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
@@ -64,6 +101,7 @@ class RFloatDragonView(context: Context) : View(context) {
     private val tick = object : Runnable {
         override fun run() {
             if (!running) return
+            step()
             invalidate()
             postOnAnimation(this)
         }
@@ -79,17 +117,175 @@ class RFloatDragonView(context: Context) : View(context) {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         running = true
+        lastFrame = SystemClock.uptimeMillis()
         postOnAnimation(tick)
     }
 
     override fun onDetachedFromWindow() {
         running = false
         removeCallbacks(tick)
+        restoreAncestors()
         super.onDetachedFromWindow()
     }
 
+    // ---- throw physics (same feel as the home dragon: loses speed fast, a glide and not a ball) ----
+
+    private fun step() {
+        val now = SystemClock.uptimeMillis()
+        val dt = ((now - lastFrame) / 1000f).coerceIn(0f, 0.05f)
+        lastFrame = now
+        when (mode) {
+            Mode.FLY -> {
+                offX += vx * dt
+                offY += vy * dt
+                val damp = 0.07f.pow(dt)
+                vx *= damp
+                vy *= damp
+                if (offX < minX) {
+                    offX = minX
+                    vx = abs(vx) * 0.5f
+                }
+                if (offX > maxX) {
+                    offX = maxX
+                    vx = -abs(vx) * 0.5f
+                }
+                if (offY < minY) {
+                    offY = minY
+                    vy = abs(vy) * 0.5f
+                }
+                if (offY > maxY) {
+                    offY = maxY
+                    vy = -abs(vy) * 0.5f
+                }
+                spin += (vx / density) * 0.2f * dt
+                if (now - lastDotAt > 30L) {
+                    lastDotAt = now
+                    dots.add(Dot(offX + width / 2f, offY + height * 0.55f, now))
+                }
+                if (sqrt(vx * vx + vy * vy) < 70f * density) {
+                    mode = Mode.DIZZY
+                    dizzyUntil = now + 900L
+                    vx = 0f
+                    vy = 0f
+                }
+            }
+            Mode.DIZZY -> {
+                spin += (-spin) * (1f - exp(-5f * dt)) // untwist
+                if (now >= dizzyUntil) mode = Mode.RETURN
+            }
+            Mode.RETURN -> {
+                val k = 1f - exp(-4f * dt) // smooth glide home
+                spin += (-spin) * (1f - exp(-8f * dt))
+                if (now - lastDotAt > 45L) {
+                    lastDotAt = now
+                    dots.add(Dot(offX + width / 2f, offY + height * 0.55f, now))
+                }
+                offX += -offX * k
+                offY += -offY * k
+                if (abs(offX) < 1f && abs(offY) < 1f) {
+                    offX = 0f
+                    offY = 0f
+                    spin = 0f
+                    mode = Mode.HOME
+                    restoreAncestors()
+                }
+            }
+            else -> {}
+        }
+        translationX = offX
+        translationY = offY
+    }
+
+    private fun unclipAncestors() {
+        if (unclipped.isNotEmpty()) return
+        var p = parent
+        while (p is ViewGroup) {
+            unclipped.add(Triple(p, p.clipChildren, p.clipToPadding))
+            p.clipChildren = false
+            p.clipToPadding = false
+            p = p.parent
+        }
+    }
+
+    private fun restoreAncestors() {
+        unclipped.forEach { (g, c, pad) ->
+            g.clipChildren = c
+            g.clipToPadding = pad
+        }
+        unclipped.clear()
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (!floating || !animationsOn) return super.onTouchEvent(event)
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                parent?.requestDisallowInterceptTouchEvent(true)
+                unclipAncestors()
+                val loc = IntArray(2)
+                getLocationOnScreen(loc)
+                val homeLeft = loc[0] - translationX
+                val homeTop = loc[1] - translationY
+                val dm = resources.displayMetrics
+                minX = -homeLeft
+                maxX = dm.widthPixels - homeLeft - width
+                minY = -homeTop
+                maxY = dm.heightPixels - homeTop - height
+                downRawX = event.rawX
+                downRawY = event.rawY
+                offStartX = offX
+                offStartY = offY
+                estVx = 0f
+                estVy = 0f
+                lastMoveAt = SystemClock.uptimeMillis()
+                moved = false
+                mode = Mode.DRAG
+                return true
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (mode != Mode.DRAG) return true
+                val nx = (offStartX + event.rawX - downRawX).coerceIn(minX, maxX)
+                val ny = (offStartY + event.rawY - downRawY).coerceIn(minY, maxY)
+                val now = SystemClock.uptimeMillis()
+                val dt = max(1L, now - lastMoveAt) / 1000f
+                estVx = estVx * 0.5f + ((nx - offX) / dt) * 0.5f
+                estVy = estVy * 0.5f + ((ny - offY) / dt) * 0.5f
+                lastMoveAt = now
+                offX = nx
+                offY = ny
+                if (abs(event.rawX - downRawX) + abs(event.rawY - downRawY) > 8f * density) moved = true
+                return true
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                if (mode != Mode.DRAG) return true
+                val cap = 2300f * density
+                if (moved) {
+                    vx = (estVx * 0.6f).coerceIn(-cap, cap)
+                    vy = (estVy * 0.6f).coerceIn(-cap, cap)
+                    // a hold without speed at release (it stopped under the finger) still gets a small push
+                    if (sqrt(vx * vx + vy * vy) < 150f * density) vy = 150f * density
+                } else {
+                    // a tap: it jumps up and comes back
+                    vx = 0f
+                    vy = -900f * density
+                }
+                mode = Mode.FLY
+                lastFrame = SystemClock.uptimeMillis()
+                return true
+            }
+        }
+        return super.onTouchEvent(event)
+    }
+
+    // ---- drawing ----
+
     override fun onDraw(canvas: Canvas) {
-        val bmp = (if (pointing) point else null) ?: still ?: return
+        val idle = mode == Mode.HOME
+        val bmp = when {
+            mode == Mode.DRAG || mode == Mode.FLY -> scared
+            mode == Mode.DIZZY -> dizzy
+            pointing -> point
+            else -> null
+        } ?: still ?: return
         val side = sizeDp * density
         val animate = floating && animationsOn
         val now = SystemClock.uptimeMillis()
@@ -103,10 +299,10 @@ class RFloatDragonView(context: Context) : View(context) {
         val lift = if (animate) 6f * density else 0f
         val dy = -lift - bob * 4f * density
 
-        // glide to the side every ~7 s (0.9 s out and back) leaving sparkles
+        // glide to the side every ~7 s (0.9 s out and back) leaving sparkles (only while idle at home)
         var dx = 0f
         var moving = false
-        if (animate) {
+        if (animate && idle) {
             val phase = (now % GLIDE_EVERY_MS).toFloat()
             if (phase < GLIDE_MS) {
                 val p = phase / GLIDE_MS
@@ -117,7 +313,7 @@ class RFloatDragonView(context: Context) : View(context) {
 
         // poke toward the text while pointing
         var poke = 0f
-        if (animate && pointing) {
+        if (animate && pointing && idle) {
             val p = max(0f, sin(sec * 2f * PI.toFloat() / 2.4f))
             poke = p * p * p
         }
@@ -126,15 +322,17 @@ class RFloatDragonView(context: Context) : View(context) {
         val cx = width / 2f
         val baseY = height - slack.toFloat() * 0.55f
 
-        // glowing shadow on the "ground": breathes with the bob
-        val shadowW = side * 0.5f * (1f - 0.12f * bob)
-        val shadowH = side * 0.07f
-        shadowPaint.shader = RadialGradient(0f, 0f, 1f, GLOW_SOFT, 0x0022C55E, Shader.TileMode.CLAMP)
-        canvas.save()
-        canvas.translate(cx + dx * 0.4f, baseY)
-        canvas.scale(shadowW, shadowH)
-        canvas.drawCircle(0f, 0f, 1f, shadowPaint)
-        canvas.restore()
+        // glowing shadow on the "ground": breathes with the bob (only at home)
+        if (idle) {
+            val shadowW = side * 0.5f * (1f - 0.12f * bob)
+            val shadowH = side * 0.07f
+            shadowPaint.shader = RadialGradient(0f, 0f, 1f, GLOW_SOFT, 0x0022C55E, Shader.TileMode.CLAMP)
+            canvas.save()
+            canvas.translate(cx + dx * 0.4f, baseY)
+            canvas.scale(shadowW, shadowH)
+            canvas.drawCircle(0f, 0f, 1f, shadowPaint)
+            canvas.restore()
+        }
 
         // sparkle trail
         if (moving && now - lastDotAt > 45L) {
@@ -150,15 +348,29 @@ class RFloatDragonView(context: Context) : View(context) {
                 continue
             }
             dotPaint.alpha = ((1f - age) * 200).toInt()
-            canvas.drawCircle(d.x, d.y + age * 8f * density, (2.6f - age * 1.4f) * density, dotPaint)
+            canvas.drawCircle(d.x - offX, d.y - offY + age * 8f * density, (2.6f - age * 1.4f) * density, dotPaint)
+        }
+
+        // two glowing orbs that circle the dragon (like the spirit in the video)
+        if (animate) {
+            val a = sec * 2f * PI.toFloat() / 2.2f
+            for (i in 0..1) {
+                val ang = a + i * PI.toFloat()
+                val ox = cx + dx + cos(ang) * side * 0.42f
+                val oy = baseY + dy - side * 0.4f + sin(ang) * side * 0.1f
+                val front = sin(ang) > 0f
+                orbPaint.color = GLOW
+                orbPaint.alpha = if (front) 235 else 120
+                canvas.drawCircle(ox, oy, (if (front) 2.8f else 2f) * density, orbPaint)
+            }
         }
 
         // the dragon itself, bottom-center anchored so it squashes from the ground
         canvas.save()
         canvas.translate(cx + dx + dir * poke * 5f * density, baseY + dy)
-        canvas.rotate(tilt + dir * poke * 4f)
+        canvas.rotate(tilt + dir * poke * 4f + spin)
         canvas.scale(sx, sy)
-        if (pointing && !pointRight) canvas.scale(-1f, 1f)
+        if (pointing && !pointRight && bmp === point) canvas.scale(-1f, 1f)
         dst.set(-side / 2f, -side, side / 2f, 0f)
         canvas.drawBitmap(bmp, null, dst, bitmapPaint)
         canvas.restore()
@@ -170,7 +382,5 @@ class RFloatDragonView(context: Context) : View(context) {
         private const val DOT_LIFE_MS = 800L
         private const val GLOW = 0xFF4ADE80.toInt()
         private const val GLOW_SOFT = 0x6622C55E
-        private val RES_STILL = R.drawable.r_mascot_happy
-        private val RES_POINT = R.drawable.r_mascot_point
     }
 }

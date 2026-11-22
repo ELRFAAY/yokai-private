@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-22 (see NEWEST-32).
+Last updated: 2026-11-22 (see NEWEST-33).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,11 @@ Last updated: 2026-11-22 (see NEWEST-32).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-33 2026-11-22 16:30 (thirteenth account): START HERE, then NEWEST-32. Build 45030122675 = `313852d` (first batch). THIS batch is pushed but NOT built: wait for "بيلد"
+- Owner: the hover was NOT the video's motion; he wants the home dragon's behavior: touch it, THROW it, it flies over the screen (corner below etc.), spins and comes back. `RFloatDragonView` now has throw physics (modes HOME/DRAG/FLY/DIZZY/RETURN; grab follows the finger, release speed x0.6 capped 2300dp/s, damping 0.07/s, bounce 0.5 on the screen edges, spin, scared face while flying, dizzy face 0.9 s, smooth glide home; a tap = it jumps up and returns). While thrown it un-clips its ancestors (`clipChildren`/`clipToPadding` false, restored at home) so it can leave its row; two glowing orbs circle it when idle (from the video). Risk: a Compose/RecyclerView/MaterialCardView ancestor may still clip it or draw over it (the card clips to its outline): check on the phone; if so draw it in an overlay on the activity's decor view instead.
+- Reader (owner): tapping the middle showed the phone's 3 buttons (back/home/recents); he wants them ONLY with a swipe up from the bottom edge, and the tools card as the lowest thing. Switch `r_hide_nav_buttons` (`rHideNavButtons`, default ON, Settings > R "القارئ: إخفاء أزرار الموبايل"): `setMenuVisibility` shows only `statusBars()`, hides `navigationBars()`, behavior `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE` (also in the insets listener). The tools card/page bar already sit low (NEWEST-32 peek change). The owner's message was cut at "... وقائمة ال": ask what he meant if something else should go down.
+- ALL UNCOMPILED. Suspects: `RFloatDragonView` (`Triple` list, `getLocationOnScreen`), `ReaderActivity` imports `navigationBars`.
 
 ## NEWEST-32 2026-11-22 15:55 (thirteenth account = Claude in the chat app): START HERE, then NEWEST-31. STILL NO BUILD until the owner says "بيلد"
 - Owner's video `565940.mp4` (another app's little flame spirit): hovers with a slow bob + soft glow shadow, glides around with a trail of sparkles, bubble with a pointer above it. Applied to the small dragon in the two spots the owner named: the chapter-end card (`ChapterTransition.kt` `ReadTimeCard`) and the stats dragon lines (`RStatsSections.dragonLine`). New view `ui/main/RFloatDragonView.kt` (bob, tilt, squash, breathing glow shadow, a 0.9 s sideways glide every 7 s with fading sparkles, POINTING pose that pokes toward the text; mirrored by layout direction). Switch `r_dragon_float` (`rDragonFloat`, default ON, Settings > R "التنين الصغير: الطيران والإشارة"; OFF = the old still `r_mascot_happy`). Also stops when system animations are off.
