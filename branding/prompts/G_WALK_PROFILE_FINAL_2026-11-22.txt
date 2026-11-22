@@ -1,0 +1,12 @@
+SHEET G (FINAL TRY) - wise dragon slither walk, TRUE SIDE PROFILE
+Frames wanted: 8 (4 columns x 2 rows), seamless loop. Minimum acceptable: 6 (3 x 2).
+Attach TWO images: (1) the wise dragon profile anchor (ANCHOR-wise-profile-left-565705.jpg), (2) the wise dragon reference sheet (p5). Then paste the GLOBAL RULES and this prompt.
+
+GLOBAL RULES
+Same character as the attached images, do not redesign. Flat-colour cartoon sticker style, thick dark-green outline (same line weight in every cell), glossy green skin, light-green belly scales. WISE dragon: straw conical hat, long white beard and white eyebrows, wooden cane. Pure white background (#FFFFFF), no ground shadow, no text, no numbers, no labels, no cell borders. All cells exactly the same size, character centred, the BASELINE on the same horizontal line in every cell, and the SAME SCALE in all cells (no zoom between frames). Read left to right, top to bottom = animation order.
+
+PROMPT
+Make an 8-frame walk cycle sprite sheet, 4 columns x 2 rows. EVERY cell uses EXACTLY the same view as the first attached image (the profile anchor): strict side profile, 90 degrees from the side, facing the LEFT edge of the cell, one eye visible, hood narrow and seen from the side, hat seen from the side, beard hanging on the left side of the neck, right hand holding the cane planted in front (to the left), body a horizontal S-shaped wave flowing to the right with the tail tip at the right. NOT a front view, NOT a three-quarter view, in any cell. If a cell would show both eyes, redraw it as a side view.
+Only the slithering wave changes: it travels from the head toward the tail, advancing 45 degrees of wave phase per frame, so a 9th frame would be identical to frame 1.
+Frame 1: phase 0, cane tip touches the ground (tap). 2: phase 45, cane lifts 10 degrees. 3: phase 90, cane in the air a little forward. 4: phase 135, cane in the air, hat 2 percent lower. 5: phase 180, cane tip touches the ground (tap). 6: phase 225, cane lifting. 7: phase 270, cane in the air. 8: phase 315, cane coming down to the next tap.
+All 8 cells are moving frames; no resting or coiled pose in any cell. The tail tip swings opposite to the head. The beard sways opposite to the direction of motion. Head height changes at most 5 percent between frames. Body length and thickness stay constant. Calm stern face, mouth closed.

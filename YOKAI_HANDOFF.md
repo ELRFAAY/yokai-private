@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-21 (see NEWEST-12).
+Last updated: 2026-11-22 10:10 (see NEWEST-20).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,13 @@ Last updated: 2026-11-21 (see NEWEST-12).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-20 2026-11-22 10:10 (seventh account, owner at 96% credit): START HERE, then NEWEST-19/18/17/16/15
+- **State**: branch `fix/stats-and-name-clean`, last GREEN build 62 on `665f83e`. NOT built yet: `a9540fc` (switch `rOldToolbar` "شريط الصفحات القديم", default OFF, hides `binding.navLayout`; the new tools card keeps `rToolsBar`) and `668f940` (clock+battery overlay hardened, see NEWEST-17). Owner has NOT answered "build 63 now?": do not dispatch until he says so (he wants ONE build after the scene work).
+- **Session tips**: attach the repo with `add_repo` (access push), `git clone --depth 1`, then `git fetch --depth=20 origin fix/stats-and-name-clean`. The stop hook's "N unpushed commits, no remote branch" is a FALSE ALARM from the shallow clone (no remote-tracking ref): check `git ls-remote --heads origin fix/stats-and-name-clean` equals `git rev-parse HEAD`. `gh run list/view -R ELRFAAY/yokai-private` works after `add_repo`.
+- **Sheets (all recorded in `branding/mascot-models/new-sheets-2026-11-22/`, NOT cut yet; owner must say "ابدأ")**: USABLE: `H1` 15 frames 5x3 (wise hits toward the LEFT, no mirroring needed), `J` 3x2 (small dragon peek, notice, shock with cane tip (skip J3), HIT squash, compress, bounce), `J3b` shocked without cane (use instead of J3), `E2` 8 frames drop-in/landing (home mascot welcome), `I2-try3` (wise in true profile facing RIGHT dragging the dazed small one, 8 frames), `ANCHOR` (wise true profile facing LEFT). NOT usable: `G` (3 tries, always FRONT view, frame 8 coiled), `I2` first two tries. Waiting for a true-profile G: prompt in `branding/prompts/G_WALK_PROFILE_FINAL_2026-11-22.txt` (8 frames, attach ANCHOR). If he says "continue without it": walk-in = ANCHOR scaled/rocked in code.
+- **Plan for the scene** (small dragon LEFT, wise enters from the RIGHT): J1-J2 peek/notice, wise slides in, H1 wind-up, swing, impact, J4-J6 then S4 dizzy ("آآآي! دماغي!"), wise lectures (p5 point/angry poses), I2-try3 drag to the right. Normalise the wise/small scale with the I2-try3 sheet (both in one image). Cutter pattern: `branding/tools/make_sheets_2026_11_21b.py`; webps into `app/src/main/res/drawable-nodpi/`; scene code `RReaderCobraView` (`SCENE`, `sceneStep`, `drawScene`); home drop-in `RMascotView.startWelcome`.
+- **Owner decisions pending**: "ابدأ"; approval of the Egyptian bubble phrases (still my drafts); build 63; true-profile G. Next-account prompt: `branding/prompts/NEXT_ACCOUNT_PROMPT_2026-11-22.txt`.
 
 ## NEWEST-19 2026-11-22 10:05 (seventh account): READ FIRST, then NEWEST-18
 - Owner sent 4 more images, recorded in `branding/mascot-models/new-sheets-2026-11-22/` (NOT cut yet): `ANCHOR` (565705) = wise dragon in a TRUE side profile facing LEFT (cane in front-left, beard on the left side of the neck, S-wave body going right): good reference; `G-try3` (565704) = looks IDENTICAL to the earlier front-view G (not redone with the anchor? ask); `I2-try3` (565703) = wise in a true profile facing RIGHT, small dazed dragon (spiral eyes, tongue out) in ALL 8 cells, sitting upright beside/in front of his coils (not hanging by the tail), good enough for the "carried off" beat; `J3b` (565702) = small dragon shocked, hands up, no cane, 3 frames (still, shake left, shake right) = replaces J3.

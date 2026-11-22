@@ -1,0 +1,7 @@
+Paste this as the FIRST message to the next Claude account:
+
+اقرا الأول ملف YOKAI_HANDOFF.md في الريبو ELRFAAY/yokai-private (الفرع fix/stats-and-name-clean)، وبالذات NEWEST-20. اتكلم معايا بالمصري وبشكل مختصر.
+الريبو: اعمل add_repo (owner ELRFAAY, repo yokai-private, access push) وبعدين git clone --depth 1 ثم fetch للفرع بعمق 20. تحذير الـ stop hook عن "commits غير مدفوعة" غلط بسبب الكلون السطحي: اتأكد بـ git ls-remote.
+الحالة: آخر بيلد أخضر هو 62. فيه commits لسه متبنّتش (سويتش شريط الصفحات القديم، وتثبيت نسبة الشحن). ما تعملش بيلد من نفسك، أنا هقولك.
+الشغل: لما أقول "ابدأ" تقص الشيتس الجديدة في branding/mascot-models/new-sheets-2026-11-22 (H1, J, J3b, E2, I2-try3، وG لو بعتّه بروفايل) وتربطهم في مشهد العصاية (RReaderCobraView) وفي نزول التنين الصغير (RMascotView)، من غير ما تغيّر الإعدادات الموجودة، وكل حاجة جديدة بسويتش في الإعدادات > R.
+اسألني في الأول عن 3 حاجات: هل بعتّ G من جديد، هل الجمل في الفقاعات معتمدة، وهل أطلّع بيلد 63.
