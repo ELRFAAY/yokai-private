@@ -385,6 +385,19 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
         // R: floating snake mascot overlay (only shown on the library screen, see updateRMascot)
         rMascot = RMascotView(this).also { view ->
             view.visibility = View.GONE
+            // R: home spot = the height of the big library title (the dragon sits on the other side of the row)
+            view.homeYProvider = {
+                val t = binding.appBar.bigTitleView
+                if (t == null || !t.isShown || t.height == 0) {
+                    null
+                } else {
+                    val a = IntArray(2)
+                    val b = IntArray(2)
+                    t.getLocationOnScreen(a)
+                    view.getLocationOnScreen(b)
+                    a[1] - b[1] + t.height / 2f
+                }
+            }
             binding.root.addView(
                 view,
                 ConstraintLayout.LayoutParams(0, 0).apply {

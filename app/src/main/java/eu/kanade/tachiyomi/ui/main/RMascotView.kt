@@ -378,8 +378,8 @@ class RMascotView(context: Context) : View(context) {
         super.onSizeChanged(w, h, oldw, oldh)
         if (w == 0 || h == 0) return
         if (!positioned) {
-            x = w - half - 16f * density
-            y = maxY() - 90f * density
+            x = homeX()
+            y = homeY()
             targetX = x
             targetY = y
             positioned = true
@@ -388,6 +388,13 @@ class RMascotView(context: Context) : View(context) {
             y = y.coerceIn(minY(), maxY())
         }
     }
+
+    /** R: where the dragon lives: next to the big library title, on the side opposite to it. Set by MainActivity. */
+    var homeYProvider: (() -> Float?)? = null
+    private var tfShift = 0f // R: costume pushed down while it is taller than the room above it
+
+    private fun homeX() = if (layoutDirection == LAYOUT_DIRECTION_RTL) half + 16f * density else width - half - 16f * density
+    private fun homeY() = (homeYProvider?.invoke() ?: (minY() + 8f * density)).coerceIn(minY(), maxY())
 
     private fun minY() = half + 24f * density
     private fun maxY() = max(minY(), height - half - 72f * density) // stays above the bottom bar
@@ -418,8 +425,8 @@ class RMascotView(context: Context) : View(context) {
             // drop in from above the top right corner, easing out; a touch ends it at once
             val p = ((now - enterStart) / ENTER_MS.toFloat()).coerceIn(0f, 1f)
             val e = 1f - (1f - p) * (1f - p) * (1f - p)
-            val destX = width - half - 16f * density
-            val destY = minY() + 8f * density
+            val destX = homeX()
+            val destY = homeY()
             x = destX + half * 1.8f * (1f - e)
             y = destY - half * 2.2f * (1f - e)
             if (p >= 1f || state != State.IDLE) enterStart = 0L
@@ -428,6 +435,20 @@ class RMascotView(context: Context) : View(context) {
                 targetY = y
                 scaleYSpring.kick(-6f)
                 if (e2Start != 0L) e2LandAt = now
+            }
+        }
+
+        // R: a thrown or dragged dragon does not stay in the middle of the list: a few seconds after the last touch
+        // it glides back to its home spot beside the title (smooth, no jump)
+        if (state == State.IDLE && !asleep && tfStart == 0L && enterStart == 0L && now - lastActiveAt >= HOME_AFTER_MS) {
+            val hx = homeX()
+            val hy = homeY()
+            if (hypot(hx - x, hy - y) > 6f * density) {
+                val k = 1f - exp(-dt * 2.6f)
+                x += (hx - x) * k
+                y += (hy - y) * k
+                targetX = x
+                targetY = y
             }
         }
 
@@ -445,7 +466,7 @@ class RMascotView(context: Context) : View(context) {
         if (state == State.FLYING) {
             x += vx * dt
             y += vy * dt
-            val damp = 0.4f.pow(dt)
+            val damp = 0.07f.pow(dt) // R: loses speed fast: a glide, not a ball (was 0.4)
             vx *= damp
             vy *= damp
 
@@ -456,26 +477,26 @@ class RMascotView(context: Context) : View(context) {
             val impact = (hypot(vx, vy) / (2200f * density)).coerceIn(0.25f, 1f) * 6f
             if (x < minX) {
                 x = minX
-                vx = abs(vx) * 0.8f
+                vx = abs(vx) * 0.5f
                 hitWall = true
                 scaleXSpring.kick(-impact)
                 scaleYSpring.kick(impact * 0.6f)
             } else if (x > maxX) {
                 x = maxX
-                vx = -abs(vx) * 0.8f
+                vx = -abs(vx) * 0.5f
                 hitWall = true
                 scaleXSpring.kick(-impact)
                 scaleYSpring.kick(impact * 0.6f)
             }
             if (y < minY()) {
                 y = minY()
-                vy = abs(vy) * 0.8f
+                vy = abs(vy) * 0.5f
                 hitCeiling = true
                 scaleYSpring.kick(-impact)
                 scaleXSpring.kick(impact * 0.6f)
             } else if (y > maxY()) {
                 y = maxY()
-                vy = -abs(vy) * 0.8f
+                vy = -abs(vy) * 0.5f
                 hitWall = true
                 scaleYSpring.kick(-impact)
                 scaleXSpring.kick(impact * 0.6f)
@@ -494,7 +515,7 @@ class RMascotView(context: Context) : View(context) {
                 lastDotY = y
             }
 
-            if (speed < 40f * density) {
+            if (speed < 70f * density) {
                 state = State.IDLE
                 vx = 0f
                 vy = 0f
@@ -822,7 +843,7 @@ class RMascotView(context: Context) : View(context) {
 
                 val now = SystemClock.uptimeMillis()
                 val speed = hypot(tvx, tvy)
-                val maxSpeed = 4500f * density / 2.75f
+                val maxSpeed = 2300f * density / 2.75f // R: gentler throw (was 4500)
                 if (speed > maxSpeed) {
                     tvx *= maxSpeed / speed
                     tvy *= maxSpeed / speed
@@ -850,8 +871,8 @@ class RMascotView(context: Context) : View(context) {
                     }
                 } else if (speed > 350f * density) {
                     state = State.FLYING
-                    vx = tvx
-                    vy = tvy
+                    vx = tvx * 0.6f
+                    vy = tvy * 0.6f
                     bounces = 0
                     lastDotX = x
                     lastDotY = y
@@ -928,8 +949,24 @@ class RMascotView(context: Context) : View(context) {
         val current = tfBmp ?: shownBitmap ?: return
         val previous = if (tfBmp == null && fade < 1f) fromBitmap else null
 
+        // R: a tall costume (hat, helmet) must not be cut by the top of the screen: slide the dragon down while it wears it
+        var shiftTarget = 0f
+        if (tfStart != 0L) {
+            val fb = tfBitmap(TF_FORMS[tfForm].first)
+            if (fb != null) {
+                val hr = (fb.height * (half * 2f / 384f) - half * 2f).coerceAtLeast(0f)
+                val statusTop = androidx.core.view.ViewCompat.getRootWindowInsets(this)
+                    ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())?.top ?: 0
+                val topEdge = y - half - hr // where the top of the costume would be
+                shiftTarget = (statusTop + 12f * density - topEdge).coerceAtLeast(0f)
+            }
+        }
+        tfShift += (shiftTarget - tfShift) * 0.16f
+        if (tfShift < 0.5f && shiftTarget == 0f) tfShift = 0f
+        if (tfShift > 0f) postInvalidateOnAnimation()
+
         canvas.save()
-        canvas.translate(x + shake, y + bob)
+        canvas.translate(x + shake, y + bob + tfShift)
         canvas.rotate(tiltSpring.value)
         if (stretch > 0.005f) {
             // squash and stretch: longer along the flight direction, thinner across it
@@ -1051,7 +1088,7 @@ class RMascotView(context: Context) : View(context) {
         val bh = lineHeight * lines.size + pad * 1.4f
 
         val left = (x - bw / 2f).coerceIn(margin, max(margin, width - bw - margin))
-        var top = y - half - headroom - bh - 14f * density
+        var top = y + tfShift - half - headroom - bh - 14f * density
         // R: stay under the status bar (the view can start behind it, which cut the bubble at the top)
         val loc = IntArray(2)
         getLocationOnScreen(loc)
@@ -1128,6 +1165,7 @@ class RMascotView(context: Context) : View(context) {
         val GO_SLEEP = listOf("هنام شوية... صحّيني لما ترجع", "الدنيا هادية... هجيب اللحاف وأنام", "تصبح على خير، المانجا مش هتهرب")
         val WAKE = listOf("هاه؟ صحيت!", "كنت في أحلى حلم...", "خلاص خلاص، صاحي!")
         const val SLEEP_AFTER_MS = 60_000L
+        const val HOME_AFTER_MS = 3500L // R: back to the home spot this long after the last touch
         val WAG_ORDER = intArrayOf(0, 1, 2, 3, 4, 3, 2, 1)
         const val WELCOME_MIN_GAP_MS = 2 * 60_000L // R: greet after 2 minutes away (was 3 h)
         const val DAY_MS = 24L * 60 * 60 * 1000
