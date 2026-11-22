@@ -723,7 +723,7 @@ class RReaderCobraView(
         val s = 100f * d * sizeK // little dragon size (same as the home dragon)
         val kw = s / 384f // screen px per canvas px, both dragons
         val smallLeft = 4f * d
-        val stageH = 500f * kw + 16f * d
+        val stageH = (H3_FLOOR + 8f * WISE_UP + 14f) * kw + 16f * d
         val stageTop = ((height - stageH) * yFrac).coerceAtLeast(0f)
         val ground = stageTop + stageH
         val smallCx = smallLeft + s / 2f
@@ -740,12 +740,12 @@ class RReaderCobraView(
             if (bothMode) {
                 val wiseCx = smallCx + (H3_WISE_CX - H3_SMALL_CX) * kw
                 if (speaker == WISE) {
-                    drawBubble(canvas, wiseCx, ground - 420f * kw, ground - 150f * kw)
+                    drawBubble(canvas, wiseCx, ground - 420f * kw * WISE_UP, ground - 150f * kw * WISE_UP)
                 } else {
-                    drawBubble(canvas, smallCx, ground - 8f * kw - 250f * kw, ground - 8f * kw - 120f * kw)
+                    drawBubble(canvas, smallCx, ground - 8f * kw * WISE_UP - 325f * kw, ground - 8f * kw * WISE_UP - 160f * kw)
                 }
             } else if (speaker == WISE && !wiseRect.isEmpty) {
-                drawBubble(canvas, wiseRect.centerX(), ground - 420f * kw, ground - 150f * kw)
+                drawBubble(canvas, wiseRect.centerX(), ground - 420f * kw * WISE_UP, ground - 150f * kw * WISE_UP)
             } else if (!smallRect.isEmpty) {
                 drawBubble(canvas, smallRect.centerX(), smallRect.top + s * 0.08f, smallRect.bottom - s * 0.2f)
             }
@@ -759,7 +759,7 @@ class RReaderCobraView(
             if (look.both) {
                 val bb = bitmapFor(look.wise) ?: return
                 val left = smallCx - H3_SMALL_CX * kw
-                val top = ground - 8f * kw - H3_FLOOR * kw
+                val top = ground - 8f * kw * WISE_UP - H3_FLOOR * kw
                 val r = RectF(left, top, left + bb.width * kw, top + bb.height * kw)
                 canvas.drawBitmap(bb, null, r, bitmapPaint)
                 if (record) {
@@ -778,8 +778,8 @@ class RReaderCobraView(
             }
             val wb = bitmapFor(look.wise)
             if (wb != null && (wiseSlide > 0f || exitT > 0f)) {
-                val ww = wb.width * kw
-                val wh = wb.height * kw
+                val ww = wb.width * kw * WISE_UP
+                val wh = wb.height * kw * WISE_UP
                 val restCx = smallCx + (H3_WISE_CX - H3_SMALL_CX) * kw
                 val cx = restCx + ((1f - wiseSlide) + exitT) * (width - restCx + ww)
                 val r = RectF(cx - ww / 2f, ground - wh, cx + ww / 2f, ground)
@@ -902,11 +902,14 @@ class RReaderCobraView(
 
         private fun ids(vararg v: Int) = v
 
-        // H3 pictures (both dragons, common canvas 521x493, from branding/tools/make_h3_cells.py): floor line, wise coil
-        // centre and little dragon hood centre, in bitmap px (the wise is as tall as in the G walk, so the scale is the same)
-        private const val H3_FLOOR = 481f
-        private const val H3_WISE_CX = 392f
-        private const val H3_SMALL_CX = 179f
+        // H3 pictures (both dragons, common canvas 611x612, from branding/tools/make_h3_cells.py): floor line, wise coil
+        // centre and little dragon hood centre, in bitmap px. They are cut so the little dragon has exactly the size of the
+        // lone one (r_j_*, 333 px), which makes the wise 1.2447x taller than the G walk sprites: those are drawn bigger by
+        // WISE_UP in the scene so the wise does not change size when the H3 pictures take over.
+        private const val H3_FLOOR = 600f
+        private const val H3_WISE_CX = 480f
+        private const val H3_SMALL_CX = 162f
+        private const val WISE_UP = 1.2447f
 
         /**
          * R scene v2 (sheets of 2026-11-22), the H3 version. 0 the little one peeks (J0); the wise one walks in (G) and

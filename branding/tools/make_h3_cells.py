@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image, ImageFilter
 from scipy import ndimage as ndi
 
-SRC = 'branding/mascot-models/new-sheets-2026-11-22/H3-contact-both-dragons-4x2-565719.jpg'
+SRC = 'branding/mascot-models/new-sheets-2026-11-22/H3-v6-565740.jpg'  # owner's last version (565719 was the first)
 CUT = 'branding/mascot-models/cutouts-2026-11-22/'
 RES = 'app/src/main/res/drawable-nodpi/'
 COLS, ROWS = 4, 2
@@ -26,7 +26,8 @@ PADX = 24            # the box is wider than the grid cell: tails, stars and the
 BOX_H = 376
 ROW_Y0 = (8, 392)    # box top of row 1 / row 2 (sheet px); row 2 is corrected by ROW_DY below
 WHITE = 225          # all channels above this = page white
-WISE_H_OUT = 436.0   # wise height (hat top -> floor) in the output sprites = the wise height of the G walk sprites, so the scene draws both at the same scale
+SMALL_HOME_H = 333.0  # height of the lone little dragon sprites (r_j_*, r_mascot_*): the little one of H3 (cell 1) gets exactly this size
+G_WISE_H = 436.0      # height of the G walk sprites: the scene scales them by (wise height here / 436), see WISE_UP in RReaderCobraView
 MARGIN = 6
 HOLE_ZONE = 120      # closed white holes this close to the floor line are coil holes and get cleared
 HOLE_MIN = 60
@@ -104,6 +105,17 @@ def to_img(rgb, fg):
     return img
 
 
+def small_height(img):
+    """height of the little dragon in a cell: the component that holds the leftmost opaque pixel (the cane is a separate piece)."""
+    a = np.array(img.getchannel('A')) > 128
+    lab, _ = ndi.label(ndi.binary_dilation(a, iterations=1))
+    xs = np.nonzero(a.any(axis=0))[0]
+    col = np.nonzero(a[:, xs.min()])[0]
+    comp = lab == lab[col[0], xs.min()]
+    ys = np.nonzero((comp & a).any(axis=1))[0]
+    return int(ys.max() - ys.min())
+
+
 def wise_right_edge(img):
     """right edge of the wise dragon's coil (the rightmost drawn pixel of the bottom rows; the little dragon is always left of it)."""
     a = np.array(img.getchannel('A')) > 128
@@ -171,8 +183,9 @@ def run(preview=False):
     h_ref = float(np.median(heights))
     tx = float(np.median([e for ((e, _), _) in info]))
     fy = float(np.median([fl for ((_, fl), _) in info]))
-    k = WISE_H_OUT / h_ref
+    k = SMALL_HOME_H / small_height(cells[0])  # the little dragon of cell 1 = the home dragon's size
     print('wise height per cell', heights, 'right edge', [e for ((e, _), _) in info], '-> out scale', round(k, 4))
+    print('wise height in the output', round(h_ref * k), '-> WISE_UP (draw the G walk bigger by this)', round(h_ref * k / G_WISE_H, 4))
     big = 80
     placed = []
     for i, img in enumerate(cells):

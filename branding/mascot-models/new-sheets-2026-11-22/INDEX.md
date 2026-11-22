@@ -12,3 +12,5 @@
 | `G-redo-...-565698`, `G-try3-...-565704`, `G-wise-walk-4x2-565683`, `I2-wise-drag-...-565685`, `I2-redo-...-565699`, `H1`/`J` first tries | earlier tries | not usable, kept for history |
 
 Pending from the owner: a TRUE profile walk (prompt `branding/prompts/G_WALK_PROFILE_FINAL_2026-11-22.txt`).
+
+`H3-v6-565740.jpg` = the owner's last H3 (cell 1 little dragon slightly bigger): the one `make_h3_cells.py` cuts now. The other H3 versions (565719, 565722, 565736, 565737, 565739) are the same sheet; only 565719 and v6 are kept in the repo.
