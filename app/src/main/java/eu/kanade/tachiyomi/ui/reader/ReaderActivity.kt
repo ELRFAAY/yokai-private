@@ -1552,14 +1552,33 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         bar.isVisible = menuVisible
         (binding.root as ViewGroup).addView(bar, lp)
         rToolsBar = bar
-        binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> rPositionToolsBar() }
+        binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            // never change layout params inside the layout pass itself (could loop and freeze the app): do it after it
+            if (!rPositioning) {
+                rPositioning = true
+                binding.root.post {
+                    try {
+                        rPositionToolsBar()
+                    } finally {
+                        rPositioning = false
+                    }
+                }
+            }
+        }
     }
+
+    private var rPositioning = false
 
     /** R: puts the tools card right above the page bar (or above the chapters sheet when the page bar is not shown). */
     private fun rPositionToolsBar() {
         val bar = rToolsBar ?: return
         val rootHeight = binding.root.height
         if (rootHeight <= 0) return
+        // while the chapters list is opening / open the tools stay hidden and untouched (no layout work during the slide)
+        if (!binding.chaptersSheet.chaptersBottomSheet.sheetBehavior.isCollapsed()) {
+            if (bar.isVisible) bar.isVisible = false
+            return
+        }
         val sheet = binding.chaptersSheet.root
         val pageBarShown = !verticalNav && binding.navLayout.isVisible && readerNav.root.isVisible
         val top = if (pageBarShown) binding.navLayout.top else sheet.top
