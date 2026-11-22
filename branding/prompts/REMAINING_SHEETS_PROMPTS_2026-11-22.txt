@@ -1,0 +1,39 @@
+REMAINING MODEL SHEETS (2026-11-22): redo G, redo I2, and send E2.
+Already good and NOT needed again: H1 (15 frames), J.
+How to use: attach the wise dragon reference (p5) for G and I2, and the small dragon reference (p1) for E2. Paste the GLOBAL RULES first, then ONE sheet prompt per image. Name the images G, I2, E2.
+
+==================================================
+GLOBAL RULES (paste at the start of EVERY prompt)
+==================================================
+Same character as the attached reference sheet, do not redesign. Flat-colour cartoon sticker style, thick dark-green outline (same line weight in every cell), glossy green skin, light-green belly scales. SMALL dragon: short, WIDE, chubby body, big hood, exactly TWO small hands (the body's own, never extra arms), tail curled. WISE dragon: same snake body type, straw conical hat, long white beard and white eyebrows, wooden cane. Pure white background (#FFFFFF), no ground shadow, no text, no numbers, no labels, no cell borders. All cells exactly the same size, character centred, the BASELINE (where the body touches the ground) on the same horizontal line in every cell, and the SAME SCALE in all cells (no zoom between frames). Effects must not touch the character unless stated. Read left to right, top to bottom = animation order.
+
+==================================================
+SHEET G (REDO) - wise dragon slither walk, STRICT SIDE PROFILE (4 columns x 2 rows = 8 cells, seamless loop)
+==================================================
+IMPORTANT: the last version was drawn from the FRONT. This must be a true SIDE PROFILE, like a side-scrolling game sprite. NOT front view, NOT three-quarter view.
+SHEET G, 4 columns x 2 rows, 8 cells. The wise dragon seen exactly from his LEFT-facing side: the head, hat, beard and cane all face the LEFT edge of the cell. The hood is seen from the side (narrow, one eye visible, the beard hanging down on the left side of the neck). The body is a long horizontal slithering wave lying along the ground: the raised neck on the left, then the body flowing to the right with 2 to 3 humps, tail tip at the right end. His right hand holds the cane planted ahead of him on the left.
+Animation: the wave travels from head to tail, advancing 45 degrees of wave phase per frame, so frame 9 would be identical to frame 1 (loop).
+Frame 1: phase 0, cane tip touches the ground (tap). Frame 2: phase 45, cane lifts 10 degrees. 3: phase 90, cane in the air, a little forward. 4: phase 135, cane in the air, hat 2% lower. 5: phase 180, cane tip touches the ground again (tap). 6: phase 225, cane lifting. 7: phase 270, cane in the air. 8: phase 315, cane coming down to the next tap.
+ALL 8 FRAMES are moving frames of the same walk. Do NOT draw a resting or coiled pose in any cell.
+Tail tip swings opposite to the head every frame. Beard sways opposite to the direction of motion with a small delay. Head height changes at most 5% between frames. Body length and thickness stay constant (no stretching). Calm stern face, eyes open, mouth closed in every frame.
+
+==================================================
+SHEET I2 (REDO) - wise dragon dragging the small one, STRICT SIDE PROFILE (4 columns x 2 rows = 8 cells, seamless loop)
+==================================================
+IMPORTANT: the last version had the wise dragon from the front and the small dragon missing in cells 3, 4 and 8. EVERY one of the 8 cells must contain BOTH characters. Strict SIDE PROFILE like a side-scrolling game sprite, NOT front view, NOT three-quarter view.
+SHEET I2, 4 columns x 2 rows, 8 cells. Everything faces the RIGHT edge of the cell. The wise dragon (hat, beard, cane) is on the RIGHT part of each cell, slithering to the right. His LEFT hand holds the cane planted ahead on the right. His RIGHT hand, behind him, holds the tip of the SMALL dragon's tail. The small dragon is on the LEFT part of each cell, behind him, being dragged along the ground: dazed spiral eyes, tongue slightly out, arms limp, hood drooping, body lying on its side along the ground, head toward the right.
+Animation: the wise dragon's wave advances 45 degrees of phase per frame (same as sheet G, mirrored to face right), cane tip taps the ground on frames 1 and 5 only. The small dragon bounces to the same rhythm: on frames 1 and 5 it touches the ground and is squashed 10 percent, on frames 3 and 7 it is lifted about 15 percent of its own height off the ground, the frames in between are halfway. The tail between the wise dragon's hand and the small dragon stays taut and visible in every frame.
+The small dragon is the same scale as in the other sheets (the wise dragon about 1.4 times taller than the small one), both on the same baseline in every cell. Do NOT draw a resting pose in any cell. Frame 9 would be identical to frame 1.
+
+==================================================
+SHEET E2 - small dragon drop-in and landing, FRONT view (4 columns x 2 rows = 8 cells) - not received yet
+==================================================
+SHEET E2, 4 columns x 2 rows, 8 cells. SMALL dragon, front view.
+1: falling, both arms up and spread, mouth wide open "aaah", eyes wide, tail straight up above the head, body slightly above the baseline.
+2: still falling, hood flapping upward, tail bent, eyes wide.
+3: touching the ground, body squashed flat and wide, eyes shut tight, two small dust puffs at the sides.
+4: maximum squash, body very flat and wide, hood bent, no stars.
+5: bounce up, stretched tall and thin, eyes open and dizzy (small spirals).
+6: second small bounce, slightly stretched, relieved face.
+7: settling, normal body, shaking his head with a few small swirl lines above (far from the head).
+8: sitting normal, big smile, one hand waving.
