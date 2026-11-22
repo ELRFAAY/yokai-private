@@ -1523,6 +1523,27 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         return super.dispatchTouchEvent(ev)
     }
 
+    /** R: simple chapters list dialog (the tools bar used to expand the heavy chapters sheet, which froze some phones). */
+    private fun rShowChapterDialog() {
+        lifecycleScope.launch {
+            val items = viewModel.getChapters()
+            if (items.isEmpty()) return@launch
+            val names = items.map { it.preferredChapterName(this@ReaderActivity, viewModel.manga!!, preferences) }.toTypedArray()
+            val current = items.indexOfFirst { it.isCurrent }.coerceAtLeast(0)
+            val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this@ReaderActivity)
+                .setTitle("الشباتر")
+                .setSingleChoiceItems(names, current) { d, which ->
+                    d.dismiss()
+                    if (items[which].chapter.id != viewModel.getCurrentChapter()?.chapter?.id) {
+                        lifecycleScope.launch { loadChapter(items[which].chapter) }
+                    }
+                }
+                .create()
+            dialog.show()
+            dialog.listView?.setSelection((current - 3).coerceAtLeast(0))
+        }
+    }
+
     /** R: the tools bar (speed / brightness / volume / battery) under the toolbar, with fling gestures. */
     private fun rSetupToolsBar() {
         if (!preferences.rToolsBar().get()) return
@@ -1530,13 +1551,13 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             this,
             preferences,
             { rBatteryPercent },
-            { binding.chaptersSheet.chaptersBottomSheet.sheetBehavior?.expand() },
+            { rShowChapterDialog() },
             { TabbedReaderSettingsSheet(this@ReaderActivity).show() },
             { rScheduleAutoHide() },
             { rLock() },
             { loadAdjacentChapter(viewer is R2LPagerViewer) }, // previous chapter
             { loadAdjacentChapter(viewer !is R2LPagerViewer) }, // next chapter
-            { binding.chaptersSheet.chaptersBottomSheet.sheetBehavior?.expand() },
+            { rShowChapterDialog() },
         )
         // R: floating card at the bottom; its bottom margin is computed from the TOP of the page bar / chapters sheet
         // (rPositionToolsBar), so it never covers them

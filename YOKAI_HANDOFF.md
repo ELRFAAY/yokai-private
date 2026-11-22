@@ -18,6 +18,8 @@ Last updated: 2026-11-22 (see NEWEST-22).
 
 ## NEWEST-25 2026-11-22 12:15 (tenth account): START HERE, then NEWEST-24
 
+**Build 64 did NOT fix the chapter-name freeze (owner 12:54).** Cause still unknown (no logcat). Build 65: tapping the chapter name AND fling-up now open a plain dialog list (`rShowChapterDialog`) instead of expanding the chapters sheet. If it still freezes, the problem is in the tools bar/tap itself, not the sheet: ask for logcat/ANR trace.
+
 **ANR on tapping the chapter name (video 565780) — fix in build 64:** the tap only calls `sheetBehavior.expand()`; the freeze came from `rPositionToolsBar()` changing the tools-bar layout params inside `binding.root`'s layout-change listener on every slide frame (layout loop). Now: the listener posts once (reentrancy flag `rPositioning`), and positioning is skipped (bar just hidden) while the chapters sheet is not collapsed. No download/Mihon code was involved (the `findMihonChapterFile` hypothesis was wrong: it does not exist on this branch). Owner to confirm on phone.
 - Build 63 (run 45005325431, `d402873`) = GREEN (first attempt died on a Maven Central HTTP 429, re-run with `gh run rerun --failed` passed). Not tried on the phone yet.
 - **Owner sent a video of what happens when he taps the CHAPTER NAME** (in the reader or the chapter list; he did not say where): recorded as `branding/screens/chapter-name-tap-565780.mp4` (20.7 s). Analysis below / next commits.
