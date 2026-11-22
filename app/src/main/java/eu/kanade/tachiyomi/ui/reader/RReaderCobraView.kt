@@ -102,7 +102,11 @@ class RReaderCobraView(
         val smallFrames: IntArray? = null, // v2: little dragon pictures looped while the beat runs
         val flip: Boolean = true, // old wise pictures face right and are mirrored; the 2026-11-22 sheets are drawn the right way
         val frameMs: Long = 120L,
+        val both: Boolean = false, // v2: the picture holds BOTH dragons (H3 sheet), so the little one is not drawn on his own
     )
+
+    /** What was on stage before a switch (kept for a short cross-fade). */
+    private class Look(val both: Boolean, val wise: Int, val flip: Boolean, val small: Int, val smallHidden: Boolean)
 
     private val bitmaps = HashMap<Int, Bitmap?>()
     private fun bitmapFor(res: Int): Bitmap? = bitmaps.getOrPut(res) { load(res) }
@@ -217,6 +221,10 @@ class RReaderCobraView(
     private var v2 = false
     private var wiseFlip = true
     private var smallHidden = false
+    private var bothMode = false // the picture on stage holds both dragons (H3)
+    private var prevLook: Look? = null
+    private var fadeT = 1f
+    private var fadeAnim: ValueAnimator? = null
     private var cycle: IntArray? = null
     private var cycleSmall: IntArray? = null
     private var cycleIdx = 0
@@ -244,6 +252,22 @@ class RReaderCobraView(
         if (w != null) wiseRes = w[0]
         if (sm != null) smallRes = sm[0]
         handler.postDelayed(cycleRunnable, ms)
+    }
+
+    /** Cross-fade from what is on stage now to what the next beat sets (the swap to / from the both-dragons picture). */
+    private fun beginFade() {
+        prevLook = Look(bothMode, wiseRes, wiseFlip, smallRes, smallHidden)
+        fadeT = 0f
+        fadeAnim?.cancel()
+        fadeAnim = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 240
+            addUpdateListener {
+                fadeT = it.animatedValue as Float
+                if (fadeT >= 1f) prevLook = null
+                invalidate()
+            }
+            start()
+        }
     }
 
     private fun stopCycle() {
@@ -285,6 +309,10 @@ class RReaderCobraView(
         handler.removeCallbacks(hideRunnable)
         handler.removeCallbacks(stepRunnable)
         stopCycle()
+        fadeAnim?.cancel()
+        fadeAnim = null
+        prevLook = null
+        fadeT = 1f
         animator?.cancel()
         animator = null
     }
@@ -346,6 +374,9 @@ class RReaderCobraView(
             v2 = sceneV2On()
             stopCycle()
             smallHidden = false
+            bothMode = false
+            prevLook = null
+            fadeT = 1f
             wiseFlip = if (v2) SCENE2[0].flip else true
             wiseRes = (if (v2) SCENE2 else SCENE)[0].wise
             smallRes = if (v2) R.drawable.r_j_0 else R.drawable.r_mascot_happy
@@ -439,10 +470,12 @@ class RReaderCobraView(
         speaker = st.speaker
         typedChars = 0
         bubbleAlpha = 0f
+        if (st.both != bothMode) beginFade()
+        bothMode = st.both
         wiseFlip = st.flip
         wiseRes = st.wise
         if (st.small > 0) smallRes = st.small
-        smallHidden = st.small == -1
+        smallHidden = st.small == -1 || st.both
         startCycle(st.wiseFrames, st.smallFrames, st.frameMs)
         if (st.sound == 1) play(whooshOut, 0.7f)
         if (st.sound == 2) play(tick1, 1f)
@@ -466,6 +499,25 @@ class RReaderCobraView(
     private fun sceneExit() {
         play(whooshOut, 0.6f)
         bubbleAlpha = 0f
+        if (v2 && bothMode) {
+            // the wise dragon leaves to the right on his own: back to two separate pictures, the little one stays, sad
+            beginFade()
+            bothMode = false
+            smallHidden = false
+            smallRes = R.drawable.r_mascot_sad
+            wiseFlip = false
+            startCycle(
+                ids(
+                    R.drawable.r_g_00, R.drawable.r_g_01, R.drawable.r_g_02, R.drawable.r_g_03,
+                    R.drawable.r_g_04, R.drawable.r_g_05, R.drawable.r_g_06,
+                ),
+                null, 110,
+            )
+            run(600, 0f, 1f, AccelerateInterpolator(), { exitT = it }) {
+                run(350, 1f, 0f, AccelerateInterpolator(), { smallSlide = it }) { finishVisit() }
+            }
+            return
+        }
         run(600, 0f, 1f, AccelerateInterpolator(), { exitT = it }) { finishVisit() }
     }
 
@@ -659,9 +711,11 @@ class RReaderCobraView(
     }
 
     /**
-     * R scene v2. Every sprite of the 2026-11-22 sheets is on a canvas whose bottom is the ground and whose centre is the
-     * body (the wise dragon's coils), at the same pixel scale as the home dragon, so frames of a sheet never jump. The wise
-     * dragon stands so that the burst of the "impact" picture (about 215 canvas px left of his centre) lands on the little one.
+     * R scene v2. The single-dragon sprites of the 2026-11-22 sheets are on a canvas whose bottom is the ground and whose
+     * centre is the body (the wise dragon's coils), at the same pixel scale as the home dragon. The H3 pictures hold BOTH
+     * dragons in one bitmap (fixed camera): they are placed so the wise coil centre stands where the G walk ended
+     * ([H3_WISE_CX]) and the little one's hood centre is where the lone little dragon was ([H3_SMALL_CX]). Swapping between
+     * the separate pictures and the H3 ones is a short cross-fade ([beginFade]).
      */
     private fun drawSceneV2(canvas: Canvas) {
         val d = density
@@ -669,45 +723,80 @@ class RReaderCobraView(
         val s = 100f * d * sizeK // little dragon size (same as the home dragon)
         val kw = s / 384f // screen px per canvas px, both dragons
         val smallLeft = 4f * d
-        val stageH = 430f * kw + 16f * d
+        val stageH = 500f * kw + 16f * d
         val stageTop = ((height - stageH) * yFrac).coerceAtLeast(0f)
         val ground = stageTop + stageH
         val smallCx = smallLeft + s / 2f
 
         smallRect.setEmpty()
-        val sb = if (smallHidden) null else bitmapFor(smallRes)
-        if (sb != null) {
-            val sw = s * sb.width / sb.height
-            val slideX = -(1f - smallSlide) * (s + 16f * d)
-            smallRect.set(smallCx - sw / 2f + slideX, ground - s, smallCx + sw / 2f + slideX, ground)
-            canvas.drawBitmap(sb, null, smallRect, bitmapPaint)
-        }
-
         cobraRect.setEmpty()
         wiseRect.setEmpty()
-        val wb = bitmapFor(wiseRes)
-        if (wb != null && (wiseSlide > 0f || exitT > 0f)) {
-            val ww = wb.width * kw
-            val wh = wb.height * kw
-            val restCx = smallCx + 215f * kw
-            val cx = restCx + ((1f - wiseSlide) + exitT) * (width - restCx + ww)
-            wiseRect.set(cx - ww / 2f, ground - wh, cx + ww / 2f, ground)
-            canvas.save()
-            if (wiseFlip) canvas.scale(-1f, 1f, cx, wiseRect.centerY())
-            canvas.drawBitmap(wb, null, wiseRect, bitmapPaint)
-            canvas.restore()
-            cobraRect.set(wiseRect)
-        }
-        if (!smallRect.isEmpty) {
-            if (cobraRect.isEmpty) cobraRect.set(smallRect) else cobraRect.union(smallRect)
-        }
+        val prev = prevLook
+        if (prev != null && fadeT < 1f) drawLookV2(canvas, prev, 1f - fadeT, false, s, kw, smallCx, ground)
+        val cur = Look(bothMode, wiseRes, wiseFlip, smallRes, smallHidden)
+        drawLookV2(canvas, cur, if (prev != null) fadeT else 1f, true, s, kw, smallCx, ground)
 
         if (bubbleAlpha > 0f && typedChars > 0 && exitT == 0f) {
-            if (speaker == WISE && !wiseRect.isEmpty) {
+            if (bothMode) {
+                val wiseCx = smallCx + (H3_WISE_CX - H3_SMALL_CX) * kw
+                if (speaker == WISE) {
+                    drawBubble(canvas, wiseCx, ground - 420f * kw, ground - 150f * kw)
+                } else {
+                    drawBubble(canvas, smallCx, ground - 8f * kw - 250f * kw, ground - 8f * kw - 120f * kw)
+                }
+            } else if (speaker == WISE && !wiseRect.isEmpty) {
                 drawBubble(canvas, wiseRect.centerX(), ground - 420f * kw, ground - 150f * kw)
             } else if (!smallRect.isEmpty) {
                 drawBubble(canvas, smallRect.centerX(), smallRect.top + s * 0.08f, smallRect.bottom - s * 0.2f)
             }
+        }
+    }
+
+    /** Draws one look with [alpha]; [record] = this is the current look, so its rectangles become the touch areas. */
+    private fun drawLookV2(canvas: Canvas, look: Look, alpha: Float, record: Boolean, s: Float, kw: Float, smallCx: Float, ground: Float) {
+        bitmapPaint.alpha = (alpha.coerceIn(0f, 1f) * 255f).toInt()
+        try {
+            if (look.both) {
+                val bb = bitmapFor(look.wise) ?: return
+                val left = smallCx - H3_SMALL_CX * kw
+                val top = ground - 8f * kw - H3_FLOOR * kw
+                val r = RectF(left, top, left + bb.width * kw, top + bb.height * kw)
+                canvas.drawBitmap(bb, null, r, bitmapPaint)
+                if (record) {
+                    wiseRect.set(r)
+                    cobraRect.set(r)
+                }
+                return
+            }
+            val sb = if (look.smallHidden) null else bitmapFor(look.small)
+            if (sb != null) {
+                val sw = s * sb.width / sb.height
+                val slideX = -(1f - smallSlide) * (s + 16f * density)
+                val r = RectF(smallCx - sw / 2f + slideX, ground - s, smallCx + sw / 2f + slideX, ground)
+                canvas.drawBitmap(sb, null, r, bitmapPaint)
+                if (record) smallRect.set(r)
+            }
+            val wb = bitmapFor(look.wise)
+            if (wb != null && (wiseSlide > 0f || exitT > 0f)) {
+                val ww = wb.width * kw
+                val wh = wb.height * kw
+                val restCx = smallCx + (H3_WISE_CX - H3_SMALL_CX) * kw
+                val cx = restCx + ((1f - wiseSlide) + exitT) * (width - restCx + ww)
+                val r = RectF(cx - ww / 2f, ground - wh, cx + ww / 2f, ground)
+                canvas.save()
+                if (look.flip) canvas.scale(-1f, 1f, cx, r.centerY())
+                canvas.drawBitmap(wb, null, r, bitmapPaint)
+                canvas.restore()
+                if (record) wiseRect.set(r)
+            }
+            if (record) {
+                if (!wiseRect.isEmpty) cobraRect.set(wiseRect)
+                if (!smallRect.isEmpty) {
+                    if (cobraRect.isEmpty) cobraRect.set(smallRect) else cobraRect.union(smallRect)
+                }
+            }
+        } finally {
+            bitmapPaint.alpha = 255
         }
     }
 
@@ -813,11 +902,17 @@ class RReaderCobraView(
 
         private fun ids(vararg v: Int) = v
 
+        // H3 pictures (both dragons, common canvas 521x493, from branding/tools/make_h3_cells.py): floor line, wise coil
+        // centre and little dragon hood centre, in bitmap px (the wise is as tall as in the G walk, so the scale is the same)
+        private const val H3_FLOOR = 481f
+        private const val H3_WISE_CX = 392f
+        private const val H3_SMALL_CX = 179f
+
         /**
-         * R scene v2 (sheets of 2026-11-22). 0 the little one peeks (J0); the wise one walks in (G) and scolds while the
-         * little one notices (J1), 1 he raises the cane (H1 wind-up) and the little one is shocked (J3b), 2 swing, 3 impact:
-         * burst (H1-10) and the little one is hit, squashed and bounces (J3-J5), 4 "ouch" (dizzy), 5 the lecture,
-         * 6 he drags the dazed little one off to the right (I2). Text lines marked * are drafts, not approved by the owner.
+         * R scene v2 (sheets of 2026-11-22), the H3 version. 0 the little one peeks (J0); the wise one walks in (G) and
+         * scolds while the little one notices (J1). Then the H3 pictures (both dragons in one bitmap): 1 calm, 2 wind-up,
+         * 3 swing, 4 IMPACT (cane tip on his head), 5-6 bump and dizzy ("ouch"), 7 the lecture, 8 sad end. Then the wise one
+         * walks off to the right (G frames) and the little one slides away. The lecture line is a draft, not approved.
          */
         private val SCENE2 = listOf(
             Step(
@@ -829,45 +924,23 @@ class RReaderCobraView(
                 ),
                 flip = true, frameMs = 110,
             ),
+            Step(R.drawable.r_h3_0, "", 600, both = true, flip = false),
             Step(
-                R.drawable.r_h1_01, "نصيحة من الحاج: اللي ما يسمعش الكلام... يتضرب!", 300, 1,
-                small = R.drawable.r_j3b_0,
-                wiseFrames = ids(R.drawable.r_h1_01, R.drawable.r_h1_02, R.drawable.r_h1_03, R.drawable.r_h1_04),
-                smallFrames = ids(R.drawable.r_j3b_0, R.drawable.r_j3b_1, R.drawable.r_j3b_2, R.drawable.r_j3b_1),
-                flip = false, frameMs = 240,
+                R.drawable.r_h3_1, "نصيحة من الحاج: اللي ما يسمعش الكلام... يتضرب!", 300,
+                both = true, flip = false,
+            ),
+            Step(R.drawable.r_h3_2, "", 380, 1, both = true, flip = false),
+            Step(R.drawable.r_h3_3, "", 1000, 2, both = true, flip = false),
+            Step(
+                R.drawable.r_h3_4, "آآآي! دماغي!", 900, 0, SMALL,
+                wiseFrames = ids(R.drawable.r_h3_4, R.drawable.r_h3_5),
+                both = true, flip = false, frameMs = 420,
             ),
             Step(
-                R.drawable.r_h1_05, "", 420, 1,
-                small = R.drawable.r_j3b_0,
-                wiseFrames = ids(R.drawable.r_h1_05, R.drawable.r_h1_06, R.drawable.r_h1_07, R.drawable.r_h1_09),
-                flip = false, frameMs = 105,
+                R.drawable.r_h3_6, "ده جزاء اللي ما يسمعش الكلام. ريّح عينيك واشرب مية!", 800, 0, WISE,
+                both = true, flip = false,
             ),
-            Step(
-                R.drawable.r_h1_10, "", 1000, 2,
-                small = R.drawable.r_j_3,
-                smallFrames = ids(R.drawable.r_j_3, R.drawable.r_j_4, R.drawable.r_j_5, R.drawable.r_j_4),
-                flip = false, frameMs = 170,
-            ),
-            Step(
-                R.drawable.r_h1_11, "آآآي! دماغي!", 900, 0, SMALL,
-                small = R.drawable.r_mascot_dizzy,
-                wiseFrames = ids(R.drawable.r_h1_11, R.drawable.r_h1_12),
-                flip = false, frameMs = 260,
-            ),
-            Step(
-                R.drawable.r_h1_13, "ده جزاء اللي ما يسمعش الكلام. ريّح عينيك واشرب مية!", 800, 0, WISE,
-                wiseFrames = ids(R.drawable.r_h1_13, R.drawable.r_h1_14),
-                flip = false, frameMs = 400,
-            ),
-            Step(
-                R.drawable.r_i2_00, "يلا معايا يا شاطر. وكمّل قراية بهدوء.", 700, 0, WISE,
-                small = -1,
-                wiseFrames = ids(
-                    R.drawable.r_i2_00, R.drawable.r_i2_01, R.drawable.r_i2_02, R.drawable.r_i2_03,
-                    R.drawable.r_i2_04, R.drawable.r_i2_05, R.drawable.r_i2_06, R.drawable.r_i2_07,
-                ),
-                flip = false, frameMs = 130,
-            ),
+            Step(R.drawable.r_h3_7, "", 1100, both = true, flip = false),
         )
 
         private val NORMAL = listOf(

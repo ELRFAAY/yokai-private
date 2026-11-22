@@ -59,7 +59,7 @@ def run():
     k = HAT / hat_w(h1[0])
     for i, p in enumerate(h1):
         p.save(m.CUT + 'H1_%02d.png' % i)
-        save(place_wise(p, k), 'r_h1_%02d' % i)
+        # r_h1_* webp no longer written: the H3 scene (make_h3_cells.py) replaced the H1 hit
     # G walk (565706): 8 frames, wise 3/4 front, frame 8 is a coiled rest pose (kept, not used in the loop)
     g, _ = cut('G-wise-walk-4x2-USE-565706.jpg', 2, 8, merge_dil=6)
     k = HAT / hat_w(g[0])
@@ -71,7 +71,7 @@ def run():
     k = HAT / hat_w(i2[0])
     for i, p in enumerate(i2):
         p.save(m.CUT + 'I2_%02d.png' % i)
-        save(place_wise(p, k), 'r_i2_%02d' % i)
+        # r_i2_* webp no longer written: the wise one leaves alone with the G walk frames
     # J: small dragon 3x2: 0 peek, 1 notice, 2 shock with cane tip (skipped, J3b instead), 3 HIT squash, 4 compress, 5 bounce
     j, kj = cut('J-small-hit-3x2-565687.jpg', 2, 6, merge_dil=6)
     for i, p in enumerate(j):
