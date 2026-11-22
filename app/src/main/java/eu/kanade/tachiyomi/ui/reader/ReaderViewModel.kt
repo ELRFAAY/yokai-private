@@ -40,6 +40,7 @@ import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.model.ViewerChapters
 import eu.kanade.tachiyomi.ui.reader.settings.OrientationType
 import eu.kanade.tachiyomi.ui.reader.settings.ReadingModeType
+import eu.kanade.tachiyomi.util.RHiddenLists
 import eu.kanade.tachiyomi.util.chapter.ChapterFilter
 import eu.kanade.tachiyomi.util.chapter.ChapterSort
 import eu.kanade.tachiyomi.util.chapter.ChapterUtil.Companion.preferredChapterName
@@ -716,6 +717,9 @@ class ReaderViewModel(
      */
     private suspend fun saveChapterHistory(readerChapter: ReaderChapter, startTime: Long?, endTime: Long) {
         if (preferences.incognitoMode().get()) return
+        // R: manga that sit in a hidden list (the "hidden files" vault) are read without leaving any history
+        val mangaId = readerChapter.chapter.manga_id
+        if (mangaId != null && mangaId in RHiddenLists.hiddenMangaIds()) return
 
         val sessionReadDuration = startTime?.let { (endTime - it).coerceAtLeast(0L) } ?: 0L
         val history = History.create(readerChapter.chapter).apply {
