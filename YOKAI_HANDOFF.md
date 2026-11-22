@@ -16,6 +16,10 @@ Last updated: 2026-11-21 (see NEWEST-12).
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
 
+## NEWEST-19 2026-11-22 10:05 (seventh account): READ FIRST, then NEWEST-18
+- Owner sent 4 more images, recorded in `branding/mascot-models/new-sheets-2026-11-22/` (NOT cut yet): `ANCHOR` (565705) = wise dragon in a TRUE side profile facing LEFT (cane in front-left, beard on the left side of the neck, S-wave body going right): good reference; `G-try3` (565704) = looks IDENTICAL to the earlier front-view G (not redone with the anchor? ask); `I2-try3` (565703) = wise in a true profile facing RIGHT, small dazed dragon (spiral eyes, tongue out) in ALL 8 cells, sitting upright beside/in front of his coils (not hanging by the tail), good enough for the "carried off" beat; `J3b` (565702) = small dragon shocked, hands up, no cane, 3 frames (still, shake left, shake right) = replaces J3.
+- Plan stays: scene = J peek/notice, wise slides in, H1 wind-up + swing + impact, J4-J6 + S4 dizzy, wise lectures, I2 drag to the right. Pending owner: "ابدأ", phrases approval, build 63.
+
 ## NEWEST-18 2026-11-22 09:50 (seventh account): READ FIRST, then NEWEST-17
 - Owner sent 3 more sheets, recorded in `branding/mascot-models/new-sheets-2026-11-22/` (NOT cut yet, waiting for "ابدأ"): `G-redo` (565698) is practically the SAME as the first G: wise dragon still 3/4 FRONT, frames 1-7 = walk, frame 8 = coiled rest pose (do not use 8 in a loop); `I2-redo` (565699): both dragons now in ALL 8 cells (small one dazed with tongue out, held by the tail, bouncing), wise still 3/4 front, not a right profile; `E2` (565700) good: 8 cells = falling arms up, falling hood flapping, squash + dust, max squash, bounce stretched dizzy, small bounce relieved, settling shaking head with swirls, sitting waving. Decision pending: use G/I2 as they are (mirror for direction) or redo again.
 
