@@ -16,6 +16,7 @@ import android.media.AudioAttributes
 import android.media.SoundPool
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.text.Layout
 import android.text.SpannableString
 import android.text.Spanned
@@ -59,6 +60,8 @@ class RReaderCobraView(
     private val sceneEvery: () -> Int = { 3 },
     private val sceneV2On: () -> Boolean = { false },
     private val sizeDp: () -> Int = { 72 },
+    private val chaptersEvery: () -> Int = { 2 },
+    private val cooldownMinutes: () -> Int = { 10 },
 ) : View(context) {
 
     private val density = resources.displayMetrics.density
@@ -177,6 +180,10 @@ class RReaderCobraView(
     // ---- state --------------------------------------------------------------------------------------------
     private var running = false
     private var firstDone = false
+    private var due = false // a visit is due (enough chapters were opened); it starts about half a minute into the chapter
+    private var chaptersSince = 0
+    private var lastChapterId = -1L
+    private var cooldownUntil = 0L // uptimeMillis: after the wise dragon's scene nobody comes before this
     private var shown = false
     private var pose = Pose.NORMAL
     private var visits = 0
@@ -280,7 +287,28 @@ class RReaderCobraView(
     fun onActivityResume() {
         running = true
         cancelAll()
-        handler.postDelayed(showRunnable, if (firstDone) AFTER_RESUME_MS else FIRST_MS)
+        postVisit()
+    }
+
+    /** Called by the reader every time a chapter becomes the current one: visits are counted in chapters, not minutes. */
+    fun onChapterOpened(chapterId: Long) {
+        if (chapterId == lastChapterId) return
+        lastChapterId = chapterId
+        chaptersSince++
+        if (chaptersSince >= chaptersEvery().coerceIn(1, 10)) {
+            chaptersSince = 0
+            due = true
+            if (!shown && !scenePending) postVisit()
+        }
+    }
+
+    /** Schedules the due visit 20-60 s from now, and never before the quiet time after a scene is over. */
+    private fun postVisit() {
+        if (!running || !due) return
+        val wait = 20_000L + Random.nextLong(40_000L)
+        val cool = (cooldownUntil - SystemClock.uptimeMillis()).coerceAtLeast(0L)
+        handler.removeCallbacks(showRunnable)
+        handler.postDelayed(showRunnable, maxOf(wait, cool + 10_000L))
     }
 
     fun onActivityPause() {
@@ -317,11 +345,10 @@ class RReaderCobraView(
         animator = null
     }
 
+    /** No more timer: the next visit comes from [onChapterOpened]; only a visit that is still due is rescheduled. */
     private fun scheduleNext() {
         if (!running) return
-        val base = intervalMinutes().coerceIn(1, 60) * 60_000L
-        val delay = (base * (0.8 + Random.nextDouble() * 0.4)).toLong()
-        handler.postDelayed(showRunnable, delay)
+        postVisit()
     }
 
     // ---- animation ----------------------------------------------------------------------------------------
@@ -357,6 +384,7 @@ class RReaderCobraView(
     }
 
     private fun appear() {
+        due = false
         sceneIdx = -1
         val night0 = nightOn() && Calendar.getInstance().get(Calendar.HOUR_OF_DAY) in 0..4
         if (scenePending && (!sceneOn() || night0)) scenePending = false
@@ -428,7 +456,7 @@ class RReaderCobraView(
         sceneIdx = i
         val st = SCENE[i]
         wiseRes = st.wise
-        text = st.text
+        text = lineOf(st.text)
         speaker = st.speaker
         typedChars = 0
         bubbleAlpha = 0f
@@ -466,7 +494,7 @@ class RReaderCobraView(
         }
         sceneIdx = i
         val st = SCENE2[i]
-        text = st.text
+        text = lineOf(st.text)
         speaker = st.speaker
         typedChars = 0
         bubbleAlpha = 0f
@@ -524,10 +552,14 @@ class RReaderCobraView(
     private fun finishVisit() {
         stopCycle()
         shown = false
+        if (sceneIdx >= 0) cooldownUntil = SystemClock.uptimeMillis() + cooldownMinutes().coerceIn(1, 60) * 60_000L
         sceneIdx = -1
         invalidate()
         scheduleNext()
     }
+
+    /** A scene line may be the [ADVICE] marker: then a random comic (and useless) piece of advice is said. */
+    private fun lineOf(t: String) = if (t == ADVICE) ADVICES.random() else t
 
     private fun typeText() {
         bubbleAlpha = 1f
@@ -880,6 +912,20 @@ class RReaderCobraView(
     }
 
     companion object {
+        private const val ADVICE = "@advice"
+
+        // the wise dragon's advice: comic and completely useless on purpose (the owner's request). My drafts, to approve.
+        private val ADVICES = listOf(
+            "نصيحة من الحاج: لو الشابتر خلص... يبقى اللي بعده هو اللي بعده.",
+            "نصيحة من الحاج: كل ما تقرا أكتر، اللي لسه ما اتقراش بيقل.",
+            "نصيحة من الحاج: لو الموبايل وقع على وشك... يبقى وقع على وشك.",
+            "نصيحة من الحاج: اللي يقرا في الضلمة... بيقرا في الضلمة.",
+            "نصيحة من الحاج: لو حسيت بنعاس... فغالبًا إنت نعسان.",
+            "نصيحة من الحاج: الصبر مفتاح الفرج، والواي فاي مفتاح الشابتر.",
+            "نصيحة من الحاج: أهم حاجة في القراءة... إنك تقرا.",
+            "نصيحة من الحاج: لو دماغك وجعتك... يبقى فيه حد ضربك على دماغك.",
+        )
+
         private const val FIRST_MS = 45_000L
         private const val AFTER_RESUME_MS = 90_000L
         private const val RETRY_MS = 15_000L
@@ -893,11 +939,11 @@ class RReaderCobraView(
          * 3 the little dragon complains, 4 the wise one pulls him in and carries him off.
          */
         private val SCENE = listOf(
-            Step(R.drawable.r_stick_wise_walk, "إنت تاني؟! تلات مرات في دقيقة! مفيش أدب!", 900),
-            Step(R.drawable.r_stick_wise_raise, "نصيحة من الحاج: اللي ما يسمعش الكلام... يتضرب!", 300, 1),
+            Step(R.drawable.r_stick_wise_walk, "إنت أزعجت القارئ! سيبه يقرا في حاله!", 900),
+            Step(R.drawable.r_stick_wise_raise, "خد دي على دماغك... عشان تفتكر!", 300, 1),
             Step(R.drawable.r_stick_wise_hit, "", 900, 2),
             Step(R.drawable.r_stick_wise_hit, "آآآي! دماغي!", 900, 0, SMALL),
-            Step(R.drawable.r_stick_wise_walk_with_small, "يلا معايا. ونصيحة تانية: اشرب مية.", 700),
+            Step(R.drawable.r_stick_wise_walk_with_small, ADVICE, 700),
         )
 
         private fun ids(vararg v: Int) = v
@@ -919,7 +965,7 @@ class RReaderCobraView(
          */
         private val SCENE2 = listOf(
             Step(
-                R.drawable.r_g_00, "إنت تاني؟! تلات مرات في دقيقة! مفيش أدب!", 900,
+                R.drawable.r_g_00, "إنت أزعجت القارئ! سيبه يقرا في حاله!", 900,
                 small = R.drawable.r_j_1,
                 wiseFrames = ids(
                     R.drawable.r_g_00, R.drawable.r_g_01, R.drawable.r_g_02, R.drawable.r_g_03,
@@ -929,7 +975,7 @@ class RReaderCobraView(
             ),
             Step(R.drawable.r_h3_0, "", 600, both = true, flip = false),
             Step(
-                R.drawable.r_h3_1, "نصيحة من الحاج: اللي ما يسمعش الكلام... يتضرب!", 300,
+                R.drawable.r_h3_1, "خد دي على دماغك... عشان تفتكر!", 300,
                 both = true, flip = false,
             ),
             Step(R.drawable.r_h3_2, "", 380, 1, both = true, flip = false),
@@ -940,7 +986,7 @@ class RReaderCobraView(
                 both = true, flip = false, frameMs = 420,
             ),
             Step(
-                R.drawable.r_h3_6, "ده جزاء اللي ما يسمعش الكلام. ريّح عينيك واشرب مية!", 800, 0, WISE,
+                R.drawable.r_h3_6, ADVICE, 800, 0, WISE,
                 both = true, flip = false,
             ),
             Step(R.drawable.r_h3_7, "", 1100, both = true, flip = false),
@@ -955,6 +1001,9 @@ class RReaderCobraView(
             Line("بقالك فترة بتقرا... فخور بيك والله!", Pose.LAUGH),
             Line("ما تقلقش، مش هبوّظ عليك الأحداث.", Pose.NORMAL),
             Line("شد حيلك، فاضل شوية وتخلّص الفصل.", Pose.LOOK),
+            Line("الفصل الجاي أحلى، ثق فيا.", Pose.LAUGH),
+            Line("لو حد سألك، أنا مش هنا.", Pose.LOOK),
+            Line("كمّل، أنا بس بتفرج.", Pose.NORMAL),
         )
 
         private val NIGHT = listOf(

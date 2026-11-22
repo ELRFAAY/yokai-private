@@ -342,6 +342,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 soundOn = { preferences.rReaderCobraSound().get() },
                 nightOn = { preferences.rReaderCobraNight().get() },
                 intervalMinutes = { preferences.rReaderCobraInterval().get() },
+                chaptersEvery = { preferences.rReaderCobraChapters().get() },
+                cooldownMinutes = { preferences.rReaderCobraCooldown().get() },
                 sceneOn = { preferences.rReaderCobraScene().get() },
                 sceneEvery = { preferences.rReaderCobraSceneEvery().get() },
                 sceneV2On = { preferences.rSceneV2().get() },
@@ -1790,6 +1792,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         intentPageNumber?.let { moveToPageIndex(it) }
         intentPageNumber = null
         val chapter = viewerChapters.currChapter.chapter
+        rCobra?.onChapterOpened(chapter.id ?: 0L)
         binding.toolbar.subtitle =
             chapter.preferredChapterName(this, viewModel.manga!!, preferences)
         rToolsBar?.setChapterTitle(chapter.preferredChapterName(this, viewModel.manga!!, preferences))

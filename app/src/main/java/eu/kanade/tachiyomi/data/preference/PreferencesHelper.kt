@@ -385,7 +385,13 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     fun rReaderCobraNight() = preferenceStore.getBoolean("r_reader_cobra_night", true)
 
     /** Reader cobra: minutes between visits (randomized by +-20 %). */
-    fun rReaderCobraInterval() = preferenceStore.getInt("r_reader_cobra_interval", 6)
+    fun rReaderCobraInterval() = preferenceStore.getInt("r_reader_cobra_interval", 6) // no longer used: visits are per chapter now
+
+    /** Reader cobra: he visits once every this many chapters (instead of every few minutes). */
+    fun rReaderCobraChapters() = preferenceStore.getInt("r_reader_cobra_chapters", 2)
+
+    /** Reader cobra: minutes both dragons stay away after the wise dragon's scene. */
+    fun rReaderCobraCooldown() = preferenceStore.getInt("r_reader_cobra_cooldown", 10)
 
     /** Language: open the app in Arabic unless another language was picked in Settings > General. */
     fun rForceArabic() = preferenceStore.getBoolean("r_force_arabic", true)

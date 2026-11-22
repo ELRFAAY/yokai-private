@@ -372,11 +372,22 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             intListPreference(activity) {
-                bindTo(preferences.rReaderCobraInterval())
-                title = "التنين الصغير: كل قد إيه يظهر"
+                bindTo(preferences.rReaderCobraChapters())
+                title = "التنين الصغير: يظهر كل كام شابتر"
                 rIcon(R.drawable.ic_progress_clock_24dp)
-                entries = listOf("كل 3 دقايق", "كل 6 دقايق", "كل 10 دقايق", "كل 20 دقيقة", "كل 45 دقيقة")
-                entryValues = listOf(3, 6, 10, 20, 45)
+                entries = listOf("كل شابتر", "كل شابترين", "كل 3 شباتر", "كل 5 شباتر", "كل 8 شباتر")
+                entryValues = listOf(1, 2, 3, 5, 8)
+                summary = "بيظهر بعد ما تفتح الشابتر بنص دقيقة تقريبًا، مش بالدقايق."
+            }
+
+            intListPreference(activity) {
+                bindTo(preferences.rReaderCobraCooldown())
+                title = "بعد المشهد: يختفي قد إيه"
+                rIcon(R.drawable.ic_progress_clock_24dp)
+                entries = listOf("5 دقايق", "10 دقايق", "15 دقيقة", "30 دقيقة")
+                entryValues = listOf(5, 10, 15, 30)
+                summary = "بعد ما الحكيم يضرب التنين الصغير، ما حدّش فيهم يظهر غير بعد المدة دي."
+                preferences.rReaderCobraScene().changesIn(viewScope) { isEnabled = it }
             }
 
             switchPreference {
@@ -390,8 +401,8 @@ class SettingsRController : SettingsLegacyController() {
                 bindTo(preferences.rReaderCobraSceneEvery())
                 title = "مشهد العصا: كل كام زيارة"
                 rIcon(R.drawable.ic_progress_clock_24dp)
-                entries = listOf("كل زيارة تالتة", "كل زيارة رابعة", "كل زيارة خامسة", "كل زيارة سابعة")
-                entryValues = listOf(3, 4, 5, 7)
+                entries = listOf("كل زيارة تانية", "كل زيارة تالتة", "كل زيارة رابعة", "كل زيارة خامسة", "كل زيارة سابعة")
+                entryValues = listOf(2, 3, 4, 5, 7)
                 preferences.rReaderCobraScene().changesIn(viewScope) { isEnabled = it }
             }
 
