@@ -93,6 +93,8 @@ class BackupRestorer(
                 )
             }
         }
+        // R: pinned manga and custom covers need the NEW manga ids, so they are put back after the manga
+        preferenceBackupRestorer.restoreRPostManga(backup.backupPreferences)
         // TODO: optionally trigger online library + tracker update
     }
 

@@ -8,11 +8,27 @@
         android:title="تعديل الصورة الشخصية"
         app:showAsAction="never" />
     <item
-        android:id="@+id/action_r_banner_edit"
-        android:title="تعديل الغلاف (استبدال الصور)"
-        app:showAsAction="never" />
-    <item
         android:id="@+id/action_r_banner_add"
         android:title="إضافة صورة للغلاف"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_r_banner_crop"
+        android:title="تعديل / قص / تدوير الصورة الظاهرة"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_r_banner_order"
+        android:title="ترتيب الصور"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_r_banner_delete"
+        android:title="حذف الصورة الظاهرة"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_r_banner_edit"
+        android:title="استبدال كل صور الغلاف"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_r_banner_clear"
+        android:title="حذف كل صور الغلاف"
         app:showAsAction="never" />
 </menu>

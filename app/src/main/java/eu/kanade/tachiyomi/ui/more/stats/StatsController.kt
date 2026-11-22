@@ -134,6 +134,10 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
                 replaceBanners = true
                 pickImages(REQ_BANNERS, true)
             }
+            R.id.action_r_banner_crop -> profileView?.editCurrentBanner()
+            R.id.action_r_banner_order -> profileView?.showReorder()
+            R.id.action_r_banner_delete -> profileView?.deleteCurrentBanner()
+            R.id.action_r_banner_clear -> profileView?.deleteAllBanners()
             R.id.action_r_banner_add -> {
                 replaceBanners = false
                 pickImages(REQ_BANNERS, true)

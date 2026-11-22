@@ -4,7 +4,9 @@ import android.content.Context
 import android.util.Base64
 import co.touchlab.kermit.Logger
 import eu.kanade.tachiyomi.data.backup.create.creators.R_FILE_PREFIX
+import eu.kanade.tachiyomi.data.backup.create.creators.R_COVER_PREFIX
 import eu.kanade.tachiyomi.data.backup.create.creators.R_HIDDEN_NAMES
+import eu.kanade.tachiyomi.data.backup.create.creators.R_PINNED
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -36,7 +38,10 @@ class PreferenceBackupRestorer(
     private val preferenceStore: PreferenceStore = Injekt.get(),
 ) {
     fun restoreAppPreferences(preferences: List<BackupPreference>, onComplete: () -> Unit) {
-        val plain = preferences.filter { it.key != R_HIDDEN_NAMES && !it.key.startsWith(R_FILE_PREFIX) }
+        val plain = preferences.filter {
+            it.key != R_HIDDEN_NAMES && it.key != R_PINNED && it.key != "library_pinned_manga" &&
+                !it.key.startsWith(R_FILE_PREFIX) && !it.key.startsWith(R_COVER_PREFIX)
+        }
         restorePreferences(plain, preferenceStore)
         restoreRExtras(preferences)
 
@@ -45,6 +50,29 @@ class PreferenceBackupRestorer(
         BackupCreatorJob.setupTask(context)
 
         onComplete()
+    }
+
+    /** R: after the manga are restored (new ids): pinned manga and custom covers are matched by source + url. */
+    fun restoreRPostManga(all: List<BackupPreference>) {
+        try {
+            val getManga = Injekt.get<yokai.domain.manga.interactor.GetManga>()
+            fun find(key: String) = key.split('|', limit = 2).takeIf { it.size == 2 }?.let { (s, u) ->
+                s.toLongOrNull()?.let { src -> runBlocking { getManga.awaitByUrlAndSource(u, src) } }
+            }
+            val pinned = (all.firstOrNull { it.key == R_PINNED }?.value as? StringSetPreferenceValue)?.value
+            if (pinned != null) {
+                val ids = pinned.mapNotNull { find(it)?.id?.toString() }.toSet()
+                Injekt.get<yokai.domain.library.LibraryPreferences>().pinnedManga().set(ids)
+            }
+            val covers = Injekt.get<eu.kanade.tachiyomi.data.cache.CoverCache>()
+            all.filter { it.key.startsWith(R_COVER_PREFIX) }.forEach { p ->
+                val v = (p.value as? StringPreferenceValue)?.value ?: return@forEach
+                val manga = find(p.key.removePrefix(R_COVER_PREFIX)) ?: return@forEach
+                covers.setCustomCoverToCache(manga, Base64.decode(v, Base64.NO_WRAP).inputStream())
+            }
+        } catch (e: Exception) {
+            Logger.e(e) { "R restore post-manga failed" }
+        }
     }
 
     /** R: puts the profile pictures back (and points the profile at them) and re-finds the hidden lists by name. */

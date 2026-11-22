@@ -259,29 +259,103 @@ class RStatsProfileView(
         restartFlipping()
     }
 
+    /** A tap on the banner only adds the first picture; every other banner option lives in the 3-dot menu of the statistics. */
     private fun showBannerMenu() {
-        if (banners.isEmpty()) {
-            onPickBanners()
-            return
-        }
-        val items = arrayOf("إضافة صور", "تعديل / قص / تدوير هذا البانر", "حذف هذا البانر", "حذف كل البانرات")
-        MaterialAlertDialogBuilder(context)
-            .setTitle("البانر")
-            .setItems(items) { _, which ->
-                val idx = current.coerceIn(0, banners.size - 1)
-                when (which) {
-                    0 -> onPickBanners()
-                    1 -> editBanner(idx)
-                    2 -> {
-                        prefs.rProfileBanners().set(banners.filterIndexed { i, _ -> i != idx }.joinToString("\n"))
-                        refresh()
-                    }
-                    else -> {
-                        prefs.rProfileBanners().set("")
-                        refresh()
+        if (banners.isEmpty()) onPickBanners()
+    }
+
+    fun editCurrentBanner() {
+        if (banners.isNotEmpty()) editBanner(current.coerceIn(0, banners.size - 1))
+    }
+
+    fun deleteCurrentBanner() {
+        if (banners.isEmpty()) return
+        val idx = current.coerceIn(0, banners.size - 1)
+        prefs.rProfileBanners().set(banners.filterIndexed { i, _ -> i != idx }.joinToString("\n"))
+        refresh()
+    }
+
+    fun deleteAllBanners() {
+        prefs.rProfileBanners().set("")
+        refresh()
+    }
+
+    /** A list of the banners: press a picture and drag it to its new place, then save. */
+    fun showReorder() {
+        if (banners.size < 2) return
+        val list = banners.toMutableList()
+        val thumbs = HashMap<String, Bitmap?>()
+        val rv = RecyclerView(context)
+        lateinit var helper: androidx.recyclerview.widget.ItemTouchHelper
+        val ad = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+            override fun getItemCount() = list.size
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+                val img = ImageView(context).apply {
+                    scaleType = ImageView.ScaleType.CENTER_CROP
+                    layoutParams = ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (84 * density).toInt()).apply {
+                        setMargins(0, (4 * density).toInt(), 0, (4 * density).toInt())
                     }
                 }
+                val h = object : RecyclerView.ViewHolder(img) {}
+                img.setOnTouchListener { _, e ->
+                    if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) helper.startDrag(h)
+                    false
+                }
+                return h
             }
+
+            override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+                val path = list[position]
+                val img = holder.itemView as ImageView
+                img.setImageDrawable(null)
+                img.tag = path
+                scope.launch {
+                    val bmp = thumbs.getOrPut(path) { decode(path, 400) }
+                    if (img.tag == path) img.setImageBitmap(bmp)
+                }
+            }
+        }
+        helper = androidx.recyclerview.widget.ItemTouchHelper(
+            object : androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback(
+                androidx.recyclerview.widget.ItemTouchHelper.UP or androidx.recyclerview.widget.ItemTouchHelper.DOWN,
+                0,
+            ) {
+                override fun isLongPressDragEnabled() = false
+                override fun onMove(r: RecyclerView, a: RecyclerView.ViewHolder, b: RecyclerView.ViewHolder): Boolean {
+                    val from = a.bindingAdapterPosition
+                    val to = b.bindingAdapterPosition
+                    if (from < 0 || to < 0) return false
+                    list.add(to, list.removeAt(from))
+                    ad.notifyItemMoved(from, to)
+                    return true
+                }
+                override fun onSwiped(h: RecyclerView.ViewHolder, direction: Int) {}
+            },
+        )
+        rv.layoutManager = LinearLayoutManager(context)
+        rv.adapter = ad
+        helper.attachToRecyclerView(rv)
+        val hint = TextView(context).apply {
+            text = "اضغط على الصورة وحرّكها لفوق أو لتحت"
+            alpha = 0.7f
+            setPadding((20 * density).toInt(), (8 * density).toInt(), (20 * density).toInt(), (8 * density).toInt())
+        }
+        val box = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(hint)
+            addView(rv, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (360 * density).toInt()).apply {
+                marginStart = (16 * density).toInt()
+                marginEnd = (16 * density).toInt()
+            })
+        }
+        MaterialAlertDialogBuilder(context)
+            .setTitle("ترتيب الصور")
+            .setView(box)
+            .setPositiveButton("حفظ") { _, _ ->
+                prefs.rProfileBanners().set(list.joinToString("\n"))
+                refresh()
+            }
+            .setNegativeButton("إلغاء", null)
             .show()
     }
 

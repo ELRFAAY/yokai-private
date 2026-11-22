@@ -62,6 +62,23 @@ class PreferenceBackupCreator(
                     StringPreferenceValue(Base64.encodeToString(f.readBytes(), Base64.NO_WRAP)),
                 )
             }
+            // pinned manga + custom covers are keyed by manga id, which changes after a restore: save them by source + url
+            val all = runBlocking { Injekt.get<yokai.domain.manga.MangaRepository>().getMangaList() }
+            val pinnedIds = Injekt.get<yokai.domain.library.LibraryPreferences>().pinnedManga().get()
+            val pinned = all.filter { it.id?.toString() in pinnedIds }.map { "${it.source}|${it.url}" }.toSet()
+            if (pinned.isNotEmpty()) out += BackupPreference(R_PINNED, StringSetPreferenceValue(pinned))
+            val covers = Injekt.get<eu.kanade.tachiyomi.data.cache.CoverCache>()
+            var coverTotal = 0L
+            all.forEach { m ->
+                val f = covers.getCustomCoverFile(m)
+                if (f.exists() && f.length() > 0 && coverTotal + f.length() <= 60_000_000L) {
+                    coverTotal += f.length()
+                    out += BackupPreference(
+                        R_COVER_PREFIX + "${m.source}|${m.url}",
+                        StringPreferenceValue(Base64.encodeToString(f.readBytes(), Base64.NO_WRAP)),
+                    )
+                }
+            }
         } catch (e: Exception) {
             co.touchlab.kermit.Logger.e(e) { "R backup extras failed" }
         }
@@ -115,3 +132,5 @@ class PreferenceBackupCreator(
 /** Backup keys written by [PreferenceBackupCreator.rExtras] and read back by the restorer. */
 const val R_HIDDEN_NAMES = "r_backup_hidden_list_names"
 const val R_FILE_PREFIX = "r_backup_file:"
+const val R_PINNED = "r_backup_pinned_manga" // set of "sourceId|url"
+const val R_COVER_PREFIX = "r_backup_cover:" // + "sourceId|url" = base64 of the manga's custom cover image
