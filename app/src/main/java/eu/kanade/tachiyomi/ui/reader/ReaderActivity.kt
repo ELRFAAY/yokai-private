@@ -213,6 +213,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
     private var coroutine: Job? = null
     private var rAutoHideJob: Job? = null
+    private var rClockJob: Job? = null
     private var rBatteryPercent = -1
     private val rClockReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -440,6 +441,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
         binding.chaptersSheet.chaptersBottomSheet.setup(this)
         rSetupToolsBar()
+        rStyleClock()
+        binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> rPositionClock() }
         // R: the original page bar is only shown when its switch is on (Settings > R); the new tools card replaces it
         if (!preferences.rOldToolbar().get()) binding.navLayout.visibility = View.GONE
         binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateNavHeight() }
@@ -1271,6 +1274,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     private fun setMenuVisibility(visible: Boolean, animate: Boolean = true) {
         val oldVisibility = menuVisible
         menuVisible = visible
+        binding.root.post { rUpdateClock() }
         if (visible) coroutine?.cancel()
         rScheduleAutoHide()
         binding.viewerContainer.requestLayout()
@@ -1585,14 +1589,59 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
     }
 
-    /** R: clock + battery in the corner (switch in the reader settings). */
+    /** R: clock + battery in the corner (switch in the reader settings). Always shown while the switch is on. */
     private fun rUpdateClock() {
         val on = preferences.rClockBattery().get() && !rLocked
         binding.rClockBattery.isVisible = on
         if (!on) return
+        rReadBattery()
         val time = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(Date())
         val battery = if (rBatteryPercent >= 0) "  $rBatteryPercent%" else ""
         binding.rClockBattery.text = time + battery
+        rPositionClock()
+    }
+
+    /** R: reads the battery level from the sticky broadcast, so it never depends on the receiver having fired. */
+    private fun rReadBattery() {
+        try {
+            val i = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)) ?: return
+            val level = i.getIntExtra("level", -1)
+            val scale = i.getIntExtra("scale", 100)
+            if (level >= 0 && scale > 0) rBatteryPercent = level * 100 / scale
+        } catch (_: Exception) {
+        }
+    }
+
+    /** R: readable on any page colour (white text on a soft dark pill), sized once. */
+    private fun rStyleClock() {
+        binding.rClockBattery.apply {
+            setTextColor(Color.WHITE)
+            textSize = 12f
+            setPadding(10.dpToPx, 3.dpToPx, 10.dpToPx, 3.dpToPx)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = 12.dpToPx.toFloat()
+                setColor(Color.argb(150, 0, 0, 0))
+            }
+        }
+    }
+
+    /** R: keeps the clock below the status bar / camera cutout so it is never hidden behind them. */
+    private fun rPositionClock() {
+        val v = binding.rClockBattery
+        if (!v.isVisible) return
+        val insets = ViewCompat.getRootWindowInsets(binding.root)
+        val top = insets?.let {
+            max(
+                it.getInsets(WindowInsetsCompat.Type.statusBars()).top,
+                it.getInsets(WindowInsetsCompat.Type.displayCutout()).top,
+            )
+        } ?: 0
+        val margin = top + 6.dpToPx
+        val lp = v.layoutParams as? ViewGroup.MarginLayoutParams ?: return
+        if (lp.topMargin != margin) {
+            lp.topMargin = margin
+            v.layoutParams = lp
+        }
     }
 
     override fun onPause() {
@@ -1601,6 +1650,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         } catch (_: Exception) {
         }
         rAutoHideJob?.cancel()
+        rClockJob?.cancel()
         (viewer as? WebtoonViewer)?.stopAutoScroll()
         rCobra?.onActivityPause()
         viewModel.flushReadTimer()
@@ -1617,6 +1667,14 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
         ContextCompat.registerReceiver(this, rClockReceiver, clockFilter, ContextCompat.RECEIVER_NOT_EXPORTED)
         rUpdateClock()
+        // R: refresh every 20 s too, in case a broadcast is missed
+        rClockJob?.cancel()
+        rClockJob = lifecycleScope.launch {
+            while (true) {
+                rUpdateClock()
+                delay(20_000L)
+            }
+        }
         rScheduleAutoHide()
         viewModel.restartReadTimer()
         rCobra?.onActivityResume()
