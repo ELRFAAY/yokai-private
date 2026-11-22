@@ -16,6 +16,12 @@ import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.source.preferenceKey
 import eu.kanade.tachiyomi.source.sourcePreferences
 import eu.kanade.tachiyomi.ui.library.LibrarySort
+import android.app.Application
+import android.util.Base64
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import kotlinx.coroutines.runBlocking
+import java.io.File
+import yokai.domain.category.interactor.GetCategories
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -24,8 +30,42 @@ class PreferenceBackupCreator(
     private val preferenceStore: PreferenceStore = Injekt.get(),
 ) {
     fun createApp(includePrivatePreferences: Boolean): List<BackupPreference> {
-        return preferenceStore.getAll().toBackupPreferences()
+        return (preferenceStore.getAll().toBackupPreferences() + rExtras())
             .withPrivatePreferences(includePrivatePreferences)
+    }
+
+    /**
+     * R: things the plain preference dump cannot carry over to another install:
+     * - the hidden lists, by list NAME (category ids change after a restore);
+     * - the profile pictures (the preferences only hold file paths): the image files themselves.
+     */
+    private fun rExtras(): List<BackupPreference> {
+        val out = mutableListOf<BackupPreference>()
+        try {
+            val prefs: PreferencesHelper = Injekt.get()
+            val ids = prefs.rHiddenLists().get().mapNotNull { it.toIntOrNull() }.toSet()
+            if (ids.isNotEmpty()) {
+                val names = runBlocking { Injekt.get<GetCategories>().await() }
+                    .filter { it.id in ids }
+                    .map { it.name }
+                    .toSet()
+                if (names.isNotEmpty()) out += BackupPreference(R_HIDDEN_NAMES, StringSetPreferenceValue(names))
+            }
+            val ctx: Application = Injekt.get()
+            val dir = File(ctx.filesDir, "r_profile")
+            var total = 0L
+            dir.listFiles()?.filter { it.isFile && it.length() in 1..8_000_000L }?.forEach { f ->
+                if (total + f.length() > 40_000_000L) return@forEach
+                total += f.length()
+                out += BackupPreference(
+                    R_FILE_PREFIX + f.name,
+                    StringPreferenceValue(Base64.encodeToString(f.readBytes(), Base64.NO_WRAP)),
+                )
+            }
+        } catch (e: Exception) {
+            co.touchlab.kermit.Logger.e(e) { "R backup extras failed" }
+        }
+        return out
     }
 
     fun createSource(includePrivatePreferences: Boolean): List<BackupSourcePreferences> {
@@ -71,3 +111,7 @@ class PreferenceBackupCreator(
             this.filter { !Preference.isPrivate(it.key) }
         }
 }
+
+/** Backup keys written by [PreferenceBackupCreator.rExtras] and read back by the restorer. */
+const val R_HIDDEN_NAMES = "r_backup_hidden_list_names"
+const val R_FILE_PREFIX = "r_backup_file:"

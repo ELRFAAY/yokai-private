@@ -14,7 +14,7 @@ data class BackupOptions(
     val sourcePrefs: Boolean = true,
     val customInfo: Boolean = true,
     val readManga: Boolean = true,
-    val includePrivate: Boolean = false,
+    val includePrivate: Boolean = true, // R: everything as it is (private settings too)
 ) {
     fun asBooleanArray() = booleanArrayOf(
         libraryEntries,

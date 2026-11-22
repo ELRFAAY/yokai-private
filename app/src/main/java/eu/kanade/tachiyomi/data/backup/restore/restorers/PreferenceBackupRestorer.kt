@@ -1,6 +1,14 @@
 package eu.kanade.tachiyomi.data.backup.restore.restorers
 
 import android.content.Context
+import android.util.Base64
+import co.touchlab.kermit.Logger
+import eu.kanade.tachiyomi.data.backup.create.creators.R_FILE_PREFIX
+import eu.kanade.tachiyomi.data.backup.create.creators.R_HIDDEN_NAMES
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import kotlinx.coroutines.runBlocking
+import java.io.File
+import yokai.domain.category.interactor.GetCategories
 import eu.kanade.tachiyomi.core.preference.AndroidPreferenceStore
 import eu.kanade.tachiyomi.core.preference.PreferenceStore
 import eu.kanade.tachiyomi.core.preference.getEnum
@@ -28,13 +36,47 @@ class PreferenceBackupRestorer(
     private val preferenceStore: PreferenceStore = Injekt.get(),
 ) {
     fun restoreAppPreferences(preferences: List<BackupPreference>, onComplete: () -> Unit) {
-        restorePreferences(preferences, preferenceStore)
+        val plain = preferences.filter { it.key != R_HIDDEN_NAMES && !it.key.startsWith(R_FILE_PREFIX) }
+        restorePreferences(plain, preferenceStore)
+        restoreRExtras(preferences)
 
         ExtensionUpdateJob.setupTask(context)
         LibraryUpdateJob.setupTask(context)
         BackupCreatorJob.setupTask(context)
 
         onComplete()
+    }
+
+    /** R: puts the profile pictures back (and points the profile at them) and re-finds the hidden lists by name. */
+    private fun restoreRExtras(all: List<BackupPreference>) {
+        try {
+            val prefs: PreferencesHelper = Injekt.get()
+            val files = all.filter { it.key.startsWith(R_FILE_PREFIX) }
+            if (files.isNotEmpty()) {
+                val dir = File(context.filesDir, "r_profile").apply { mkdirs() }
+                files.forEach { p ->
+                    val v = (p.value as? StringPreferenceValue)?.value ?: return@forEach
+                    File(dir, p.key.removePrefix(R_FILE_PREFIX)).writeBytes(Base64.decode(v, Base64.NO_WRAP))
+                }
+                // the saved paths belong to the old install: keep the file names, use this install's folder
+                fun fix(path: String) = File(dir, File(path).name).takeIf { it.exists() }?.absolutePath
+                fix(prefs.rProfileAvatar().get())?.let { prefs.rProfileAvatar().set(it) }
+                prefs.rProfileBanners().set(
+                    prefs.rProfileBanners().get().split('\n').filter { it.isNotBlank() }
+                        .mapNotNull { fix(it) }.joinToString("\n"),
+                )
+            }
+            val names = (all.firstOrNull { it.key == R_HIDDEN_NAMES }?.value as? StringSetPreferenceValue)?.value
+            if (names != null) {
+                val ids = runBlocking { Injekt.get<GetCategories>().await() }
+                    .filter { it.name in names }
+                    .mapNotNull { it.id?.toString() }
+                    .toSet()
+                prefs.rHiddenLists().set(ids)
+            }
+        } catch (e: Exception) {
+            Logger.e(e) { "R restore extras failed" }
+        }
     }
 
     fun restoreSourcePreferences(preferences: List<BackupSourcePreferences>, onComplete: () -> Unit) {
