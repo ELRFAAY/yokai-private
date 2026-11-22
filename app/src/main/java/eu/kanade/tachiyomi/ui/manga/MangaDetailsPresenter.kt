@@ -199,7 +199,11 @@ class MangaDetailsPresenter(
             refreshMangaFromDb()
             // chapterSort is created in syncData() and getChapters() needs it too ("lateinit chapterSort" crash)
             syncData()
-            setCurrentExcludedScanlators(getExcludedScanlators.await(mangaId))
+            // NOT setCurrentExcludedScanlators(): it ends with withUIContext { view?.updateChapters() }, and waiting for the
+            // main thread from a runBlocking that BLOCKS the main thread never returns = "app isn't responding" (ANR) when the
+            // manga page is opened by id (reader title, "start reading"). Only database work is allowed in here.
+            excludedScanlators = getExcludedScanlators.await(mangaId)
+            getChapters()
         }
         syncData()
 

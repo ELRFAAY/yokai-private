@@ -16,6 +16,10 @@ Last updated: 2026-11-22 (see NEWEST-22).
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
 
+## NEWEST-26 2026-11-22 (owner video 565799.mp4 + "the freeze when I press the title is NOT fixed"): READ FIRST
+- **Root cause of the old "tap the reader title / start reading -> app freezes, ANR dialog 'wait / OK' -> restart" (found now, never a lateinit crash):** `MangaDetailsPresenter.onCreate` (manga opened by id: reader title -> `SearchActivity.openMangaIntent`) ran `runBlocking { ... setCurrentExcludedScanlators() }` ON THE MAIN THREAD, and that function ends with `withUIContext { view?.updateChapters() }` = `withContext(Dispatchers.Main)` (NOT `.immediate`): the main thread waits for itself = deadlock. Fix: inside that `runBlocking` only database work: `excludedScanlators = ...; getChapters()`. Rule: never call anything with `withUIContext` / `Dispatchers.Main` from a `runBlocking` on the main thread. Not built when written (see the build list on GitHub).
+- Video (it was recorded on an OLD build, before the simple dialog): tapping the chapter name opened the heavy chapters SHEET, the tools card stayed on top of it and the UI froze for seconds. Now the dialog list is used (8263c6e) and the tools card hides while it is open (`rChapterDialogOpen`, restored on dismiss).
+
 ## NEWEST-25 2026-11-22 12:15 (tenth account): START HERE, then NEWEST-24
 
 **Build 64 did NOT fix the chapter-name freeze (owner 12:54).** Cause still unknown (no logcat). Build 65: tapping the chapter name AND fling-up now open a plain dialog list (`rShowChapterDialog`) instead of expanding the chapters sheet. If it still freezes, the problem is in the tools bar/tap itself, not the sheet: ask for logcat/ANR trace.

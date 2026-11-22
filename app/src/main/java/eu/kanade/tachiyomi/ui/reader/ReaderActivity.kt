@@ -1524,6 +1524,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     }
 
     /** R: simple chapters list dialog (the tools bar used to expand the heavy chapters sheet, which froze some phones). */
+    private var rChapterDialogOpen = false
+
     private fun rShowChapterDialog() {
         lifecycleScope.launch {
             val items = viewModel.getChapters()
@@ -1539,6 +1541,13 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                     }
                 }
                 .create()
+            // the tools card disappears while the list is open and comes back when it closes
+            rChapterDialogOpen = true
+            rToolsBar?.isVisible = false
+            dialog.setOnDismissListener {
+                rChapterDialogOpen = false
+                rPositionToolsBar()
+            }
             dialog.show()
             dialog.listView?.setSelection((current - 3).coerceAtLeast(0))
         }
@@ -1613,7 +1622,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
         // hidden while the chapters list is open
         if (menuVisible) {
-            val shown = binding.chaptersSheet.chaptersBottomSheet.sheetBehavior.isCollapsed()
+            val shown = !rChapterDialogOpen && binding.chaptersSheet.chaptersBottomSheet.sheetBehavior.isCollapsed()
             if (bar.isVisible != shown) bar.isVisible = shown
         }
     }
