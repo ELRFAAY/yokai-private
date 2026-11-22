@@ -28,7 +28,11 @@ abstract class LibraryItem(
         get() = uiPreferences.uniformGrid().get()
 
     internal val libraryLayout: Int
-        get() = preferences.libraryLayout().get()
+        get() = preferences.libraryLayout().get().let { if (it == LAYOUT_COLOR_CARD) LAYOUT_COMFORTABLE_GRID else it }
+
+    /** R: the "colored card" display mode (stored as layout 4, drawn as the comfortable grid with colored strips). */
+    internal val isColorCardLayout: Boolean
+        get() = preferences.libraryLayout().get() == LAYOUT_COLOR_CARD
 
     val hideReadingButton: Boolean
         get() = preferences.hideStartReadingButton().get()
@@ -50,5 +54,6 @@ abstract class LibraryItem(
         const val LAYOUT_COMPACT_GRID = 1
         const val LAYOUT_COMFORTABLE_GRID = 2
         const val LAYOUT_COVER_ONLY_GRID = 3
+        const val LAYOUT_COLOR_CARD = 4
     }
 }

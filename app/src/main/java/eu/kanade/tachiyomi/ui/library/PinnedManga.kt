@@ -16,5 +16,5 @@ object PinnedManga {
         enabled && mangaId != null && libraryPreferences.pinnedManga().get().contains(mangaId.toString())
 
     /** A pin emoji to put in front of a pinned manga's title (empty when it is not pinned). */
-    fun titlePrefix(mangaId: Long?): String = if (isPinned(mangaId)) "\uD83D\uDCCC " else ""
+    fun titlePrefix(mangaId: Long?): String = ""
 }

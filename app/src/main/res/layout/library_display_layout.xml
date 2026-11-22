@@ -44,6 +44,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/cover_only_grid" />
+
+                <com.google.android.material.radiobutton.MaterialRadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="بطاقة ملونة" />
             </RadioGroup>
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -125,6 +130,7 @@
 
             <com.google.android.material.checkbox.MaterialCheckBox
                 android:id="@+id/r_color_cards"
+                android:visibility="gone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"

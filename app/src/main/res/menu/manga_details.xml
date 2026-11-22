@@ -76,6 +76,12 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_r_notes"
+        android:icon="@drawable/ic_edit_24dp"
+        android:title="ملاحظات"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_migrate"
         android:icon="@drawable/ic_swap_calls_24dp"
         android:title="@string/migrate"

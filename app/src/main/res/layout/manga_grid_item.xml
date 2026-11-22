@@ -138,6 +138,19 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
+            <ImageView
+                android:id="@+id/r_pin_badge"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="top|end"
+                android:layout_margin="5dp"
+                android:background="@drawable/r_pin_badge_bg"
+                android:padding="4dp"
+                android:src="@drawable/ic_pin_24dp"
+                android:visibility="gone"
+                app:tint="@android:color/white"
+                tools:ignore="ContentDescription" />
+
         </com.google.android.material.card.MaterialCardView>
 
         <include

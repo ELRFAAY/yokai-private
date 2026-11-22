@@ -1232,6 +1232,33 @@ class MangaDetailsController :
             !presenter.manga.isLocal() && presenter.manga.favorite
     }
 
+    /** R: the manga's personal notes (saved in a preference, carried by the backup). */
+    private fun rShowNotes() {
+        val ctx = activity ?: return
+        val manga = presenter.manga
+        val input = android.widget.EditText(ctx).apply {
+            setText(eu.kanade.tachiyomi.util.RNotes.get(manga.source, manga.url))
+            hint = "اكتب ملاحظاتك عن المنهج هنا"
+            minLines = 5
+            gravity = android.view.Gravity.TOP or android.view.Gravity.START
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            textDirection = View.TEXT_DIRECTION_FIRST_STRONG
+        }
+        val pad = (20 * ctx.resources.displayMetrics.density).toInt()
+        val box = android.widget.FrameLayout(ctx).apply {
+            setPadding(pad, pad / 2, pad, 0)
+            addView(input)
+        }
+        ctx.materialAlertDialog()
+            .setTitle("ملاحظات")
+            .setView(box)
+            .setPositiveButton("حفظ") { _, _ ->
+                eu.kanade.tachiyomi.util.RNotes.set(manga.source, manga.url, input.text.toString())
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_edit -> {
@@ -1241,6 +1268,7 @@ class MangaDetailsController :
                 )
                 editMangaDialog?.showDialog(router)
             }
+            R.id.action_r_notes -> rShowNotes()
             R.id.action_open_in_web_view -> openInWebView()
             R.id.action_refresh_tracking -> presenter.refreshTracking(true)
             R.id.action_migrate ->

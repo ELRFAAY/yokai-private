@@ -420,6 +420,8 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
 
     /** Statistics: show minutes in the reading time even when it is more than a day. */
     fun rStatsMinutes() = preferenceStore.getBoolean("r_stats_minutes", true)
+    /** R: personal notes per manga, JSON {"sourceId:url": "text"}; a normal preference so the backup carries it. */
+    fun rMangaNotes() = preferenceStore.getString("r_manga_notes", "{}")
     fun rColorCards() = preferenceStore.getBoolean("r_color_cards", false) // R: colored title strip under library covers
 
     /** Mascot: the wise old snake sometimes shows up and gives useless advice (a joke). */

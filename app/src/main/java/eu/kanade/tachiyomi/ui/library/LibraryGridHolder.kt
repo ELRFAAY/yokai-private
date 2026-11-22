@@ -107,6 +107,7 @@ class LibraryGridHolder(
         applyColorCard(item)
         setUnreadBadge(binding.unreadDownloadBadge.badgeView, item)
         setReadingButton(item)
+        rApplyPin(item)
         setSelected(adapter.isSelected(flexibleAdapterPosition))
 
         // Update the cover.
@@ -118,9 +119,18 @@ class LibraryGridHolder(
      * R: "colored card": in the comfortable grid the title strip under the cover takes the cover's dominant color
      * (text in the matching contrast color) and the cover's bottom corners become square so cover and strip look like one card.
      */
+    /** R: a small dark round pin on the cover's top corner for pinned manga (beside the play button when it shows). */
+    private fun rApplyPin(item: LibraryMangaItem) {
+        val pinned = PinnedManga.isPinned(item.manga.manga.id)
+        binding.rPinBadge.isVisible = pinned
+        if (pinned) {
+            binding.rPinBadge.translationX = if (binding.playLayout.isVisible) -(34.dpToPx).toFloat() else 0f
+        }
+    }
+
     private fun applyColorCard(item: LibraryMangaItem) {
         val ctx = itemView.context
-        val on = !compact && rPrefs.rColorCards().get() && item.manga.manga.id != Long.MIN_VALUE
+        val on = !compact && (item.isColorCardLayout || rPrefs.rColorCards().get()) && item.manga.manga.id != Long.MIN_VALUE
         val baseHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 31f, ctx.resources.displayMetrics).toInt()
         with(binding) {
             if (on) {

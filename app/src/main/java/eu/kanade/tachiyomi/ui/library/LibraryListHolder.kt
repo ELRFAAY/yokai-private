@@ -78,6 +78,7 @@ class LibraryListHolder(
 
         // Update the binding.title of the manga.
         binding.title.text = (PinnedManga.titlePrefix(item.manga.manga.id) + item.manga.manga.title).highlightText(item.filter, color)
+        binding.rPinBadge.isVisible = PinnedManga.isPinned(item.manga.manga.id)
         setUnreadBadge(binding.unreadDownloadBadge.badgeView, item)
 
         val authorArtist =
