@@ -1531,21 +1531,44 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             { loadAdjacentChapter(viewer !is R2LPagerViewer) }, // next chapter
             { binding.chaptersSheet.chaptersBottomSheet.sheetBehavior?.expand() },
         )
-        // R: floating card just above the page bar (anchored to the chapters sheet like the page bar itself)
+        // R: floating card at the bottom; its bottom margin is computed from the TOP of the page bar / chapters sheet
+        // (rPositionToolsBar), so it never covers them
         val lp = androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
         ).apply {
-            anchorId = R.id.chapters_sheet
-            anchorGravity = android.view.Gravity.TOP
             gravity = android.view.Gravity.BOTTOM
             leftMargin = 10.dpToPx
             rightMargin = 10.dpToPx
-            bottomMargin = 64.dpToPx // sits above the page bar
+            bottomMargin = 120.dpToPx
         }
         bar.isVisible = menuVisible
         (binding.root as ViewGroup).addView(bar, lp)
         rToolsBar = bar
+        binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> rPositionToolsBar() }
+    }
+
+    /** R: puts the tools card right above the page bar (or above the chapters sheet when the page bar is not shown). */
+    private fun rPositionToolsBar() {
+        val bar = rToolsBar ?: return
+        val rootHeight = binding.root.height
+        if (rootHeight <= 0) return
+        val sheet = binding.chaptersSheet.root
+        val pageBarShown = !verticalNav && binding.navLayout.isVisible && readerNav.root.isVisible
+        val top = if (pageBarShown) binding.navLayout.top else sheet.top
+        val margin = (rootHeight - top + 8.dpToPx).coerceAtLeast(0)
+        val lp = bar.layoutParams as? androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams ?: return
+        val right = if (verticalNav) 64.dpToPx else 10.dpToPx // the vertical slider lives on the right
+        if (lp.bottomMargin != margin || lp.rightMargin != right) {
+            lp.bottomMargin = margin
+            lp.rightMargin = right
+            bar.layoutParams = lp
+        }
+        // hidden while the chapters list is open
+        if (menuVisible) {
+            val shown = binding.chaptersSheet.chaptersBottomSheet.sheetBehavior.isCollapsed()
+            if (bar.isVisible != shown) bar.isVisible = shown
+        }
     }
 
     /** R: hides the tools by itself after the delay chosen in the reader settings (0 = never). */

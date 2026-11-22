@@ -16,6 +16,11 @@ Last updated: 2026-11-21 (see NEWEST-12).
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
 
+## NEWEST-15 2026-11-21 (sixth account, owner screenshot of the reader): READ FIRST, then NEWEST-14
+- Owner screenshot (`565333.jpg`, saved in `owner-inputs/`): the NEW tools card covered the OLD page bar and overlapped the chapters-sheet icons at the bottom; the page counter showed "31 / 1" (Arabic RTL screen flips "1 / 13"); he does not like the new card's icons.
+- Fixed in the commit after `c12a631` (NOT built when written; build 61 on `c12a631` was still running, do not dispatch while it runs): (1) `ReaderActivity.rPositionToolsBar()` now computes the card's bottom margin from the TOP of the page bar (`navLayout.top`, horizontal nav) or of the chapters sheet (`sheet.top`, vertical nav / no page bar) + 8dp, on every layout (the anchor approach was wrong); right margin 64dp in vertical-nav mode; the card hides while the chapters list is expanded. (2) `RToolsBar.pageCounter` has `textDirection = LTR`. (3) New thin OUTLINE icons `ic_rt_speed/brightness/volume/battery/lock` (24dp strokes, drawn in `RToolsBar`), buttons 46dp. If he still dislikes them, ask which look he wants (the reference app used outline round buttons: settings, brightness, lock, auto-play, chapters).
+- Still open: reader TOP bar + side chips of the reference, sheets E-K, wiring p5 `r_sage2_angry/think`, token reminder.
+
 ## NEWEST-14 2026-11-21 (sixth account, later): READ FIRST, then NEWEST-13
 - **Build 60 (`e178026`) = GREEN** (it had all of NEWEST-13 + `e90625a`). The next commit (below) is NOT compiled until its build (61 if dispatched). Suspects if it fails: `RMascotView` (`lastTapAt/DOUBLE_TAP_MS`, fists/shock block in `updateLook`, `CEILING` is now a `List`).
 - **Transformation now needs TWO quick taps** (<= 700 ms, `DOUBLE_TAP_MS`): the first tap does the old single-tap thing (tongue out + a `TAP` phrase, or the wise dragon's advice by chance), the second tap within 0.7 s starts the smoke + costume. Settings > R summary updated.

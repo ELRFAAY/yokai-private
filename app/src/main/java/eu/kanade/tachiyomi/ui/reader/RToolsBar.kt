@@ -128,6 +128,7 @@ class RToolsBar(
             setTextColor(onSurface)
             textSize = 13f
             gravity = Gravity.CENTER
+            textDirection = TEXT_DIRECTION_LTR // the screen is Arabic (RTL): without this "1 / 13" showed as "13 / 1"
             background = pill(ColorUtils.setAlphaComponent(accent, 50), 14f)
             setPadding((14 * density).toInt(), (3 * density).toInt(), (14 * density).toInt(), (3 * density).toInt())
         }
@@ -145,11 +146,11 @@ class RToolsBar(
             gravity = Gravity.CENTER
             setPadding((2 * density).toInt())
         }
-        addTool(row, Tool.SPEED, R.drawable.ic_r_speed, "سرعة التمرير التلقائي")
-        addTool(row, Tool.BRIGHTNESS, R.drawable.ic_brightness_day_24dp, "السطوع")
-        addTool(row, Tool.VOLUME, R.drawable.ic_r_volume, "الصوت")
-        addTool(row, Tool.BATTERY, R.drawable.ic_r_battery, "البطارية")
-        addTool(row, Tool.LOCK, R.drawable.ic_lock_24dp, "قفل الشاشة")
+        addTool(row, Tool.SPEED, R.drawable.ic_rt_speed, "سرعة التمرير التلقائي")
+        addTool(row, Tool.BRIGHTNESS, R.drawable.ic_rt_brightness, "السطوع")
+        addTool(row, Tool.VOLUME, R.drawable.ic_rt_volume, "الصوت")
+        addTool(row, Tool.BATTERY, R.drawable.ic_rt_battery, "البطارية")
+        addTool(row, Tool.LOCK, R.drawable.ic_rt_lock, "قفل الشاشة")
         addView(row, LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         panel.apply {
@@ -271,14 +272,14 @@ class RToolsBar(
             setColorFilter(onSurface)
             contentDescription = description
             background = roundButton(false)
-            val pad = (13 * density).toInt()
+            val pad = (12 * density).toInt()
             setPadding(pad, pad, pad, pad)
             setOnClickListener { toggle(tool) }
         }
         buttons[tool] = button
         row.addView(
             button,
-            LayoutParams(0, (50 * density).toInt(), 1f).apply {
+            LayoutParams(0, (46 * density).toInt(), 1f).apply {
                 marginStart = (6 * density).toInt()
                 marginEnd = (6 * density).toInt()
             },
