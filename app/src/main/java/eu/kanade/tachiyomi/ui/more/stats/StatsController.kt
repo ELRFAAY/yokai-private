@@ -30,6 +30,7 @@ import eu.kanade.tachiyomi.util.isLocal
 import eu.kanade.tachiyomi.util.mapStatus
 import eu.kanade.tachiyomi.util.system.getResourceColor
 import eu.kanade.tachiyomi.util.system.roundToTwoDecimal
+import eu.kanade.tachiyomi.util.system.materialAlertDialog
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
@@ -162,29 +163,109 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
             if (clip != null) for (i in 0 until clip.itemCount) add(clip.getItemAt(i).uri)
         }.distinct()
         if (uris.isEmpty()) return
-        viewScope.launch {
-            val saved = withContext(Dispatchers.IO) {
-                val dir = java.io.File(ctx.filesDir, "r_profile").apply { mkdirs() }
-                uris.mapNotNull { uri ->
-                    try {
-                        val out = java.io.File(dir, "img_${System.currentTimeMillis()}_${uri.hashCode().toUInt()}.jpg")
-                        ctx.contentResolver.openInputStream(uri)?.use { input -> out.outputStream().use { input.copyTo(it) } }
-                        out.absolutePath.takeIf { out.length() > 0 }
-                    } catch (_: Exception) {
-                        null
-                    }
-                }
-            }
-            if (saved.isEmpty()) return@launch
+        // R: every picked picture goes through the crop / rotate editor first (skip = use it as it is)
+        val finished = mutableListOf<String>()
+        val dir = java.io.File(ctx.filesDir, "r_profile").apply { mkdirs() }
+        fun finish() {
+            if (finished.isEmpty()) return
             if (requestCode == REQ_AVATAR) {
-                prefs.rProfileAvatar().set(saved.first())
+                prefs.rProfileAvatar().set(finished.first())
             } else {
                 val old = prefs.rProfileBanners().get().split('\n').filter { it.isNotBlank() }
-                prefs.rProfileBanners().set(((if (replaceBanners) emptyList() else old) + saved).joinToString("\n"))
+                prefs.rProfileBanners().set(((if (replaceBanners) emptyList() else old) + finished).joinToString("\n"))
                 replaceBanners = false
             }
             profileView?.refresh()
         }
+        fun next(index: Int) {
+            if (index >= uris.size) {
+                finish()
+                return
+            }
+            val uri = uris[index]
+            viewScope.launch {
+                val bmp = withContext(Dispatchers.IO) { rLoadBitmap(ctx, uri) }
+                val out = java.io.File(dir, "img_${System.currentTimeMillis()}_${uri.hashCode().toUInt()}.jpg")
+                if (bmp == null) {
+                    // could not decode: keep the raw file like before
+                    val ok = withContext(Dispatchers.IO) {
+                        try {
+                            ctx.contentResolver.openInputStream(uri)?.use { input -> out.outputStream().use { input.copyTo(it) } }
+                            out.length() > 0
+                        } catch (_: Exception) {
+                            false
+                        }
+                    }
+                    if (ok) finished.add(out.absolutePath)
+                    next(index + 1)
+                    return@launch
+                }
+                val avatar = requestCode == REQ_AVATAR
+                val crop = RCropView(ctx, bmp, if (avatar) 1f else 2.2f, avatar)
+                val d = ctx.resources.displayMetrics.density
+                val box = android.widget.LinearLayout(ctx).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    addView(crop, android.widget.LinearLayout.LayoutParams(-1, (300 * d).toInt()))
+                    addView(
+                        com.google.android.material.button.MaterialButton(ctx, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                            text = "تدوير ٩٠°"
+                            setOnClickListener { crop.rotate() }
+                        },
+                        android.widget.LinearLayout.LayoutParams(-2, -2).apply {
+                            gravity = android.view.Gravity.CENTER_HORIZONTAL
+                            topMargin = (8 * d).toInt()
+                        },
+                    )
+                }
+                ctx.materialAlertDialog()
+                    .setTitle(if (uris.size > 1) "تعديل وقص (${index + 1}/${uris.size})" else "تعديل وقص")
+                    .setView(box)
+                    .setCancelable(false)
+                    .setPositiveButton("حفظ") { _, _ ->
+                        viewScope.launch {
+                            val ok = withContext(Dispatchers.IO) {
+                                try {
+                                    out.outputStream().use { crop.render(if (avatar) 512 else 1080).compress(android.graphics.Bitmap.CompressFormat.JPEG, 92, it) }
+                                    out.length() > 0
+                                } catch (_: Exception) {
+                                    false
+                                }
+                            }
+                            if (ok) finished.add(out.absolutePath)
+                            next(index + 1)
+                        }
+                    }
+                    .setNeutralButton("بدون تعديل") { _, _ ->
+                        viewScope.launch {
+                            val ok = withContext(Dispatchers.IO) {
+                                try {
+                                    ctx.contentResolver.openInputStream(uri)?.use { input -> out.outputStream().use { input.copyTo(it) } }
+                                    out.length() > 0
+                                } catch (_: Exception) {
+                                    false
+                                }
+                            }
+                            if (ok) finished.add(out.absolutePath)
+                            next(index + 1)
+                        }
+                    }
+                    .setNegativeButton(android.R.string.cancel) { _, _ -> next(index + 1) }
+                    .show()
+            }
+        }
+        next(0)
+    }
+
+    /** A decoded copy of the picture, at most ~2048 px on its long side (null when it cannot be read). */
+    private fun rLoadBitmap(ctx: android.content.Context, uri: android.net.Uri): android.graphics.Bitmap? = try {
+        val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        ctx.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, bounds) }
+        var sample = 1
+        while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 2048) sample *= 2
+        val opts = android.graphics.BitmapFactory.Options().apply { inSampleSize = sample }
+        ctx.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, opts) }
+    } catch (_: Throwable) {
+        null
     }
 
     private fun handleGeneralStats(pre: GeneralPre) {
