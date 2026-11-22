@@ -320,6 +320,15 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rMascotFall())
+                title = "التنين الصغير: السقطة"
+                rIcon(R.drawable.ic_r_hotel)
+                summary = "من وقت لآخر ينزل من فوق ويقع على الأرض والنجوم فوق دماغه، يطلع تاني، " +
+                    "وينزل مرة تانية ويفضل واقع شوية. أي لمسة توقفه. عند الإيقاف: لا يقع."
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+            }
+
+            switchPreference {
                 bindTo(preferences.rMascotSleep())
                 title = "التنين الصغير: النوم"
                 rIcon(R.drawable.ic_r_hotel)

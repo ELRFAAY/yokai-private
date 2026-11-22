@@ -438,9 +438,11 @@ class RMascotView(context: Context) : View(context) {
             }
         }
 
+        fallGag(now, dt)
+
         // R: a thrown or dragged dragon does not stay in the middle of the list: a few seconds after the last touch
         // it glides back to its home spot beside the title (smooth, no jump)
-        if (state == State.IDLE && !asleep && tfStart == 0L && enterStart == 0L && now - lastActiveAt >= HOME_AFTER_MS) {
+        if (fallPhase == 0 && state == State.IDLE && !asleep && tfStart == 0L && enterStart == 0L && now - lastActiveAt >= HOME_AFTER_MS) {
             val hx = homeX()
             val hy = homeY()
             if (hypot(hx - x, hy - y) > 6f * density) {
@@ -550,6 +552,63 @@ class RMascotView(context: Context) : View(context) {
         }
     }
 
+    /** R: now and then (a few minutes, only when nobody touched it for 20 s) the dragon falls from the top, gets up, and falls again. */
+    private fun fallGag(now: Long, dt: Float) {
+        if (fallPhase == 0) {
+            if (nextFallAt == 0L) nextFallAt = now + 60_000L + (Math.random() * 60_000L).toLong()
+            if (!prefs.rMascotFall().get() || !isShown || state != State.IDLE || asleep || tfStart != 0L || enterStart != 0L) return
+            if (now < nextFallAt || now - lastActiveAt < 20_000L) return
+            // start at the top, right where it lives, then drop
+            x = homeX()
+            y = minY()
+            fallVy = 0f
+            fallPhase = 1
+            say(FALL_START.random(), 1500L)
+            return
+        }
+        val floor = maxY()
+        when (fallPhase) {
+            1, 4 -> {
+                fallVy += 2600f * density * dt
+                y += fallVy * dt
+                if (y >= floor) {
+                    y = floor
+                    scaleYSpring.kick(-9f)
+                    scaleXSpring.kick(7f)
+                    hurtUntil = now + 300
+                    dizzyUntil = now + if (fallPhase == 1) 2600L else 6000L
+                    fallUntil = dizzyUntil
+                    say((if (fallPhase == 1) FALL_HIT1 else FALL_HIT2).random(), 2600L)
+                    fallPhase = if (fallPhase == 1) 2 else 5
+                }
+            }
+            2, 5 -> {
+                if (now >= fallUntil) {
+                    if (fallPhase == 2) {
+                        fallPhase = 3
+                        say(FALL_UP.random(), 1800L)
+                    } else {
+                        fallPhase = 0
+                        nextFallAt = now + 240_000L + (Math.random() * 240_000L).toLong()
+                    }
+                }
+            }
+            3 -> {
+                // climbs back to its spot (smoothly), then drops again
+                val k = 1f - exp(-dt * 2.4f)
+                x += (homeX() - x) * k
+                y += (minY() - y) * k
+                if (abs(y - minY()) < 6f * density) {
+                    fallVy = 0f
+                    fallPhase = 4
+                    say(FALL_START.random(), 1500L)
+                }
+            }
+        }
+        targetX = x
+        targetY = y
+    }
+
     /** Eases every visual value (tilt, size, stretch, face) toward where it should be right now. */
     private fun updateLook(now: Long, dt: Float) {
         val idle = state == State.IDLE
@@ -648,6 +707,12 @@ class RMascotView(context: Context) : View(context) {
     /** Called by MainActivity on every touch anywhere in the app: restarts the sleep timer and wakes the dragon up. */
     private var lastOpinionAt = 0L
 
+    // ---- R: the fall gag. 0 none, 1 falling, 2 dizzy on the floor, 3 climbing back up, 4 falling again, 5 dizzy on the floor (longer)
+    private var fallPhase = 0
+    private var fallVy = 0f
+    private var fallUntil = 0L
+    private var nextFallAt = 0L
+
     /**
      * R: the dragon gives a (random, joking) opinion when the owner opens a manga page. It looks at nothing: no
      * ratings, no lists, no websites; the owner asked for exactly that.
@@ -675,6 +740,10 @@ class RMascotView(context: Context) : View(context) {
 
     fun noteActivity() {
         lastActiveAt = SystemClock.uptimeMillis()
+        if (fallPhase != 0) { // any touch ends the gag; the dragon goes home by itself
+            fallPhase = 0
+            nextFallAt = lastActiveAt + 240_000L
+        }
         if (asleep) {
             asleep = false
             happyUntil = lastActiveAt + 1500
@@ -1068,6 +1137,7 @@ class RMascotView(context: Context) : View(context) {
         showBack = if (showBack) speed > 560f * density else speed > 760f * density
         return when {
             asleep -> Mood.BLINK // eyes closed
+            fallPhase == 1 || fallPhase == 4 -> Mood.SCARED
             now < hurtUntil -> Mood.HURT
             state == State.GRABBED && moved -> Mood.SCARED
             state == State.FLYING -> when {
@@ -1239,6 +1309,10 @@ class RMascotView(context: Context) : View(context) {
             "مش لونها! أنا بحب الأخضر.", "أنا مش واثق فيها، بس إنت حر.",
             "دي مش من النوع بتاعي... ولا أنا بفهم أصلاً.",
         )
+        val FALL_START = listOf("آآآآآه!", "يا نهار!", "مسكوني!", "وااااه!")
+        val FALL_HIT1 = listOf("آي! دماغي!", "أنا كويس... أنا كويس...", "كان لازم الأرض تكون بعيدة شوية!")
+        val FALL_UP = listOf("هطلع تاني... وبخطة أحسن.", "مفيش حاجة حصلت، أوعد.", "هجرب تاني!")
+        val FALL_HIT2 = listOf("ماشي، ده كفاية النهارده...", "الأرض بتحبني!", "هقعد هنا شوية... الدنيا بتلف.")
         val TAP = listOf(
             "أيوه؟", "عايز إيه؟", "بس بتدغدغني!",
             "هيهي! بتدغدغني!", "تاني؟ طيب!", "إيه ده؟ حد ضغط علي؟", "قول كلمة السر الأول!",

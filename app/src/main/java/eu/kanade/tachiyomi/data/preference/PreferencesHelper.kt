@@ -304,6 +304,7 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
 
     /** Mascot: after a minute without touching the phone the little dragon says goodnight, pulls a blanket up and sleeps. */
     fun rMascotSleep() = preferenceStore.getBoolean("r_mascot_sleep", true)
+    fun rMascotFall() = preferenceStore.getBoolean("r_mascot_fall", true)
 
     /** Mascot: when the app is opened the little dragon drops in from the top right and says how long you were away. */
     fun rMascotWelcome() = preferenceStore.getBoolean("r_mascot_welcome", true)
