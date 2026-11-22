@@ -57,6 +57,7 @@ class RReaderCobraView(
     private val intervalMinutes: () -> Int,
     private val sceneOn: () -> Boolean = { false },
     private val sceneEvery: () -> Int = { 3 },
+    private val sceneV2On: () -> Boolean = { false },
     private val sizeDp: () -> Int = { 72 },
 ) : View(context) {
 
@@ -96,6 +97,11 @@ class RReaderCobraView(
         val holdMs: Long,
         val sound: Int = 0,
         val speaker: Int = WISE,
+        val small: Int = 0, // v2: little dragon picture (0 = keep, -1 = hidden: he is inside the wise dragon's picture)
+        val wiseFrames: IntArray? = null, // v2: wise pictures looped while the beat runs
+        val smallFrames: IntArray? = null, // v2: little dragon pictures looped while the beat runs
+        val flip: Boolean = true, // old wise pictures face right and are mirrored; the 2026-11-22 sheets are drawn the right way
+        val frameMs: Long = 120L,
     )
 
     private val bitmaps = HashMap<Int, Bitmap?>()
@@ -116,7 +122,7 @@ class RReaderCobraView(
     }
     private val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFF1B1B1B.toInt()
-        textSize = 22f * density
+        textSize = 26f * density
         isFakeBoldText = true
     }
 
@@ -188,6 +194,7 @@ class RReaderCobraView(
     private var text = ""
     private var animator: ValueAnimator? = null
     private val cobraRect = RectF()
+    private val wiseRect = RectF()
     private val smallRect = RectF()
 
     private var cachedText = ""
@@ -205,6 +212,45 @@ class RReaderCobraView(
     }
     private val hideRunnable: Runnable = Runnable { disappear() }
     private val stepRunnable: Runnable = Runnable { sceneStep(sceneIdx + 1) }
+
+    // ---- R scene v2 (2026-11-22 sheets: G walk, H1 hit, J small, I2 drag) ----
+    private var v2 = false
+    private var wiseFlip = true
+    private var smallHidden = false
+    private var cycle: IntArray? = null
+    private var cycleSmall: IntArray? = null
+    private var cycleIdx = 0
+    private var cycleMs = 120L
+    private val cycleRunnable: Runnable = object : Runnable {
+        override fun run() {
+            val w = cycle
+            val sm = cycleSmall
+            if (!running || (w == null && sm == null)) return
+            cycleIdx++
+            if (w != null) wiseRes = w[cycleIdx % w.size]
+            if (sm != null) smallRes = sm[cycleIdx % sm.size]
+            invalidate()
+            handler.postDelayed(this, cycleMs)
+        }
+    }
+
+    private fun startCycle(w: IntArray?, sm: IntArray?, ms: Long) {
+        stopCycle()
+        if (w == null && sm == null) return
+        cycle = w
+        cycleSmall = sm
+        cycleMs = ms
+        cycleIdx = 0
+        if (w != null) wiseRes = w[0]
+        if (sm != null) smallRes = sm[0]
+        handler.postDelayed(cycleRunnable, ms)
+    }
+
+    private fun stopCycle() {
+        handler.removeCallbacks(cycleRunnable)
+        cycle = null
+        cycleSmall = null
+    }
 
     // ---- lifecycle (called from ReaderActivity) -----------------------------------------------------------
     fun onActivityResume() {
@@ -238,6 +284,7 @@ class RReaderCobraView(
         handler.removeCallbacks(showRunnable)
         handler.removeCallbacks(hideRunnable)
         handler.removeCallbacks(stepRunnable)
+        stopCycle()
         animator?.cancel()
         animator = null
     }
@@ -296,8 +343,12 @@ class RReaderCobraView(
             scenePending = false
             // both dragons are on screen together: the little one on the LEFT, the wise one comes from the RIGHT
             sceneIdx = 0
-            wiseRes = SCENE[0].wise
-            smallRes = R.drawable.r_mascot_happy
+            v2 = sceneV2On()
+            stopCycle()
+            smallHidden = false
+            wiseFlip = if (v2) SCENE2[0].flip else true
+            wiseRes = (if (v2) SCENE2 else SCENE)[0].wise
+            smallRes = if (v2) R.drawable.r_j_0 else R.drawable.r_mascot_happy
             speaker = WISE
             smallSlide = 0f
             wiseSlide = 0f
@@ -335,6 +386,10 @@ class RReaderCobraView(
      */
     private fun sceneStep(i: Int) {
         if (!running) return
+        if (v2) {
+            sceneStepV2(i)
+            return
+        }
         if (i >= SCENE.size) {
             sceneExit()
             return
@@ -372,6 +427,33 @@ class RReaderCobraView(
         }
     }
 
+    /** R scene v2: the new sheets. Frames loop while a beat runs; the little dragon is on the LEFT, the wise one comes from the RIGHT. */
+    private fun sceneStepV2(i: Int) {
+        if (i >= SCENE2.size) {
+            sceneExit()
+            return
+        }
+        sceneIdx = i
+        val st = SCENE2[i]
+        text = st.text
+        speaker = st.speaker
+        typedChars = 0
+        bubbleAlpha = 0f
+        wiseFlip = st.flip
+        wiseRes = st.wise
+        if (st.small > 0) smallRes = st.small
+        smallHidden = st.small == -1
+        startCycle(st.wiseFrames, st.smallFrames, st.frameMs)
+        if (st.sound == 1) play(whooshOut, 0.7f)
+        if (st.sound == 2) play(tick1, 1f)
+        if (i == 0) {
+            play(whooshIn, 0.5f)
+            run(900, 0f, 1f, DecelerateInterpolator(), { wiseSlide = it }) { afterBeat(st) }
+        } else {
+            afterBeat(st)
+        }
+    }
+
     private fun afterBeat(st: Step) {
         if (st.text.isEmpty()) {
             invalidate()
@@ -388,6 +470,7 @@ class RReaderCobraView(
     }
 
     private fun finishVisit() {
+        stopCycle()
         shown = false
         sceneIdx = -1
         invalidate()
@@ -415,7 +498,7 @@ class RReaderCobraView(
         ) {
             typedChars = n
             if (sceneIdx >= 0) {
-                handler.postDelayed(stepRunnable, SCENE[sceneIdx].holdMs)
+                handler.postDelayed(stepRunnable, (if (v2) SCENE2 else SCENE)[sceneIdx].holdMs)
             } else {
                 handler.postDelayed(hideRunnable, 2200L + n * 45L)
             }
@@ -482,7 +565,7 @@ class RReaderCobraView(
             return
         }
         if (sceneIdx >= 0) {
-            drawScene(canvas)
+            if (v2) drawSceneV2(canvas) else drawScene(canvas)
             return
         }
         // the nodding pose swaps between its two frames while the text is being typed
@@ -496,7 +579,7 @@ class RReaderCobraView(
         cobraRect.set(left, top, left + cobraW, top + cobraH)
         canvas.drawBitmap(bmp, null, cobraRect, bitmapPaint)
         if (bubbleAlpha > 0f && typedChars > 0) {
-            drawBubble(canvas, restLeft + cobraW - 4f * density, top + cobraH * 0.30f, false)
+            drawBubble(canvas, restLeft + cobraW * 0.55f, top + cobraH * 0.10f, top + cobraH * 0.75f)
         }
     }
 
@@ -555,6 +638,7 @@ class RReaderCobraView(
             val wh = wiseBmp.height * k
             val cx = frameCx + offset
             cobraRect.set(cx - ww / 2f, frameBottom - wh, cx + ww / 2f, frameBottom)
+            wiseRect.set(cobraRect)
             canvas.save()
             canvas.scale(-1f, 1f, cobraRect.centerX(), cobraRect.centerY())
             canvas.drawBitmap(wiseBmp, null, cobraRect, bitmapPaint)
@@ -567,9 +651,62 @@ class RReaderCobraView(
         // ---- speech bubble, to the right of whoever is talking
         if (bubbleAlpha > 0f && typedChars > 0 && exitT == 0f) {
             if (speaker == WISE) {
-                drawBubble(canvas, frameLeft + 142f * d * sizeK, frameTop + 312f * k * 0.18f, false)
+                drawBubble(canvas, wiseRect.centerX(), wiseRect.top + wiseRect.height() * 0.05f, wiseRect.top + wiseRect.height() * 0.5f)
             } else {
-                drawBubble(canvas, smallLeft + s * 0.9f, smallTop + s * 0.30f, false)
+                drawBubble(canvas, smallRect.centerX(), smallRect.top + s * 0.08f, smallRect.bottom - s * 0.2f)
+            }
+        }
+    }
+
+    /**
+     * R scene v2. Every sprite of the 2026-11-22 sheets is on a canvas whose bottom is the ground and whose centre is the
+     * body (the wise dragon's coils), at the same pixel scale as the home dragon, so frames of a sheet never jump. The wise
+     * dragon stands so that the burst of the "impact" picture (about 215 canvas px left of his centre) lands on the little one.
+     */
+    private fun drawSceneV2(canvas: Canvas) {
+        val d = density
+        val sizeK = sizeDp().coerceIn(40, 160) / 100f
+        val s = 100f * d * sizeK // little dragon size (same as the home dragon)
+        val kw = s / 384f // screen px per canvas px, both dragons
+        val smallLeft = 4f * d
+        val stageH = 430f * kw + 16f * d
+        val stageTop = ((height - stageH) * yFrac).coerceAtLeast(0f)
+        val ground = stageTop + stageH
+        val smallCx = smallLeft + s / 2f
+
+        smallRect.setEmpty()
+        val sb = if (smallHidden) null else bitmapFor(smallRes)
+        if (sb != null) {
+            val sw = s * sb.width / sb.height
+            val slideX = -(1f - smallSlide) * (s + 16f * d)
+            smallRect.set(smallCx - sw / 2f + slideX, ground - s, smallCx + sw / 2f + slideX, ground)
+            canvas.drawBitmap(sb, null, smallRect, bitmapPaint)
+        }
+
+        cobraRect.setEmpty()
+        wiseRect.setEmpty()
+        val wb = bitmapFor(wiseRes)
+        if (wb != null && (wiseSlide > 0f || exitT > 0f)) {
+            val ww = wb.width * kw
+            val wh = wb.height * kw
+            val restCx = smallCx + 215f * kw
+            val cx = restCx + ((1f - wiseSlide) + exitT) * (width - restCx + ww)
+            wiseRect.set(cx - ww / 2f, ground - wh, cx + ww / 2f, ground)
+            canvas.save()
+            if (wiseFlip) canvas.scale(-1f, 1f, cx, wiseRect.centerY())
+            canvas.drawBitmap(wb, null, wiseRect, bitmapPaint)
+            canvas.restore()
+            cobraRect.set(wiseRect)
+        }
+        if (!smallRect.isEmpty) {
+            if (cobraRect.isEmpty) cobraRect.set(smallRect) else cobraRect.union(smallRect)
+        }
+
+        if (bubbleAlpha > 0f && typedChars > 0 && exitT == 0f) {
+            if (speaker == WISE && !wiseRect.isEmpty) {
+                drawBubble(canvas, wiseRect.centerX(), ground - 420f * kw, ground - 150f * kw)
+            } else if (!smallRect.isEmpty) {
+                drawBubble(canvas, smallRect.centerX(), smallRect.top + s * 0.08f, smallRect.bottom - s * 0.2f)
             }
         }
     }
@@ -580,10 +717,15 @@ class RReaderCobraView(
             .setTextDirection(TextDirectionHeuristics.RTL)
             .build()
 
-    private fun drawBubble(canvas: Canvas, bx: Float, by: Float, fromRight: Boolean) {
+    /**
+     * The bubble sits ABOVE whoever talks, its tail pointing down at his head ([topY] = top of his head, [bottomY] = about his
+     * chin); when there is no room above, it sits BELOW him with the tail pointing up. [ax] is the x of his head.
+     */
+    private fun drawBubble(canvas: Canvas, ax: Float, topY: Float, bottomY: Float) {
         val pad = 12f * density
-        val maxW = minOf(250f * density, (if (fromRight) bx else width - bx) - 12f * density)
-        if (maxW < 110f * density) return
+        val margin = 8f * density
+        val maxW = minOf(290f * density, width - 2 * margin)
+        if (maxW < 140f * density) return
 
         // the full text decides the bubble size, so it does not grow while it is being typed
         if (fullLayout == null || cachedText != text || cachedWidth != width) {
@@ -615,25 +757,32 @@ class RReaderCobraView(
         seamPaint.alpha = a
         textPaint.alpha = a
 
-        val y = by.coerceIn(8f * density, (height - bubbleH - 8f * density).coerceAtLeast(8f * density))
-        val x0 = if (fromRight) bx - bubbleW else bx
+        val tailH = 16f * density
+        val above = topY - tailH - bubbleH >= margin
+        val y = if (above) {
+            topY - tailH - bubbleH
+        } else {
+            (bottomY + tailH).coerceAtMost((height - bubbleH - margin).coerceAtLeast(margin))
+        }
+        val x0 = (ax - bubbleW / 2f).coerceIn(margin, (width - bubbleW - margin).coerceAtLeast(margin))
         val rect = RectF(x0, y, x0 + bubbleW, y + bubbleH)
         val r = 16f * density
         canvas.drawRoundRect(rect, r, r, bubbleFill)
         canvas.drawRoundRect(rect, r, r, bubbleStroke)
 
-        // tail pointing at the cobra's mouth
-        val y1 = y + 18f * density
-        val y2 = y + 38f * density
+        // tail pointing at the speaker's head (down when the bubble is above him, up when it is below)
+        val half = 9f * density
+        val tx = ax.coerceIn(x0 + r + half, (x0 + bubbleW - r - half).coerceAtLeast(x0 + r + half))
+        val edgeY = if (above) y + bubbleH else y
+        val apexY = if (above) edgeY + tailH else edgeY - tailH
         val tail = Path().apply {
-            val d = if (fromRight) 14f else -14f
-            moveTo(bx, y1)
-            lineTo(bx + d * density, y + 30f * density)
-            lineTo(bx, y2)
+            moveTo(tx - half, edgeY)
+            lineTo(tx, apexY)
+            lineTo(tx + half, edgeY)
         }
         canvas.drawPath(tail, bubbleFill)
         canvas.drawPath(tail, bubbleStroke)
-        canvas.drawLine(bx, y1 + 2f * density, bx, y2 - 2f * density, seamPaint)
+        canvas.drawLine(tx - half + 1.5f * density, edgeY, tx + half - 1.5f * density, edgeY, seamPaint)
 
         canvas.save()
         canvas.translate(x0 + pad - (textW0 - lineMax) / 2f, y + pad)
@@ -660,6 +809,65 @@ class RReaderCobraView(
             Step(R.drawable.r_stick_wise_hit, "", 900, 2),
             Step(R.drawable.r_stick_wise_hit, "آآآي! دماغي!", 900, 0, SMALL),
             Step(R.drawable.r_stick_wise_walk_with_small, "يلا معايا. ونصيحة تانية: اشرب مية.", 700),
+        )
+
+        private fun ids(vararg v: Int) = v
+
+        /**
+         * R scene v2 (sheets of 2026-11-22). 0 the little one peeks (J0); the wise one walks in (G) and scolds while the
+         * little one notices (J1), 1 he raises the cane (H1 wind-up) and the little one is shocked (J3b), 2 swing, 3 impact:
+         * burst (H1-10) and the little one is hit, squashed and bounces (J3-J5), 4 "ouch" (dizzy), 5 the lecture,
+         * 6 he drags the dazed little one off to the right (I2). Text lines marked * are drafts, not approved by the owner.
+         */
+        private val SCENE2 = listOf(
+            Step(
+                R.drawable.r_g_00, "إنت تاني؟! تلات مرات في دقيقة! مفيش أدب!", 900,
+                small = R.drawable.r_j_1,
+                wiseFrames = ids(
+                    R.drawable.r_g_00, R.drawable.r_g_01, R.drawable.r_g_02, R.drawable.r_g_03,
+                    R.drawable.r_g_04, R.drawable.r_g_05, R.drawable.r_g_06,
+                ),
+                flip = true, frameMs = 110,
+            ),
+            Step(
+                R.drawable.r_h1_01, "نصيحة من الحاج: اللي ما يسمعش الكلام... يتضرب!", 300, 1,
+                small = R.drawable.r_j3b_0,
+                wiseFrames = ids(R.drawable.r_h1_01, R.drawable.r_h1_02, R.drawable.r_h1_03, R.drawable.r_h1_04),
+                smallFrames = ids(R.drawable.r_j3b_0, R.drawable.r_j3b_1, R.drawable.r_j3b_2, R.drawable.r_j3b_1),
+                flip = false, frameMs = 240,
+            ),
+            Step(
+                R.drawable.r_h1_05, "", 420, 1,
+                small = R.drawable.r_j3b_0,
+                wiseFrames = ids(R.drawable.r_h1_05, R.drawable.r_h1_06, R.drawable.r_h1_07, R.drawable.r_h1_09),
+                flip = false, frameMs = 105,
+            ),
+            Step(
+                R.drawable.r_h1_10, "", 1000, 2,
+                small = R.drawable.r_j_3,
+                smallFrames = ids(R.drawable.r_j_3, R.drawable.r_j_4, R.drawable.r_j_5, R.drawable.r_j_4),
+                flip = false, frameMs = 170,
+            ),
+            Step(
+                R.drawable.r_h1_11, "آآآي! دماغي!", 900, 0, SMALL,
+                small = R.drawable.r_mascot_dizzy,
+                wiseFrames = ids(R.drawable.r_h1_11, R.drawable.r_h1_12),
+                flip = false, frameMs = 260,
+            ),
+            Step(
+                R.drawable.r_h1_13, "ده جزاء اللي ما يسمعش الكلام. ريّح عينيك واشرب مية!", 800, 0, WISE,
+                wiseFrames = ids(R.drawable.r_h1_13, R.drawable.r_h1_14),
+                flip = false, frameMs = 400,
+            ),
+            Step(
+                R.drawable.r_i2_00, "يلا معايا يا شاطر. وكمّل قراية بهدوء.", 700, 0, WISE,
+                small = -1,
+                wiseFrames = ids(
+                    R.drawable.r_i2_00, R.drawable.r_i2_01, R.drawable.r_i2_02, R.drawable.r_i2_03,
+                    R.drawable.r_i2_04, R.drawable.r_i2_05, R.drawable.r_i2_06, R.drawable.r_i2_07,
+                ),
+                flip = false, frameMs = 130,
+            ),
         )
 
         private val NORMAL = listOf(

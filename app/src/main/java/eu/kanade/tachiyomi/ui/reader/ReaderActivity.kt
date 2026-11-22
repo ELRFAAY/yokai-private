@@ -344,6 +344,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 intervalMinutes = { preferences.rReaderCobraInterval().get() },
                 sceneOn = { preferences.rReaderCobraScene().get() },
                 sceneEvery = { preferences.rReaderCobraSceneEvery().get() },
+                sceneV2On = { preferences.rSceneV2().get() },
                 sizeDp = { preferences.rDragonSize().get() },
             ).also { view ->
                 binding.root.addView(

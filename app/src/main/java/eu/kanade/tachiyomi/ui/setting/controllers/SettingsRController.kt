@@ -386,6 +386,14 @@ class SettingsRController : SettingsLegacyController() {
                 entryValues = listOf(3, 4, 5, 7)
                 preferences.rReaderCobraScene().changesIn(viewScope) { isEnabled = it }
             }
+
+            switchPreference {
+                bindTo(preferences.rSceneV2())
+                title = "مشهد العصا الجديد (الشيتس الجديدة)"
+                rIcon(R.drawable.ic_r_stick)
+                summary = "مفعّل: الحكيم يمشي من اليمين، يرفع العصا ويضرب، والتنين الصغير يتخبط ويتهز ثم يسحبه. معطّل: المشهد القديم. يسري من الزيارة الجاية."
+                preferences.rReaderCobraScene().changesIn(viewScope) { isEnabled = it }
+            }
         }
     }
 }

@@ -311,6 +311,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** When the app was last on screen (epoch ms), used by the welcome. */
     fun rLastOpenMs() = preferenceStore.getLong("r_last_open_ms", 0L)
 
+    /** Reader scene with the 2026-11-22 sheets (walk, hit, squash, drag); off = the previous scene. */
+    fun rSceneV2() = preferenceStore.getBoolean("r_scene_v2", true)
+
     /** Settings screens drawn as theme-tinted rounded cards, one per category. */
     fun rSettingsStyle() = preferenceStore.getBoolean("r_settings_style", true)
 
