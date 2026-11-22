@@ -358,25 +358,31 @@ class RStatsProfileView(
         val list = banners.toMutableList()
         val thumbs = HashMap<String, Bitmap?>()
         val rv = RecyclerView(context)
+        // every picture should be visible at once: the row height shrinks with the number of pictures
+        val gap = (6 * density).toInt()
+        val maxListH = (context.resources.displayMetrics.heightPixels * 0.6f).toInt()
+        val rowH = (maxListH / list.size - gap).coerceIn((28 * density).toInt(), (56 * density).toInt())
+        val listH = minOf(list.size * (rowH + gap), maxListH)
         lateinit var helper: androidx.recyclerview.widget.ItemTouchHelper
         val ad = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             override fun getItemCount() = list.size
             override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
                 val img = ImageView(context).apply {
                     scaleType = ImageView.ScaleType.CENTER_CROP
-                    layoutParams = LinearLayout.LayoutParams(0, (56 * density).toInt(), 1f)
+                    layoutParams = LinearLayout.LayoutParams(0, rowH, 1f)
                 }
                 val handle = ImageView(context).apply {
                     setImageResource(R.drawable.ic_drag_handle_24dp)
                     alpha = 0.7f
-                    setPadding((12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt(), (12 * density).toInt())
-                    layoutParams = LinearLayout.LayoutParams((48 * density).toInt(), (56 * density).toInt())
+                    val vPad = ((rowH - 24 * density) / 2).toInt().coerceAtLeast(0)
+                    setPadding((8 * density).toInt(), vPad, (8 * density).toInt(), vPad)
+                    layoutParams = LinearLayout.LayoutParams((40 * density).toInt(), rowH)
                 }
                 val row = LinearLayout(context).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
                     layoutParams = ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                        setMargins(0, (3 * density).toInt(), 0, (3 * density).toInt())
+                        setMargins(0, gap / 2, 0, gap / 2)
                     }
                     addView(img)
                     addView(handle)
@@ -429,7 +435,7 @@ class RStatsProfileView(
         val box = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             addView(hint)
-            addView(rv, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (360 * density).toInt()).apply {
+            addView(rv, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, listH).apply {
                 marginStart = (16 * density).toInt()
                 marginEnd = (16 * density).toInt()
             })
