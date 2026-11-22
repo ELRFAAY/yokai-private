@@ -1,0 +1,50 @@
+OPTIONAL IMPROVEMENT PROMPTS (2026-11-22)
+Everything here is optional: the scene can be built with the sheets already received (G, H1, I2, J, E2). These make the stick scene better.
+Order of value: 1) PROFILE ANCHOR + G + I2 (true side view), 2) J3b (shocked frame without the cane), 3) K1 wise turn-around, 4) H2 aftermath (lecture).
+How to use: attach the reference sheet (p5 for the wise dragon, p1 for the small one), paste the GLOBAL RULES first, then ONE prompt per image.
+
+==================================================
+GLOBAL RULES (paste at the start of EVERY prompt)
+==================================================
+Same character as the attached reference sheet, do not redesign. Flat-colour cartoon sticker style, thick dark-green outline (same line weight in every cell), glossy green skin, light-green belly scales. SMALL dragon: short, WIDE, chubby body, big hood, exactly TWO small hands (the body's own, never extra arms), tail curled. WISE dragon: same snake body type, straw conical hat, long white beard and white eyebrows, wooden cane. Pure white background (#FFFFFF), no ground shadow, no text, no numbers, no labels, no cell borders. All cells exactly the same size, character centred, the BASELINE (where the body touches the ground) on the same horizontal line in every cell, and the SAME SCALE in all cells (no zoom between frames). Effects must not touch the character unless stated. Read left to right, top to bottom = animation order.
+
+==================================================
+STEP 0 - PROFILE ANCHOR (make this FIRST, then attach it as the reference for G and I2)
+==================================================
+Two earlier attempts at a side view came out as a front view, so first make ONE single image, not a grid.
+PROMPT: A single image, one character only. The wise dragon drawn in strict SIDE PROFILE, exactly like a side-scrolling video game sprite. He faces the LEFT edge of the image. We see only his left side: one eye, the hood as a narrow shape seen from the side, the straw conical hat seen from the side, the long white beard hanging down on the left side of his neck, his right hand holding the wooden cane planted on the ground in front of him (to the left). His long snake body lies along the ground as a horizontal S-shaped wave flowing to the RIGHT, tail tip at the far right. NOT a front view, NOT a three-quarter view, the chest and belly scales face the LEFT side only as a thin light-green strip along the underside. Same character, same style, same colours as the reference.
+If the first result is still a front view, add: "his body is seen exactly 90 degrees from the side, like a snake photographed from the side on the ground, the viewer sees only ONE of his two eyes".
+Then attach this anchor image together with the reference sheet for G and I2 below.
+
+==================================================
+SHEET G (3rd try) - wise dragon slither walk, SIDE PROFILE (4 columns x 2 rows = 8 cells, seamless loop)
+==================================================
+Use the attached PROFILE ANCHOR image as the exact pose and view of EVERY cell: same view, same character, same size. Only the slithering wave changes.
+SHEET G, 4 columns x 2 rows, 8 cells, all facing LEFT. The S-wave travels from the head toward the tail, advancing 45 degrees of wave phase per frame, so frame 9 would be identical to frame 1.
+Frame 1: phase 0, cane tip touches the ground (tap). 2: phase 45, cane lifts 10 degrees. 3: phase 90, cane in the air. 4: phase 135, cane in the air, hat 2% lower. 5: phase 180, cane tip touches the ground (tap). 6: phase 225, cane lifting. 7: phase 270, cane in the air. 8: phase 315, cane coming down to the next tap.
+Every cell is a moving frame; no resting or coiled pose. Tail tip swings opposite to the head. Beard sways opposite to the direction of motion. Head height changes at most 5% between frames. Body length and thickness constant. Calm stern face, mouth closed.
+
+==================================================
+SHEET I2 (3rd try) - wise dragon dragging the small one, SIDE PROFILE (4 columns x 2 rows = 8 cells, seamless loop)
+==================================================
+Use the attached PROFILE ANCHOR image MIRRORED (facing RIGHT) as the exact view of the wise dragon in EVERY cell.
+SHEET I2, 4 columns x 2 rows, 8 cells, everything faces the RIGHT edge. Every cell contains BOTH characters. The wise dragon is on the right part of the cell, slithering to the right, cane in his LEFT hand planted ahead of him. With his RIGHT hand, behind him, he holds the tip of the small dragon's tail. The small dragon is on the left part of the cell, dragged along the ground behind him: spiral eyes, tongue slightly out, arms limp, hood drooping, lying on its side, head toward the right. The tail between the hand and the small dragon stays taut and visible in all 8 frames.
+Wave advances 45 degrees per frame, cane taps on frames 1 and 5 only. The small dragon bounces to the same rhythm: on frames 1 and 5 it touches the ground (squashed 10 percent), on frames 3 and 7 it is lifted 15 percent of its height, in between halfway. The wise dragon is about 1.4 times taller than the small one, same baseline in every cell. Frame 9 would be identical to frame 1.
+
+==================================================
+SHEET J3b - small dragon shocked, WITHOUT the cane (3 columns x 1 row = 3 cells)
+==================================================
+SMALL dragon, front view, no cane, no other character, no motion lines touching the character.
+1: shocked, mouth open round "!", pupils tiny, both hands up near the face, hood raised, body leaning back 5 degrees. 2: same, shaking: body shifted 4 percent to the left, a faint second outline on the left. 3: same, shifted 4 percent to the right, a faint second outline on the right.
+
+==================================================
+SHEET K1 - wise dragon turning around (4 columns x 1 row = 4 cells, FRONT to SIDE)
+==================================================
+WISE dragon turning his body from facing the viewer to facing the LEFT in 4 steps, same size and baseline, cane in his right hand all the time.
+1: front view (like the reference). 2: turned 30 degrees to his right so we see his left cheek, the hat tilting a little, beard swinging a little to the right. 3: turned 60 degrees, mostly side view, the beard hanging on the left side of the neck. 4: strict side profile facing LEFT (same as the PROFILE ANCHOR).
+
+==================================================
+SHEET H2 - wise dragon aftermath, he lectures (3 columns x 2 rows = 6 cells)
+==================================================
+WISE dragon, 3/4 front view, same size and baseline in all cells, cane in his right hand unless stated.
+1: stern, looking at the camera, cane resting on his shoulder. 2: shaking his LEFT index finger, mouth open lecturing, eyebrows angled down. 3: same, finger pointing up, other eyebrow raised, mouth in a different open shape. 4: sighing, eyes closed, shoulders down, cane lowered. 5: pointing the cane to the RIGHT of the image ("go"), stern face. 6: arms crossed over the chest, cane tucked under one arm, eyes shut, proud.
