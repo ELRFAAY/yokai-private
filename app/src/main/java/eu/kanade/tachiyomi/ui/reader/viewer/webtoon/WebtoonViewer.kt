@@ -152,7 +152,10 @@ class WebtoonViewer(val activity: ReaderActivity, val hasMargins: Boolean = fals
             // the middle (menu) region always toggles the tools; the jump zones only own the rest of the bottom half
             val rDir = if (config.navigator.getAction(pos) == ViewerNavigation.NavigationRegion.MENU) 0 else rZoneDirection(pos.x, pos.y)
             if (rDir != 0) {
-                recycler.smoothScrollBy(0, rDir * rJumpPx())
+                val dy = rDir * rJumpPx()
+                // R: the jump takes as long as the tools card speed says (same speed as the hold and the auto scroll)
+                val ms = (kotlin.math.abs(dy) / rZonePxPerSecond() * 1000f).toInt().coerceIn(150, 3000)
+                recycler.smoothScrollBy(0, dy, android.view.animation.DecelerateInterpolator(), ms)
                 return@f
             }
             when (config.navigator.getAction(pos)) {
@@ -196,7 +199,7 @@ class WebtoonViewer(val activity: ReaderActivity, val hasMargins: Boolean = fals
 
         // R: hold a finger in the bottom half to keep scrolling
         frame.holdDirection = { x, y -> if (rPreferences.rHoldScroll().get()) rZoneDirection(x, y) else 0 }
-        frame.holdPxPerSecond = { recycler.height * rPreferences.rHoldScrollSpeed().get() / 10f }
+        frame.holdPxPerSecond = { rZonePxPerSecond() }
         frame.holdScrollBy = { px -> recycler.scrollBy(0, px) }
 
         frame.layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
@@ -212,6 +215,18 @@ class WebtoonViewer(val activity: ReaderActivity, val hasMargins: Boolean = fals
             2 -> 1
             else -> if (right) 1 else -1
         }
+    }
+
+    /**
+     * R: speed of the bottom-corner scrolling (tap jump and hold). It follows the SPEED slider of the tools card
+     * (`r_auto_scroll_speed`, dp per second); the old hold speed choice (5/10/15/25) is only a gear on top of it
+     * (default 10 x slider 60 = 600 dp/s, about what the hold did before).
+     */
+    private fun rZonePxPerSecond(): Float {
+        val density = activity.resources.displayMetrics.density
+        val speed = rPreferences.rAutoScrollSpeed().get()
+        val gear = rPreferences.rHoldScrollSpeed().get().coerceAtLeast(1)
+        return (density * speed * gear).coerceAtLeast(1f)
     }
 
     private fun rJumpPx() = (recycler.height * rPreferences.rTapJump().get() / 100f).toInt().coerceAtLeast(1)

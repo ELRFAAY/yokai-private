@@ -449,7 +449,11 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         rStyleClock()
         binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> rPositionClock() }
         // R: the original page bar is only shown when its switch is on (Settings > R); the new tools card replaces it
-        if (!preferences.rOldToolbar().get()) binding.navLayout.visibility = View.GONE
+        if (preferences.rSideTools().get() && verticalNav) {
+            rSetupSideTools()
+        } else if (!preferences.rOldToolbar().get()) {
+            binding.navLayout.visibility = View.GONE
+        }
         binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateNavHeight() }
         config = ReaderConfig()
         initializeMenu()
@@ -1427,7 +1431,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     private fun setupAutoScrollButton(newViewer: BaseViewer) {
         val webtoon = newViewer as? WebtoonViewer
         with(readerNav.autoScroll) {
-            isVisible = webtoon != null && preferences.rAutoScroll().get()
+            // R: with the side tools on, auto-scroll lives only in the tools card (play button), not in the side bar
+            isVisible = webtoon != null && preferences.rAutoScroll().get() && !(preferences.rSideTools().get() && verticalNav)
             setImageResource(R.drawable.ic_play_arrow_24dp)
             setOnClickListener {
                 val running = webtoon?.toggleAutoScroll() ?: false
@@ -1529,6 +1534,124 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
     /** R: simple chapters list dialog (the tools bar used to expand the heavy chapters sheet, which froze some phones). */
     private var rChapterDialogOpen = false
+    private var rChapterDialogRef: android.app.Dialog? = null
+
+    /** R: title row of the chapters list: two chips to switch between the chapters and the reading settings. */
+    private fun rChaptersSettingsSwitch(): View {
+        val d = resources.displayMetrics.density
+        val accent = getResourceColor(com.google.android.material.R.attr.colorSecondary)
+        val onSurface = getResourceColor(com.google.android.material.R.attr.colorOnSurface)
+        val row = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding((16 * d).toInt(), (14 * d).toInt(), (16 * d).toInt(), (6 * d).toInt())
+        }
+        fun chip(text: String, selected: Boolean, onClick: () -> Unit) = android.widget.TextView(this).apply {
+            this.text = text
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setTextColor(if (selected) android.graphics.Color.BLACK else onSurface)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = 20 * d
+                if (selected) {
+                    setColor(accent)
+                } else {
+                    setColor(android.graphics.Color.TRANSPARENT)
+                    setStroke((1 * d).toInt().coerceAtLeast(1), androidx.core.graphics.ColorUtils.setAlphaComponent(accent, 160))
+                }
+            }
+            setPadding((18 * d).toInt(), (8 * d).toInt(), (18 * d).toInt(), (8 * d).toInt())
+            setOnClickListener { onClick() }
+        }
+        row.addView(chip("الشباتر", true) {})
+        row.addView(
+            chip("إعدادات القراءة", false) {
+                rChapterDialogRef?.dismiss()
+                TabbedReaderSettingsSheet(this@ReaderActivity).show()
+            },
+            android.widget.LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply { marginEnd = (8 * d).toInt() },
+        )
+        return row
+    }
+
+    // ---- R: side tools (arrow on the side page bar -> the old toolbar as a glass strip beside it) ----
+    private var rSideTools: RSideTools? = null
+    private var rSideToolsOpen = false
+    private var rSideToolsPositioning = false
+
+    private fun rSetupSideTools() {
+        val sheet = binding.chaptersSheet
+        // the old bottom toolbar is not shown any more: invisible and not draggable, its layout space stays as it was
+        sheet.root.alpha = 0f
+        sheet.topbarLayout.visibility = View.INVISIBLE
+        sheet.root.sheetBehavior?.isDraggable = false
+
+        val strip = RSideTools(this) { rScheduleAutoHide() }
+        strip.add("الشباتر", null, R.drawable.ic_format_list_numbered_24dp) { rShowChapterDialog() }
+        strip.add("فتح في المتصفح", sheet.webviewButton, 0) { sheet.webviewButton.performClick() }
+        strip.add("وضع القراءة", sheet.readingMode, 0) { sheet.readingMode.performClick() }
+        strip.add("التدوير", sheet.rotationSheetButton, 0) { sheet.rotationSheetButton.performClick() }
+        strip.add("قص الحواف", sheet.cropBordersSheetButton, 0) { sheet.cropBordersSheetButton.performClick() }
+        strip.add("صفحتين", sheet.doublePage, 0) { sheet.doublePage.performClick() }
+        strip.add("إعدادات القراءة", null, R.drawable.ic_tune_24dp) { TabbedReaderSettingsSheet(this@ReaderActivity).show() }
+        strip.isVisible = false
+        val lp = androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            150.dpToPx,
+        ).apply {
+            gravity = Gravity.TOP or Gravity.RIGHT
+        }
+        (binding.root as ViewGroup).addView(strip, lp)
+        rSideTools = strip
+
+        with(binding.readerNavVertical.sideToolsToggle) {
+            isVisible = true
+            setOnClickListener {
+                rSideToolsOpen = !rSideToolsOpen
+                animate().rotation(if (rSideToolsOpen) 180f else 0f).setDuration(150).start()
+                rScheduleAutoHide()
+                rPositionSideTools()
+            }
+        }
+        binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            // never change layout params inside the layout pass itself: do it right after it
+            if (!rSideToolsPositioning) {
+                rSideToolsPositioning = true
+                binding.root.post {
+                    try {
+                        rPositionSideTools()
+                    } finally {
+                        rSideToolsPositioning = false
+                    }
+                }
+            }
+        }
+    }
+
+    /** R: puts the strip right beside the side page bar, as long as the bar (the arrow's row excluded). */
+    private fun rPositionSideTools() {
+        val strip = rSideTools ?: return
+        val nav = binding.navLayout
+        val show = rSideToolsOpen && menuVisible && !rLocked && nav.isVisible && readerNav.root.isVisible && nav.height > 0
+        if (strip.isVisible != show) strip.isVisible = show
+        if (!show) return
+        strip.refresh()
+        val arrow = 32.dpToPx
+        val lp = strip.layoutParams as? androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams ?: return
+        val top = nav.top + arrow
+        val height = (nav.height - arrow - nav.paddingBottom).coerceAtLeast(120.dpToPx)
+        val right = nav.width + 6.dpToPx + 8.dpToPx
+        if (lp.topMargin != top || lp.height != height || lp.rightMargin != right) {
+            lp.topMargin = top
+            lp.height = height
+            lp.rightMargin = right
+            strip.layoutParams = lp
+        }
+    }
 
     private fun rShowChapterDialog() {
         lifecycleScope.launch {
@@ -1538,13 +1661,17 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             val current = items.indexOfFirst { it.isCurrent }.coerceAtLeast(0)
             val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this@ReaderActivity)
                 .setTitle("الشباتر")
+                .setCustomTitle(rChaptersSettingsSwitch())
                 .setSingleChoiceItems(names, current) { d, which ->
                     d.dismiss()
                     if (items[which].chapter.id != viewModel.getCurrentChapter()?.chapter?.id) {
                         lifecycleScope.launch { loadChapter(items[which].chapter) }
                     }
+                    // the tools disappear after choosing a chapter (they used to stay over the page)
+                    hideMenu()
                 }
                 .create()
+            rChapterDialogRef = dialog
             // the tools card disappears while the list is open and comes back when it closes
             rChapterDialogOpen = true
             rToolsBar?.isVisible = false

@@ -178,6 +178,13 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rSideTools())
+                title = "الشريط الجانبي وسهم الأدوات القديمة"
+                rIcon(R.drawable.ic_swap_vert_24dp)
+                summary = "شريط الصفحات والشباتر على الجنب (من غير زرار التمرير التلقائي). السهم فوقه بيطلّع أدوات البرنامج القديمة جنبه، والشريط القديم اللي تحت بيختفي. عند الإيقاف: الشكل القديم. يسري عند فتح القارئ من جديد."
+            }
+
+            switchPreference {
                 bindTo(preferences.rOldToolbar())
                 title = "شريط الصفحات القديم"
                 rIcon(R.drawable.ic_swap_vert_24dp)

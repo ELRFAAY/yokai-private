@@ -18,6 +18,23 @@
     android:focusable="true"
     android:layoutDirection="ltr">
 
+    <!-- R: arrow at the very top: shows / hides the old toolbar as a strip beside this bar -->
+    <ImageButton
+        android:id="@+id/side_tools_toggle"
+        android:layout_width="40dp"
+        android:layout_height="32dp"
+        android:background="?selectableItemBackgroundBorderless"
+        android:contentDescription="أدوات القارئ"
+        android:padding="6dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/right_chapter"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_chainStyle="spread_inside"
+        app:tint="?actionBarTintColor"
+        app:srcCompat="@drawable/ic_arrow_back_24dp" />
+
     <ImageButton
         android:id="@+id/right_chapter"
         android:layout_width="40dp"
@@ -26,11 +43,10 @@
         android:contentDescription="@string/next_chapter"
         android:padding="@dimen/material_layout_keylines_screen_edge_margin"
         android:rotation="270"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/side_tools_toggle"
         app:layout_constraintBottom_toTopOf="@id/right_page_text"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_chainStyle="spread_inside"
         app:tint="?actionBarTintColor"
         app:srcCompat="@drawable/ic_skip_next_24" />
 

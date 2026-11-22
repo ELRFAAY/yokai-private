@@ -353,6 +353,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Reader tools bar under the toolbar: speed, brightness, volume, battery icons with small panels. */
     fun rToolsBar() = preferenceStore.getBoolean("r_tools_bar", true)
     /** R: the original page bar (seekbar + page numbers) of the reader. Off by default: the new tools card replaces it. */
+    /** R: side page bar back (no auto-scroll button), arrow that opens the old toolbar as a strip, old bottom bar hidden. */
+    fun rSideTools() = preferenceStore.getBoolean("r_side_tools", true)
+
     fun rOldToolbar() = preferenceStore.getBoolean("r_old_toolbar", false)
 
     /** Reader: thin permanent progress bar at the bottom edge. */

@@ -49,6 +49,9 @@ class RToolsBar(
     private val density = resources.displayMetrics.density
     private val accent = context.getResourceColor(MR.attr.colorSecondary)
     private val onSurface = context.getResourceColor(MR.attr.colorOnSurface)
+
+    /** Second color (warm amber) next to the theme color, so the card is not one flat color. */
+    private val accent2 = Color.parseColor("#F5B942")
     private val audio = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var open: Tool? = null
 
@@ -84,11 +87,7 @@ class RToolsBar(
         val side = (14 * density).toInt()
         setPadding(side, (6 * density).toInt(), side, (6 * density).toInt())
         // R: a floating rounded card (like the owner's reference): dark, theme-tinted outline
-        background = GradientDrawable().apply {
-            setColor(ColorUtils.setAlphaComponent(Color.BLACK, 190))
-            cornerRadius = 28 * density
-            setStroke((1 * density).toInt(), ColorUtils.setAlphaComponent(accent, 90))
-        }
+        background = rGlassBackground(density, 28f, accent)
 
         // chapter row (like the owner's reference): previous chapter | current chapter (tap = list) | next chapter,
         // then the page counter
@@ -129,7 +128,8 @@ class RToolsBar(
             textSize = 13f
             gravity = Gravity.CENTER
             textDirection = TEXT_DIRECTION_LTR // the screen is Arabic (RTL): without this "1 / 13" showed as "13 / 1"
-            background = pill(ColorUtils.setAlphaComponent(accent, 50), 14f)
+            setTextColor(accent2)
+            background = pill(ColorUtils.setAlphaComponent(accent2, 40), 14f)
             setPadding((14 * density).toInt(), (3 * density).toInt(), (14 * density).toInt(), (3 * density).toInt())
         }
         addView(
@@ -191,6 +191,50 @@ class RToolsBar(
             },
         )
 
+        // handle line under the card: drag it up (or tap it) to open the chapters list; its chips switch to the
+        // reading settings
+        val handleZone = android.widget.FrameLayout(context)
+        val handle = View(context).apply {
+            background = pill(ColorUtils.setAlphaComponent(Color.WHITE, 170), 3f)
+        }
+        handleZone.addView(
+            handle,
+            android.widget.FrameLayout.LayoutParams((44 * density).toInt(), (5 * density).toInt(), Gravity.CENTER),
+        )
+        var downY = 0f
+        var fired = false
+        handleZone.setOnTouchListener { v, ev ->
+            onInteract()
+            when (ev.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downY = ev.rawY
+                    fired = false
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (!fired && downY - ev.rawY > 24 * density) {
+                        fired = true
+                        onFlingUp()
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (!fired) {
+                        v.performClick()
+                        onFlingUp()
+                    }
+                    true
+                }
+                else -> true
+            }
+        }
+        addView(
+            handleZone,
+            LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (22 * density).toInt()).apply {
+                topMargin = (2 * density).toInt()
+            },
+        )
+
         slider.addOnChangeListener { _, value, fromUser ->
             if (!fromUser) return@addOnChangeListener
             onInteract()
@@ -243,8 +287,8 @@ class RToolsBar(
     /** Round button with a thin outline; filled with the accent tint while its panel is open. */
     private fun roundButton(active: Boolean) = GradientDrawable().apply {
         shape = GradientDrawable.OVAL
-        setColor(if (active) ColorUtils.setAlphaComponent(accent, 70) else ColorUtils.setAlphaComponent(Color.WHITE, 18))
-        setStroke((1 * density).toInt(), ColorUtils.setAlphaComponent(if (active) accent else Color.WHITE, 110))
+        setColor(if (active) ColorUtils.setAlphaComponent(accent, 80) else ColorUtils.setAlphaComponent(Color.WHITE, 22))
+        setStroke((1 * density).toInt().coerceAtLeast(1), ColorUtils.setAlphaComponent(if (active) accent else accent2, 150))
     }
 
     private fun pill(color: Int, radiusDp: Float) = GradientDrawable().apply {
@@ -277,13 +321,9 @@ class RToolsBar(
             setOnClickListener { toggle(tool) }
         }
         buttons[tool] = button
-        row.addView(
-            button,
-            LayoutParams(0, (46 * density).toInt(), 1f).apply {
-                marginStart = (6 * density).toInt()
-                marginEnd = (6 * density).toInt()
-            },
-        )
+        // fixed round size; the space between the buttons stretches (they used to stretch themselves into ovals)
+        if (row.childCount > 0) row.addView(View(context), LayoutParams(1, 1, 1f))
+        row.addView(button, LayoutParams((46 * density).toInt(), (46 * density).toInt()))
     }
 
     private fun toggle(tool: Tool) {
