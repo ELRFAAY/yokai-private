@@ -646,6 +646,33 @@ class RMascotView(context: Context) : View(context) {
     }
 
     /** Called by MainActivity on every touch anywhere in the app: restarts the sleep timer and wakes the dragon up. */
+    private var lastOpinionAt = 0L
+
+    /**
+     * R: the dragon gives a (random, joking) opinion when the owner opens a manga page. It looks at nothing: no
+     * ratings, no lists, no websites; the owner asked for exactly that.
+     */
+    fun reactToManga() {
+        val now = SystemClock.uptimeMillis()
+        if (!positioned || now - lastOpinionAt < 20_000L || Math.random() > 0.7) return
+        lastOpinionAt = now
+        postDelayed(
+            {
+                if (isShown && state == State.IDLE && !asleep && tfStart == 0L) {
+                    val t = SystemClock.uptimeMillis()
+                    if (Math.random() < 0.55) {
+                        cheerUntil = t + 1800L
+                        say(OPINION_GOOD.random(), 3200L)
+                    } else {
+                        sadUntil = t + 2200L
+                        say(OPINION_BAD.random(), 3200L)
+                    }
+                }
+            },
+            1200L,
+        )
+    }
+
     fun noteActivity() {
         lastActiveAt = SystemClock.uptimeMillis()
         if (asleep) {
@@ -1200,6 +1227,17 @@ class RMascotView(context: Context) : View(context) {
         val SAD_TALK = listOf(
             "حرام عليك...", "ده أنا زعلان!", "كده يا صاحبي؟",
             "ماشي... أنا هقعد لوحدي", "كنت فاكرك صاحبي...", "كنت عايز بس حضن...", "طيب... هاروح أقرا لوحدي",
+        )
+        val OPINION_GOOD = listOf(
+            "المانهوا دي شكلها حلو، اقراها!", "غلاف جامد! ابدأ فيها.", "أنا حاسس إنها هتعجبك!",
+            "من النوع اللي بتقول فيه «شابتر كمان بس».", "أنا موافق عليها... معلش، مقريتهاش.",
+            "ابدأ فيها وقولي رأيك.", "شكلها هتسهرك. جرب!", "دي عليها القيمة!",
+        )
+        val OPINION_BAD = listOf(
+            "مش عاجبتني المانهوا دي، بصراحة.", "الغلاف مش مريحني... بس إنت حر.",
+            "حاسس إنها هتعمل لك دوشة في دماغك.", "ممكن تقرا غيرها؟ أنا بس بقترح.",
+            "مش لونها! أنا بحب الأخضر.", "أنا مش واثق فيها، بس إنت حر.",
+            "دي مش من النوع بتاعي... ولا أنا بفهم أصلاً.",
         )
         val TAP = listOf(
             "أيوه؟", "عايز إيه؟", "بس بتدغدغني!",
