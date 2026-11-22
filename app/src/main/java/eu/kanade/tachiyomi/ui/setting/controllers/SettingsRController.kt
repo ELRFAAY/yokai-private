@@ -174,7 +174,14 @@ class SettingsRController : SettingsLegacyController() {
                 bindTo(preferences.rToolsBar())
                 title = "شريط أدوات القارئ"
                 rIcon(R.drawable.ic_tune_24dp)
-                summary = "أيقونات سرعة التمرير والسطوع والصوت والبطارية تحت الشريط العلوي. اسحب الشريط لأعلى للفصول، ويمين أو شمال للإعدادات. يسري عند فتح القارئ من جديد."
+                summary = "الشريط الجديد العائم: سرعة التمرير والسطوع والصوت والبطارية وأزرار الفصول. اسحبه لأعلى للفصول، ويمين أو شمال للإعدادات. يسري عند فتح القارئ من جديد."
+            }
+
+            switchPreference {
+                bindTo(preferences.rOldToolbar())
+                title = "شريط الصفحات القديم"
+                rIcon(R.drawable.ic_swap_vert_24dp)
+                summary = "شريط التطبيق الأصلي أسفل القارئ (شريط الصفحات). عند الإيقاف: يختفي تمامًا ويبقى الشريط الجديد فقط. يمكن تشغيل الاثنين معًا أو أيهما. يسري عند فتح القارئ من جديد."
             }
 
             switchPreference {

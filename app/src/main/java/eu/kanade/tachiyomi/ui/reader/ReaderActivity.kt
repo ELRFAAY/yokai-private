@@ -440,6 +440,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
         binding.chaptersSheet.chaptersBottomSheet.setup(this)
         rSetupToolsBar()
+        // R: the original page bar is only shown when its switch is on (Settings > R); the new tools card replaces it
+        if (!preferences.rOldToolbar().get()) binding.navLayout.visibility = View.GONE
         binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateNavHeight() }
         config = ReaderConfig()
         initializeMenu()
@@ -1558,7 +1560,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         val top = if (pageBarShown) binding.navLayout.top else sheet.top
         val margin = (rootHeight - top + 8.dpToPx).coerceAtLeast(0)
         val lp = bar.layoutParams as? androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams ?: return
-        val right = if (verticalNav) 64.dpToPx else 10.dpToPx // the vertical slider lives on the right
+        val right = if (verticalNav && binding.navLayout.isVisible) 64.dpToPx else 10.dpToPx // the vertical slider lives on the right
         if (lp.bottomMargin != margin || lp.rightMargin != right) {
             lp.bottomMargin = margin
             lp.rightMargin = right
