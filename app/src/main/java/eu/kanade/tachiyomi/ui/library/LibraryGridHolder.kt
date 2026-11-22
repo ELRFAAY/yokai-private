@@ -124,7 +124,10 @@ class LibraryGridHolder(
         val pinned = PinnedManga.isPinned(item.manga.manga.id)
         binding.rPinBadge.isVisible = pinned
         if (pinned) {
-            binding.rPinBadge.translationX = if (binding.playLayout.isVisible) -(34.dpToPx).toFloat() else 0f
+            // physical top-left of the cover; drops below the unread/download badge when that one sits there (LTR)
+            val ltr = itemView.layoutDirection == View.LAYOUT_DIRECTION_LTR
+            binding.rPinBadge.translationY =
+                if (ltr && binding.unreadDownloadBadge.root.isVisible) 22.dpToPx.toFloat() else 0f
         }
     }
 

@@ -142,7 +142,7 @@
                 android:id="@+id/r_pin_badge"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
-                android:layout_gravity="top|end"
+                android:layout_gravity="top|left"
                 android:layout_margin="5dp"
                 android:src="@drawable/r_pin_badge"
                 android:visibility="gone"
