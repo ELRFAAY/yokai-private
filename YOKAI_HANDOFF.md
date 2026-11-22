@@ -16,6 +16,10 @@ Last updated: 2026-11-22 (see NEWEST-22).
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
 
+## NEWEST-25 2026-11-22 12:15 (tenth account): START HERE, then NEWEST-24
+- Build 63 (run 45005325431, `d402873`) = GREEN (first attempt died on a Maven Central HTTP 429, re-run with `gh run rerun --failed` passed). Not tried on the phone yet.
+- **Owner sent a video of what happens when he taps the CHAPTER NAME** (in the reader or the chapter list; he did not say where): recorded as `branding/screens/chapter-name-tap-565780.mp4` (20.7 s). Analysis below / next commits.
+
 ## NEWEST-24 2026-11-22 10:56 (ninth account, owner at 94% credit): START HERE, then NEWEST-23 (its numbers 521x493 / 392 / 179 / 436 are OUTDATED, use these)
 - **Owner chose option 1: make the WISE bigger in the scene, keep the little dragon at home size.** Reason: the generator kept returning the same H3 (little dragon 57-60% of the wise, wanted 75%); five resends did not change it. Last sheet used: `new-sheets-2026-11-22/H3-v6-565740.jpg` (only cell 1 differed: small 187 px instead of 179). Nothing is built, nothing is compiled, nobody dispatched a build (owner decides: wait for him to say "بيلد").
 - **Cutter** `branding/tools/make_h3_cells.py` (`SRC` = the v6 jpg): now scales every cell so the little dragon of cell 1 is exactly 333 px tall (= lone little dragon sprites `r_j_*`): out scale 1.8, canvas 611x612, wise height 543 px. Prints `WISE_UP` = wise height / 436 = **1.2447**. All 8 `r_h3_*.webp` re-cut (checked on dark and light previews: clean, no stray white). Constants measured on the new sprites and put in the `RReaderCobraView` companion: `H3_FLOOR = 600`, `H3_WISE_CX = 480`, `H3_SMALL_CX = 162`, `WISE_UP = 1.2447`.
