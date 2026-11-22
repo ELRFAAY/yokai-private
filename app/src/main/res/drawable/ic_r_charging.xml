@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="14dp"
+    android:height="14dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- R: green charging bolt (shown beside the reader clock while the phone is plugged in) -->
+    <path
+        android:fillColor="#22C55E"
+        android:pathData="M13,2L5,13.5h5.5L9.5,22l8.5,-12h-5.7L13,2z" />
+</vector>

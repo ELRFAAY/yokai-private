@@ -215,12 +215,14 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     private var rAutoHideJob: Job? = null
     private var rClockJob: Job? = null
     private var rBatteryPercent = -1
+    private var rCharging = false
     private val rClockReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == Intent.ACTION_BATTERY_CHANGED) {
                 val level = intent.getIntExtra("level", -1)
                 val scale = intent.getIntExtra("scale", 100)
                 if (level >= 0 && scale > 0) rBatteryPercent = level * 100 / scale
+                rCharging = intent.getIntExtra("plugged", 0) != 0
             }
             rUpdateClock()
         }
@@ -1650,6 +1652,14 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         val time = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(Date())
         val battery = if (rBatteryPercent >= 0) "  $rBatteryPercent%" else ""
         binding.rClockBattery.text = time + battery
+        // green bolt while the phone is plugged in
+        binding.rClockBattery.setCompoundDrawablesRelativeWithIntrinsicBounds(
+            if (rCharging) R.drawable.ic_r_charging else 0,
+            0,
+            0,
+            0,
+        )
+        binding.rClockBattery.compoundDrawablePadding = 4.dpToPx
         rPositionClock()
     }
 
@@ -1660,6 +1670,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             val level = i.getIntExtra("level", -1)
             val scale = i.getIntExtra("scale", 100)
             if (level >= 0 && scale > 0) rBatteryPercent = level * 100 / scale
+            rCharging = i.getIntExtra("plugged", 0) != 0
         } catch (_: Exception) {
         }
     }
@@ -1716,6 +1727,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             addAction(Intent.ACTION_TIME_CHANGED)
             addAction(Intent.ACTION_TIMEZONE_CHANGED)
             addAction(Intent.ACTION_BATTERY_CHANGED)
+            addAction(Intent.ACTION_POWER_CONNECTED)
+            addAction(Intent.ACTION_POWER_DISCONNECTED)
         }
         ContextCompat.registerReceiver(this, rClockReceiver, clockFilter, ContextCompat.RECEIVER_NOT_EXPORTED)
         rUpdateClock()
