@@ -136,40 +136,33 @@ class RFloatDragonView(context: Context) : View(context) {
         lastFrame = now
         when (mode) {
             Mode.FLY -> {
+                // straight flight in the throw direction at a calm constant speed until it hits the screen edge
                 offX += vx * dt
                 offY += vy * dt
-                val damp = 0.07f.pow(dt)
-                vx *= damp
-                vy *= damp
-                if (offX < minX) {
-                    offX = minX
-                    vx = abs(vx) * 0.5f
-                }
-                if (offX > maxX) {
-                    offX = maxX
-                    vx = -abs(vx) * 0.5f
-                }
-                if (offY < minY) {
-                    offY = minY
-                    vy = abs(vy) * 0.5f
-                }
-                if (offY > maxY) {
-                    offY = maxY
-                    vy = -abs(vy) * 0.5f
-                }
-                spin += (vx / density) * 0.2f * dt
+                var hit = false
+                if (offX < minX) { offX = minX; hit = true }
+                if (offX > maxX) { offX = maxX; hit = true }
+                if (offY < minY) { offY = minY; hit = true }
+                if (offY > maxY) { offY = maxY; hit = true }
+                spin += (vx / density) * 0.12f * dt
                 if (now - lastDotAt > 30L) {
                     lastDotAt = now
                     dots.add(Dot(offX + width / 2f, offY + height * 0.55f, now))
                 }
-                if (sqrt(vx * vx + vy * vy) < 70f * density) {
+                if (hit) {
+                    // the bump: a short rebound, then dizzy
+                    vx *= -0.18f
+                    vy *= -0.18f
                     mode = Mode.DIZZY
                     dizzyUntil = now + 900L
-                    vx = 0f
-                    vy = 0f
                 }
             }
             Mode.DIZZY -> {
+                offX = (offX + vx * dt).coerceIn(minX, maxX)
+                offY = (offY + vy * dt).coerceIn(minY, maxY)
+                val rd = 0.002f.pow(dt)
+                vx *= rd
+                vy *= rd
                 spin += (-spin) * (1f - exp(-5f * dt)) // untwist
                 if (now >= dizzyUntil) mode = Mode.RETURN
             }
@@ -257,17 +250,22 @@ class RFloatDragonView(context: Context) : View(context) {
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (mode != Mode.DRAG) return true
-                val cap = 2300f * density
-                if (moved) {
-                    vx = (estVx * 0.6f).coerceIn(-cap, cap)
-                    vy = (estVy * 0.6f).coerceIn(-cap, cap)
-                    // a hold without speed at release (it stopped under the finger) still gets a small push
-                    if (sqrt(vx * vx + vy * vy) < 150f * density) vy = 150f * density
-                } else {
-                    // a tap: it jumps up and comes back
-                    vx = 0f
-                    vy = -900f * density
+                // direction = where it was thrown (release speed), else where it was dragged to, else up
+                var dx = 0f
+                var dy = -1f
+                val sp = sqrt(estVx * estVx + estVy * estVy)
+                if (moved && sp > 150f * density) {
+                    dx = estVx / sp
+                    dy = estVy / sp
+                } else if (moved && sqrt(offX * offX + offY * offY) > 12f * density) {
+                    val l = sqrt(offX * offX + offY * offY)
+                    dx = offX / l
+                    dy = offY / l
                 }
+                // the calm speed; thrown UP it is quicker
+                val speed = (if (dy < -0.5f) 1700f else 1000f) * density
+                vx = dx * speed
+                vy = dy * speed
                 mode = Mode.FLY
                 lastFrame = SystemClock.uptimeMillis()
                 return true

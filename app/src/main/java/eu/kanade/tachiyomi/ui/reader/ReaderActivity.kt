@@ -1158,6 +1158,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             binding.chaptersSheet.chapterRecycler.updatePaddingRelative(bottom = systemInsets.bottom)
             binding.viewerContainer.requestLayout()
             updateNavHeight()
+            binding.root.post { rPositionToolsBar() }
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             @Suppress("DEPRECATION")
@@ -1766,7 +1767,15 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         val sheet = binding.chaptersSheet.root
         val pageBarShown = !verticalNav && binding.navLayout.isVisible && readerNav.root.isVisible
         val top = if (pageBarShown) binding.navLayout.top else sheet.top
-        val margin = (rootHeight - top + 8.dpToPx).coerceAtLeast(0)
+        // R: with the original page bar hidden the card sits at the very bottom (where the phone buttons used to be);
+        // when the phone buttons are shown by a swipe up, the card rides up on top of them
+        val navInsets = ViewCompat.getRootWindowInsets(binding.root)
+        val navLift = if (navInsets?.isVisible(navigationBars()) == true) navInsets.getInsets(navigationBars()).bottom else 0
+        val margin = if (pageBarShown) {
+            (rootHeight - top + 8.dpToPx).coerceAtLeast(0)
+        } else {
+            navLift + 10.dpToPx
+        }
         val lp = bar.layoutParams as? androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams ?: return
         val right = if (verticalNav && binding.navLayout.isVisible) 64.dpToPx else 10.dpToPx // the vertical slider lives on the right
         if (lp.bottomMargin != margin || lp.rightMargin != right) {
