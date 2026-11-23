@@ -421,6 +421,12 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Statistics: show minutes in the reading time even when it is more than a day. */
     fun rStatsMinutes() = preferenceStore.getBoolean("r_stats_minutes", true)
     /** R: personal notes per manga, JSON {"sourceId:url": "text"}; a normal preference so the backup carries it. */
+    /** R: chapter notes, tags and the reading log (JSON in preferences, so the backup carries them). */
+    fun rChapterNotes() = preferenceStore.getString("r_chapter_notes", "{}")
+    fun rMangaTags() = preferenceStore.getString("r_manga_tags", "{}")
+    fun rReadLog() = preferenceStore.getString("r_read_log", "{}")
+    fun rReminder() = preferenceStore.getBoolean("r_reminder", true)
+    fun rReminderDays() = preferenceStore.getInt("r_reminder_days", 3)
     fun rMangaNotes() = preferenceStore.getString("r_manga_notes", "{}")
     fun rColorCards() = preferenceStore.getBoolean("r_color_cards", false) // R: colored title strip under library covers
 

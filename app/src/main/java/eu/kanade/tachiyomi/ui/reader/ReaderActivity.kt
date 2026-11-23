@@ -763,6 +763,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
      */
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.action_r_chapter_note -> rShowChapterNote()
             R.id.action_shift_double_page -> {
                 shiftDoublePages()
                 manuallyShiftedPages = true
@@ -1555,6 +1556,32 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (rLocked) rLockGestures.onTouchEvent(ev)
         return super.dispatchTouchEvent(ev)
+    }
+
+    /** R: a note for the chapter being read (write the page and what happened there). */
+    private fun rShowChapterNote() {
+        val manga = viewModel.manga ?: return
+        val chapter = viewModel.getCurrentChapter()?.chapter ?: return
+        val input = android.widget.EditText(this).apply {
+            setText(eu.kanade.tachiyomi.util.RChapterNotes.get(manga.source, manga.url, chapter.url))
+            hint = "مثلاً: ص١٢ هنا بدأ الأرك"
+            minLines = 4
+            gravity = android.view.Gravity.TOP or android.view.Gravity.START
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        }
+        val pad = 20.dpToPx
+        val box = android.widget.FrameLayout(this).apply {
+            setPadding(pad, pad / 2, pad, 0)
+            addView(input)
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("ملاحظة: ${chapter.name}")
+            .setView(box)
+            .setPositiveButton("حفظ") { _, _ ->
+                eu.kanade.tachiyomi.util.RChapterNotes.set(manga.source, manga.url, chapter.url, input.text.toString())
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     /** R: simple chapters list dialog (the tools bar used to expand the heavy chapters sheet, which froze some phones). */

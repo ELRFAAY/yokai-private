@@ -76,6 +76,10 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_r_tags"
+        android:title="وسوم"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_r_notes"
         android:icon="@drawable/ic_edit_24dp"
         android:title="ملاحظات"

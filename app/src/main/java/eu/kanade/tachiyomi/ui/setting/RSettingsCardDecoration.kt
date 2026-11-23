@@ -29,8 +29,17 @@ class RSettingsCardDecoration(context: Context) : RecyclerView.ItemDecoration() 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = ColorUtils.setAlphaComponent(secondary, 16)
     }
-    private val iconBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ColorUtils.setAlphaComponent(accent, 30)
+    // one calm colour per section (cycled), same softness for all, so the screen is coordinated and not all green
+    private val sectionColors = intArrayOf(
+        0xFF5B8DEF.toInt(), 0xFF9B7BE0.toInt(), 0xFFE39A4F.toInt(),
+        0xFF4FB3A9.toInt(), 0xFFD9728F.toInt(), 0xFFC9B24A.toInt(),
+    )
+    private val iconBgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    private fun sectionIndex(adapter: PreferenceGroupAdapter, pos: Int): Int {
+        var n = 0
+        for (j in 0..pos) if (adapter.getItem(j) is PreferenceCategory) n++
+        return (n - 1).coerceAtLeast(0)
     }
     private val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = ColorUtils.setAlphaComponent(secondary, 22)
@@ -78,6 +87,7 @@ class RSettingsCardDecoration(context: Context) : RecyclerView.ItemDecoration() 
                 (child as? android.view.ViewGroup)?.offsetDescendantRectToMyCoords(icon, box)
                 val cx = child.left + box.exactCenterX()
                 val cy = child.top + child.translationY + box.exactCenterY()
+                iconBgPaint.color = ColorUtils.setAlphaComponent(sectionColors[sectionIndex(adapter, pos) % sectionColors.size], 52)
                 c.drawCircle(cx, cy, iconRadius, iconBgPaint)
             }
 

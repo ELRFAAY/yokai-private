@@ -139,6 +139,7 @@ class LibraryMangaItem(
         }
         val sourceName by lazy { sourceManager.getOrStub(manga.manga.source).name }
         return manga.manga.title.contains(constraint, true) ||
+            eu.kanade.tachiyomi.util.RTags.matches(manga.manga.source, manga.manga.url, constraint) ||
             (manga.manga.author?.contains(constraint, true) ?: false) ||
             (manga.manga.artist?.contains(constraint, true) ?: false) ||
             sourceName.contains(constraint, true) ||

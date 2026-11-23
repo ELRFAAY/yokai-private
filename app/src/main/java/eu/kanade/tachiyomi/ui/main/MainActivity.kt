@@ -386,6 +386,8 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
 
         setContentView(binding.root)
 
+        RReminderJob.schedule(this)
+
         // R: floating snake mascot overlay (only shown on the library screen, see updateRMascot)
         rMascot = RMascotView(this).also { view ->
             view.visibility = View.GONE

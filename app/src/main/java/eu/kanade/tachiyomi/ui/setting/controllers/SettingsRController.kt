@@ -353,6 +353,13 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rReminder())
+                title = "تذكير التنين بالقراءة"
+                rIcon(R.drawable.ic_r_hotel)
+                summary = "لو مرّت ٣ أيام من غير قراءة يبعتلك التنين إشعاراً هادئاً (مرة في اليوم، بين ١٠ صباحاً و١٠ مساءً). عند الإيقاف: لا إشعارات."
+            }
+
+            switchPreference {
                 bindTo(preferences.rMascotSleep())
                 title = "التنين الصغير: النوم"
                 rIcon(R.drawable.ic_r_hotel)

@@ -714,6 +714,15 @@ class ReaderViewModel(
         val chapterKey = chapter.chapter.id
         if (startTime != null && chapterKey != null) {
             chapterReadMillis.merge(chapterKey, (endTime - startTime).coerceAtLeast(0L), Long::plus)
+            // R: the day / manga reading log used by the statistics and the reminder
+            if (!preferences.incognitoMode().get()) {
+                manga?.let {
+                    try {
+                        eu.kanade.tachiyomi.util.RReadLog.add(it.source, it.url, it.title, (endTime - startTime).coerceAtLeast(0L), preferences)
+                    } catch (_: Exception) {
+                    }
+                }
+            }
         }
         viewModelScope.launchNonCancellableIO {
             saveChapterHistory(chapter, startTime, endTime)

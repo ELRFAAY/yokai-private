@@ -53,6 +53,7 @@ object RStatsSections {
         listOf<() -> View?>(
             { streakCard(ctx, d) },
             { goalCard(ctx, d, goal, onGoalClick) },
+            { readTimeCard(ctx) },
             { topCard(ctx, d) },
             { hoursCard(ctx, d) },
             { monthCard(ctx, d) },
@@ -89,6 +90,22 @@ object RStatsSections {
         col.addView(text(ctx, "أطول سلسلة عندك: ${d.streakBest} ${if (d.streakBest in 3..10) "أيام" else "يوم"}", 14f, secondary = true))
         row.addView(col)
         box.addView(row)
+        return card
+    }
+
+    /** R: real reading time (from the reading log): today, average per reading day, best day, and the top titles. */
+    private fun readTimeCard(ctx: Context): View? {
+        val s = eu.kanade.tachiyomi.util.RReadLog.summary()
+        if (s.avgActiveDayMs <= 0L && s.todayMs <= 0L) return null
+        val f = eu.kanade.tachiyomi.util.RReadLog::format
+        val (card, box) = card(ctx, "وقت القراءة")
+        box.addView(text(ctx, "النهارده: ${f(s.todayMs)}", 18f, bold = true))
+        box.addView(text(ctx, "متوسط اليوم اللي قريت فيه: ${f(s.avgActiveDayMs)}", 14f, secondary = true))
+        if (s.bestDay != null) box.addView(text(ctx, "أطول يوم: ${s.bestDay} (${f(s.bestDayMs)})", 14f, secondary = true))
+        if (s.top.isNotEmpty()) {
+            box.addView(text(ctx, "أكتر مناهج قريت فيها", 13f, secondary = true).apply { setPadding(0, ctx.dp(10), 0, ctx.dp(2)) })
+            s.top.forEach { (title, ms) -> box.addView(text(ctx, "• $title — ${f(ms)}", 14f)) }
+        }
         return card
     }
 

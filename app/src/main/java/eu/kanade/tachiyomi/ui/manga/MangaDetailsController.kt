@@ -1232,6 +1232,42 @@ class MangaDetailsController :
             !presenter.manga.isLocal() && presenter.manga.favorite
     }
 
+    /** R: personal tags for this manga (comma separated); the library search finds them. */
+    private fun rShowTags() {
+        val ctx = activity ?: return
+        val manga = presenter.manga
+        val used = eu.kanade.tachiyomi.util.RTags.all()
+        val input = android.widget.EditText(ctx).apply {
+            setText(eu.kanade.tachiyomi.util.RTags.get(manga.source, manga.url).joinToString("، "))
+            hint = "وسوم مفصولة بفاصلة، مثلاً: مفضّل، أنتظر الاكتمال"
+            setSingleLine(false)
+        }
+        val pad = (20 * ctx.resources.displayMetrics.density).toInt()
+        val box = android.widget.LinearLayout(ctx).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(pad, pad / 2, pad, 0)
+            addView(input)
+            if (used.isNotEmpty()) {
+                addView(
+                    android.widget.TextView(ctx).apply {
+                        text = "وسوم مستخدمة: " + used.take(12).joinToString("، ")
+                        alpha = 0.7f
+                        setPadding(0, pad / 2, 0, 0)
+                    },
+                )
+            }
+        }
+        ctx.materialAlertDialog()
+            .setTitle("وسوم")
+            .setView(box)
+            .setPositiveButton("حفظ") { _, _ ->
+                val tags = input.text.toString().split(',', '،', '\n')
+                eu.kanade.tachiyomi.util.RTags.set(manga.source, manga.url, tags)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     /** R: the manga's personal notes (saved in a preference, carried by the backup). */
     private fun rShowNotes() {
         val ctx = activity ?: return
@@ -1269,6 +1305,7 @@ class MangaDetailsController :
                 editMangaDialog?.showDialog(router)
             }
             R.id.action_r_notes -> rShowNotes()
+            R.id.action_r_tags -> rShowTags()
             R.id.action_open_in_web_view -> openInWebView()
             R.id.action_refresh_tracking -> presenter.refreshTracking(true)
             R.id.action_migrate ->
