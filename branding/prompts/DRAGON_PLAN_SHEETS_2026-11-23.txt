@@ -1,0 +1,199 @@
+DRAGON PLAN - ALL NEW MODEL SHEETS IN ONE FILE (2026-11-23)
+Owner: Egyptian Arabic. Small dragon = التنين الصغير, big dragon = التنين الكبير (the green cobra of `RReaderCobraView`, `r_cobra_*`), wise dragon = التنين الحكيم (NOT part of this plan).
+
+=====================================================================
+طريقة الاستخدام (مصري)
+=====================================================================
+1) كل شيت = صورة واحدة. الصق الـ GLOBAL RULES الأول، وبعدها برومت الشيت، وارفق صور المرجع المكتوبة تحت عنوان كل شيت (REF).
+2) الأنكور الأول: الشيتات اللي اسمها ANCHOR بتتعمل صورة واحدة الأول (مش جريد)، وبعدين ترفقها مرجع للباقي. ده اللي بيمنع الشكل من إنه يتغير بين الشيتات.
+3) لو شيت طلع غلط (إيدين زيادة، جسم طويل للصغير، وش بيتغير) أعد الشيت ده بس، ماتعيدش الباقي.
+4) الترتيب المقترح (من الأهم): SG (الجمعة) > SD/SE (ليل وصباح) > SA/SB/SC/SF (تحية، ختمة، هدف، سلسلة) > BL0 + BL1..BL6 (الكبير) > BO (لبس الكبير، اختياري) > SX (مؤثرات).
+5) الأسماء: سمّي كل صورة بالـ ID بتاعها بالظبط (SA, SB, SC, SC2, SD, SD2, SE, SF, SG0, SG1, SG2, SG3, SX, BL0, BL1..BL6, BO1..BO6) علشان القص بالسكريبت يشتغل.
+
+NOT NEEDED AGAIN (already in the repo, reuse): small wave (rC2), small expressions with hands (p1, rD), face frames (rB), tail wag (rA2), bedtime bed scene (p3), back/side/tongue/cheer (S2), drop-in landing (E2), hit / shocked (J, J3b), wise dragon sheets, 21 costume cut-outs (costumes-2026-11-21).
+
+=====================================================================
+GLOBAL RULES (paste at the start of EVERY prompt)
+=====================================================================
+Same character as the attached reference, do not redesign. Flat-colour cartoon sticker style, thick dark-green outline (same line weight in every cell and on every prop/garment), glossy green skin, light-green belly scales, hood with the two soft spiral marks on the inner sides, exactly as in the reference.
+HANDS RULE: exactly TWO hands, the body's own (small ones on short arms coming from the upper torso under the hood). Never extra hands, never hands growing from the head or hood, never a third hand holding a prop.
+BODY RULE: do NOT invent a new snake body. Copy the body, the belly-scale pattern, the coil and the tail from the reference. SMALL dragon = short, WIDE, chubby body with a big hood and a curled tail (never a tall thin neck). BIG dragon = same face and hood design but taller: a longer upright neck (about 1.5x the small one), slimmer chubby body, the same cartoon proportions.
+Props and clothes are part of the character: same dark outline, same flat shading, fully CLOSED outline (no gaps), so a white garment is still enclosed by a dark line. Never fill a garment with pure #FFFFFF: use a very light cool grey (#E6ECF2) for white things with slightly darker fold lines.
+Pure white background (#FFFFFF), no ground shadow, no text, no letters, no Arabic calligraphy, no numbers, no labels, no cell borders, no frames, no props on the floor unless a frame says so.
+GEOMETRY (important, the sheets are cut by a script):
+ - SMALL dragon cells are 512 x 512 px. Character height about 400 px max (cap/crown included), centred horizontally at x = 256, BASELINE (where the body touches the ground) at y = 450 in every cell.
+ - BIG dragon cells are 512 x 640 px, character height about 540 px, centred at x = 256, baseline at y = 590.
+ - Sheet size = columns x 512 by rows x 512 (4x2 = 2048x1024, 3x2 = 1536x1024, 4x3 = 2048x1536, 4x1 = 2048x512). BIG sheets use 640 for the cell height. If the tool cannot output exact pixels, keep the exact aspect ratio and the exact grid; cells must be equal and nothing may cross a cell edge.
+ - SAME SCALE in all cells of a sheet (no zoom between frames). Jumps lift the body above the baseline; the baseline line itself never moves.
+ - Effects (stars, dust, steam, confetti, sparkles, zzz) are NOT drawn on character sheets. They live only in sheet SX. Do not draw them unless a frame says so.
+ - Reading order, left to right then top to bottom = animation order.
+Angles used below: 0 deg = front, 90 deg = side profile, 180 deg = back. "Turned to his left" = the viewer sees the character's left side.
+
+=====================================================================
+PART 1 - SMALL DRAGON (التنين الصغير)
+=====================================================================
+Behaviour this art serves (code side, for the record): greets when a chapter opens, jumps when a manga is finished, spins when the weekly goal is passed; night = yawns with a sleep cap, after Fajr = good morning, Friday = white galabiya outfit all day; celebrates 3 / 7 / 30 day streaks. It never appears between chapters (the BIG dragon is there).
+REF for every small sheet: p1-small-expressions-with-hands-564639.jpg + rD-small-new-poses-3x3-564644.jpg (+ the extra REF named in the sheet).
+
+--------------------------------------------------------------------
+SA - GREETING when a chapter opens (4 columns x 2 rows = 8 cells). REF: rC2 wave
+--------------------------------------------------------------------
+Front view, 0 deg. Plays 1,2,3 once, loops 4-5-6-7 a few times, ends on 8.
+1: standing calm, eyes forward, closed relaxed smile, hood slightly low (3 percent), hands resting on the belly.
+2: "oh!" hood perks up 6 percent, eyes widen, tail tip curls up 10 percent, hands still on the belly.
+3: the dragon's RIGHT hand (viewer's left) rises to chest height, small open smile, head tilts 4 degrees to the viewer's left.
+4: wave centre: hand at shoulder height, palm open towards the viewer, fingers slightly spread, mouth open smile "hi".
+5: wave out: the same hand moved 12 percent to the viewer's left, fingers spread, eyes happy.
+6: wave centre again (same as 4 but eyes squeezed happy).
+7: wave in: the hand 12 percent to the viewer's right, close to the head, big smile.
+8: hand lowering to the belly, hood settling, relaxed smile (frame 8 resembles frame 1 so it loops back).
+Both eyes visible in all frames except 5 and 6 where they may be happy arcs.
+
+--------------------------------------------------------------------
+SB - MANGA FINISHED, happy jump (4 x 2 = 8 cells). REF: S2 cheer cell
+--------------------------------------------------------------------
+Front view. Baseline fixed; the body leaves it only in 2-4 and 6.
+1: anticipation, body squashed 15 percent (wider, flatter), hood low, both arms pulled back, determined grin.
+2: launch, body stretched 20 percent taller, body lifted 10 percent of its height above the baseline, both arms going up, eyes shut in a grin.
+3: apex, body lifted 35 percent of its height, both arms straight up in a V, mouth wide open cheering, tail curled behind.
+4: still up, starting to descend (lifted 22 percent), hood flaring sideways, arms up, eyes happy arcs.
+5: landing squash 20 percent, wide and flat, eyes shut tight, big smile, arms out to the sides.
+6: small rebound hop, lifted 12 percent, arms up again, laughing.
+7: settled on the baseline, the RIGHT fist pumped up beside the head, proud grin, one eye winking.
+8: final, both fists held at the chest, huge grin, eyes shaped like little stars (star pupils drawn inside the eyes).
+
+--------------------------------------------------------------------
+SC - WEEKLY GOAL PASSED, spin (4 x 2 = 8 cells, turntable). REF: S2 (back cell) + cobra-model-sheet-557773 (back and side views of the hood)
+--------------------------------------------------------------------
+The SAME pose in all cells (arms slightly out, big happy grin when the face is visible, tail coil turning with the body); only the viewing angle changes, 45 degrees per frame, so frame 9 would equal frame 1. Do not blur. No effects.
+1: 0 deg front. 2: 45 deg turned to his left (3/4 front). 3: 90 deg side profile facing the viewer's left. 4: 135 deg back 3/4. 5: 180 deg pure back: the hood seen from behind with its soft rounded pattern of two big spiral marks and a spine line, NOT a plain shield; head hidden, tail coil visible. 6: 225 deg back 3/4 (mirror of 4). 7: 270 deg side profile facing the viewer's right. 8: 315 deg front 3/4 on the other side.
+In the profile frames the hood is a narrow rounded shape (see the side view of the model sheet), in the back frames it is the wide heart shape.
+
+SC2 - AFTER THE SPIN (3 x 2 = 6 cells), front view.
+1: dizzy but happy, spiral eyes with a big smile, arms out. 2: wobbling, body leaning 6 degrees to the viewer's left, spiral eyes. 3: wobbling, leaning 6 degrees to the viewer's right. 4: recovered, both hands on its sides (hands on hips), proud grin, chin up. 5: a small bow, head lowered 20 percent, one hand on the belly, eyes closed smiling. 6: standing, waving one hand, big smile.
+
+--------------------------------------------------------------------
+SD - NIGHT: yawn with the sleep cap (4 x 2 = 8 cells). REF: p3 bedtime cell 1-2 (yawn, rubbing eye)
+--------------------------------------------------------------------
+SLEEP CAP (draw it exactly the same in every cell): a soft knitted pointed sleeping cap, deep navy blue with 3 tiny pale-yellow stars and a white fluffy pom-pom on the tip, a thick white folded rim. It sits on top of the head BETWEEN the upper edges of the hood (the hood stays visible and unchanged on both sides, the cap never covers the eyes). The tip droops to the viewer's right and the pom-pom hangs at about ear height.
+Front view, 0 deg.
+1: standing sleepy, eyes half-lidded, mouth flat, hood drooping 8 percent, hands on the belly.
+2: yawn starting, mouth opening a little, eyes narrowing.
+3: yawn at maximum: mouth wide open, eyes shut tight, the RIGHT hand rising towards the mouth, pom-pom swung 10 degrees back.
+4: yawn closing, eyes watery (a tiny tear), hand at the mouth.
+5: rubbing one eye with the right fist, the other eye half open.
+6: head nodding down 15 percent, eyes closed, pom-pom swinging forward.
+7: head jerks up startled, eyes wide open, cap slightly shifted sideways.
+8: sleepy smile, eyes half open, head tilted 5 degrees, hands on the belly.
+
+SD2 - SLEEPING WITH THE CAP (3 x 2 = 6 cells, breathing loop). REF: p3 bedtime cell 6 (asleep in bed with the striped teal blanket)
+Same bed, pillow and blanket as in p3 cell 6, the same camera, now with the sleep cap on. Only the blanket and the chest move, the head, bed and cap stay still (the pom-pom may sway 2 px).
+1: lowest breath, blanket flat. 2: breathing in, blanket rises a little. 3: fullest breath, blanket highest. 4: breathing out. 5: low, a very small cap tip movement. 6: low, same as 1 (loop). No z letters here (they are in SX).
+
+--------------------------------------------------------------------
+SE - GOOD MORNING (after Fajr) (4 x 2 = 8 cells). REF: p3 cell 2 (rubbing eye) + rD cell 6 (yawn)
+--------------------------------------------------------------------
+Front view, coiled, sitting. A small tea glass: the usual Egyptian shai glass, a small clear tulip-shaped glass with brown tea, on no saucer, held in the RIGHT hand.
+1: eyes closed, tiny smile, hood low 5 percent, hands on the belly. 2: one eye half open, the other shut. 3: big stretch, both arms up and back, mouth open in a yawn-smile, eyes shut. 4: arms down, eyes wide and bright, hood fully up, big smile. 5: holding the tea glass in the right hand at chest height, left hand on the belly, calm smile. 6: sipping, the glass at the mouth, eyes closed contentedly. 7: lowering the glass, an open satisfied "ahh" smile. 8: waving with the LEFT hand, the glass still in the right hand, big happy smile (good morning).
+No steam drawn (steam is in SX).
+
+--------------------------------------------------------------------
+SF - READING STREAK 3 / 7 / 30 DAYS (4 x 3 = 12 cells). REF: S2 cheer + rD cell 7 (arms up)
+--------------------------------------------------------------------
+Front view. Each ROW is one celebration, 4 frames, played in order (and looped if needed).
+ROW 1 = 3 days (a good start):
+ 1: hands open apart in front of the chest, ready to clap, grin. 2: hands pressed together (clap), eyes shut happy. 3: small hop 10 percent off the baseline, hands out, grin. 4: landing, thumbs-up with the right hand, winking one eye.
+ROW 2 = 7 days (on fire):
+ 5: the right fist raised, determined grin, eyebrows angled. 6: both fists up flexing, mouth open "yes!". 7: victory pose with a small RED superhero cape tied at the neck, flowing behind to the viewer's left, chest out, proud grin. 8: the same with the cape flowing to the viewer's right and a small hop 10 percent.
+ROW 3 = 30 days (legend):
+ 9: a small GOLD crown (3 points, a tiny red gem in the middle) on the head between the hood edges, proud smile, eyes closed. 10: crown, both arms wide open, mouth open cheering. 11: crown, both hands on the cheeks, happy with a tiny tear of joy. 12: crown, one hand waving slowly like a king, dignified smile.
+The cape is only in 7 and 8, the crown only in 9-12.
+
+--------------------------------------------------------------------
+FRIDAY OUTFIT (يوم الجمعة فقط - the small dragon wears it ALL DAY)
+--------------------------------------------------------------------
+THE OUTFIT, identical in every cell of SG0-SG3 (this is the owner's design, do not change it):
+ a) WHITE GALABIYA (جلابية بيضاء): plain, simple, loose. It dresses only the upper body: from under the hood down over the torso, ending in a soft wide hem that rests like a skirt on top of the first coil; the lower snake coil and the tail stay visible below it in green. Round collar with a short front opening and 2 small buttons, loose sleeves reaching the wrist (the two hands stay uncovered), a few soft vertical fold lines. White = light cool grey (#E6ECF2) with darker fold lines, closed dark outline.
+ b) WHITE CAP (طاقية بيضاء): a small round knitted white skullcap (taqiyah) with a fine ribbed texture and a thin darker band at the rim. It sits on the top of the head BETWEEN the upper edges of the hood, the hood stays visible on both sides, the cap never covers the eyes or the face.
+ c) PRAYER RUG (مصلية): a small folded prayer rug draped over the dragon's LEFT shoulder (the viewer's right in the front view), the folded part hanging down the front to the middle of the torso and a little down the back, cream fringe at the ends. Colours: deep burgundy red with a dark green border and a small simple golden arch (mihrab) motif on the visible front part, plus a thin geometric border. NO text, NO calligraphy, NO figures on the rug.
+ d) PRAYER BEADS (سبحة): held in the dragon's RIGHT hand (viewer's left) by loosely curled fingers: a loop of round warm-brown wooden beads (draw 20-24 beads, big enough to read at small size) with one larger oval bead and a small tassel; the loop hangs down to about belly height. The LEFT hand is free.
+Respect: the dragon is only dressed for the day and holding its beads. Do not draw prayer postures, kneeling, or any person.
+
+SG0 - FRIDAY ANCHOR (make this FIRST, ONE single image, not a grid). REF: p1 cell 1 + rD cell 1
+ PROMPT: A single image, one character only. The small dragon, front view, standing calm in its short wide chubby body, wearing the Friday outfit exactly as described in a) b) c) d) above: white galabiya, white knitted cap between the hood edges, folded prayer rug over the dragon's left shoulder, brown prayer beads in the right hand held at belly height, the left hand relaxed at its side. Gentle closed smile, eyes forward. Pure white background, 512 x 512, baseline at y = 450.
+ If the result shows three hands or hands from the head, add: "exactly two hands, both small and on the body's own arms".
+
+SG1 - FRIDAY TURNAROUND (4 x 2 = 8 cells). REF: SG0 (the anchor) + cobra-model-sheet-557773
+ Same pose and outfit in all cells, 45 degrees per frame: 1: 0 front. 2: 45 turned to his left. 3: 90 profile facing the viewer's left (the rug hangs on the near shoulder, beads in the far hand, hood in profile). 4: 135 back 3/4. 5: 180 back: the cobra back of the hood with its spiral marks and spine line, the cap on top, the rug hanging down the back, the galabiya back with a soft centre fold, tail coil below. 6: 225 back 3/4. 7: 270 profile facing the viewer's right (the beads on the near side). 8: 315 front 3/4 on the other side.
+
+SG2 - FRIDAY POSES (4 x 3 = 12 cells, front view). REF: SG0 + rD
+ 1: neutral, beads in the right hand low at the belly, left hand relaxed, gentle smile.
+ 2: beads raised to the chest, a bit more smile, eyes forward.
+ 3-6: PRAYER-BEADS LOOP, four frames of the same calm moment; the body, rug and cap do not move, the head tilts 2 degrees down, the eyes look down at the beads, and the thumb of the right hand pushes the beads one bead further each frame: in 3 the thumb is on the first bead, in 4 the beads have moved one bead along the loop, in 5 two beads, in 6 three beads (the larger oval bead has travelled a little along the loop).
+ 7: the left hand on the chest (over the heart), a small bow of the head (8 degrees), peaceful smile (Friday greeting).
+ 8: the left hand waving, beads in the right hand, happy eyes, bigger smile.
+ 9: the left hand holding the edge of the rug on the shoulder (adjusting it), eyes looking at the rug.
+ 10: looking up (head tilted back 10 degrees), small smile, beads at the chest.
+ 11: a happy small hop 10 percent off the baseline, the galabiya hem lifting a little, the beads swinging.
+ 12: calm and sleepy-peaceful, eyes closed, a small smile, the beads held at the chest with BOTH hands.
+
+SG3 - FRIDAY FACES (4 x 3 = 12 cells, front view, same pose as SG2 cell 1, only the face changes). REF: rB face frames + SG0
+ 1: mouth closed. 2: small open "o". 3: wide open "aa". 4: half open "e". 5: eyes half blinking. 6: eyes closed (blink). 7: big smile with teeth. 8: laughing, eyes shut, mouth wide open. 9: surprised, eyes wide, small round mouth. 10: sad pout, eyes looking sideways. 11: sleepy, half-lidded. 12: a wink with the left eye.
+ The head, hood, cap, galabiya, rug and beads are identical in all 12 cells (pixel-identical positions); only the eyes, brows and mouth change.
+
+--------------------------------------------------------------------
+SX - EFFECTS ONLY (4 x 3 = 12 cells, NO characters, 512 x 512 cells, centred)
+--------------------------------------------------------------------
+Flat colour, same thick outline style. 1: confetti burst (colourful small rectangles, circles and strips flying outwards). 2: confetti falling (a loose vertical cluster). 3: three sparkle 4-point stars (small, medium, large, white-gold). 4: small orange flame. 5: bigger red-orange flame with a yellow core. 6: golden flame (for the 30-day streak). 7: three steam wisps (soft white-grey curls, for the tea). 8: a small friendly sun with short rays (for the morning). 9: a crescent moon with two small stars (for the night). 10: a golden aura ring (a flat horizontal ellipse ring, hollow inside, for the big dragon level-up). 11: a radial burst of golden rays (level-up flash). 12: three "Z" letters rising diagonally (small z, medium Z, big Z). If the old sheet K (effects) was already produced, only 4, 5, 6, 8, 9, 10, 11 are new.
+
+=====================================================================
+PART 2 - BIG DRAGON (التنين الكبير): grows with the REAL READING HOURS
+=====================================================================
+Who it is: the green cobra that already exists as `r_cobra_*` (reader cobra) and in `cobra-model-sheet-557773.jpg`: big heart-shaped hood, big expressive eyes, two small hands, small fangs. It is the one that stays between chapters (end-of-chapter card, beside "قعدت X في الفصل ده") and shows its level in the stats screen.
+REF for every big sheet: cobra-model-sheet-557773.jpg + cobra-body-faces-and-arms-559014.jpg + (for the body below the hood) the upper body of p1-small-expressions-with-hands-564639.jpg, but TALLER: a longer upright neck, the first coil at the bottom of the cell.
+Framing: front view, bust down to the first coil, two small hands visible, baseline at the bottom coil, cell 512 x 640.
+
+LEVELS (proposal, the thresholds are tuned in code later; hours = real reading time from the app):
+ L1 0-5 h, L2 5-20 h, L3 20-50 h, L4 50-100 h, L5 100-250 h, L6 250+ h.
+Every level is drawn at the SAME pixel height in its cell; the code scales them (about 0.70, 0.82, 0.94, 1.06, 1.18, 1.30 of a base size), so the size growth is applied in code and the art only changes SHAPE and COLOUR.
+Level look (the face, hood spirals, belly scales and the two-hands rule stay the same in every level):
+ L1 "cub": lightest lime green, small soft hood, rounder and cuter (bigger eyes), NO horns, smooth forehead, tiny fangs.
+ L2: slightly deeper green, TWO tiny rounded horn nubs on the forehead just inside the hood top, hood a little bigger.
+ L3: the reference green (as in the model sheet), TWO short pointed horns (about a quarter of the head height), a faint darker stripe pattern on the outer hood.
+ L4: emerald green, TWO medium horns curving backwards (about half the head height), 3 small spikes along each hood edge, soft gold highlights inside the hood spirals.
+ L5: dark emerald with teal tones, TWO long swept-back horns with golden tips, a row of spikes on the hood edge, golden spiral marks, belly scales pale gold.
+ L6 "legend": emerald with gold scales on the hood edge and belly, large branched horns (like antlers) with golden tips, a tiny golden crest between the horns, eyes with a golden iris, confident calm look. No aura or glow drawn (the aura ring is in SX).
+
+--------------------------------------------------------------------
+BL0 - LEVEL LINE-UP ANCHOR (3 x 2 = 6 cells, ONE pose, 512 x 640 cells): make this FIRST
+--------------------------------------------------------------------
+Cells 1-6 = L1 ... L6 in this order, identical calm front pose (hands resting on the belly, closed smile), same baseline, each drawn at the same pixel height; only the level look changes as described above. Attach this to every BL sheet below.
+
+--------------------------------------------------------------------
+BL1 ... BL6 - ONE SHEET PER LEVEL (4 x 2 = 8 cells each, 512 x 640). REF: BL0 (and say "this sheet is level N")
+--------------------------------------------------------------------
+Use the level N cell of BL0 as the exact design. Eight cells, front view, same size and baseline:
+ 1: idle, calm closed smile, hands on the belly.
+ 2: blink, eyes closed, everything else identical.
+ 3: talking, small open "o" mouth.
+ 4: talking, wide open "aa" mouth.
+ 5: pointing: the RIGHT hand (viewer's left) pointing to the viewer's RIGHT at chest height, eyes looking that way, friendly smile (it points at the "time spent" text).
+ 6: proud: chest out, chin up, eyes closed, big smile, hands on the hips.
+ 7: laughing: eyes shut, mouth wide open, head tilted back 5 degrees.
+ 8: roar / level-up: both arms wide, mouth wide open, eyes shut tight, hood fully flared (wider by 8 percent).
+In cells 1-8 the head position changes at most 4 percent; no effects.
+
+--------------------------------------------------------------------
+BO1 ... BO6 - OUTFIT THEMES, OPTIONAL, one sheet per level (4 x 2 = 8 cells, 512 x 640). REF: BL sheet of that level (cell 1) + the old costume sheets
+--------------------------------------------------------------------
+The 21 old costumes (knight, detective, pirate, guard, chef, astronaut, ...) already exist as cut-outs at the base green; the sheets below make 8 NEW outfits at each level so the colour and horns match the level. Idle front pose of that level in every cell, the outfit is fully closed and outlined, horns come through or over the headwear naturally (draw a small hole/gap in hats so the horns show; the hood stays visible):
+ 1: knitted beanie (طاقية صوف) in orange with a white pom-pom, sitting between the horns. 2: baseball cap, red, worn straight. 3: round reading glasses with thin gold frames and a small open book held in the two hands. 4: a short sword in the right hand and a plain red headband. 5: big over-ear headphones, blue, the band passing between the horns. 6: graduation cap with a yellow tassel and a small rolled scroll in the right hand. 7: a gold crown and a small royal red cape. 8: cool dark sunglasses and a green scarf.
+If this is too much work: make BO only for L1, L3 and L6, the code will use the nearest level.
+
+=====================================================================
+CHECKLIST BEFORE SENDING A SHEET
+=====================================================================
+- Exactly two hands in every cell. Small dragon body short and wide. Friday outfit identical in all SG cells.
+- Same baseline line in every cell, nothing touches a cell edge.
+- No text, no letters, no effects on character sheets, white background.
+- Name the file with its ID.
