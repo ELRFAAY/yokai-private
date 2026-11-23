@@ -16,6 +16,13 @@ Last updated: 2026-11-22 (see NEWEST-33).
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
 
+## NEWEST-46 (2026-11-23 14:25, owner credit 97%): START HERE, then NEWEST-45. Last green build 45155171990 = `25cf209` (all of NEWEST-45). Nothing unbuilt. NO build unless the owner says "بيلد".
+- OWNER'S NEW DRAGON PLAN (decided, NOT started; he wants the PROMPT first, then he generates sheets, then we integrate):
+  - SMALL dragon: (a) reacts to reading: greets/waves when a new chapter opens, jumps happy when a manga is finished, spins when the weekly goal is passed; (b) mood by time of day: at night yawns + sleep cap, after Fajr says good morning, and on FRIDAY a gentle line like "ما تنساش تصلّي على النبي / صلاة الجمعة" (owner's example: "ما تنساش تصلي"); (c) celebrates reading streaks (3 / 7 / 30 days) with a special move + bubble (streak data already in `RStatsData.streakNow`/`streakBest`). The small dragon must NOT appear between chapters.
+  - BIG dragon: (1) GROWS with real reading hours (`RReadLog`, pref `r_read_log`): levels change body size/horns/colour, shown in the stats; (3) it is the one that appears in the end-of-chapter card between chapters (`RReaderCobraView`, with a line about the time spent in the chapter); (4) outfit themes (cap, glasses, sword...) unlocked by level and chosen in R settings.
+  - Owner asked for: ONE complete prompt file with every detail (angles, frames, poses, per-frame description, "التفاصيل الممل") for the new art, and the reference model-sheet images from the GitHub repo (branding/mascot-models/..., branding/prompts/...) sent to him with SendUserFile.
+- Rules unchanged: Arabic Egyptian short replies, HANDS RULE, never draw the snake body yourself, small dragon keeps SHORT WIDE body, no token in files, record owner files before analyzing.
+
 ## NEWEST-45 (2026-11-23, same account): owner asked for ONE batch (idea list), all stored in the backup (they are plain prefs, keyed by `source|url` so ids do not matter; the generic pref dump carries them): coded, NOT built, NOT compiled:
 - Chapter notes: reader menu "ملاحظة الشبتر" (`ReaderActivity.rShowChapterNote`, `RChapterNotes`, pref `r_chapter_notes`).
 - Real reading time log: `RReadLog` (pref `r_read_log`, per day + per manga) fed from `ReaderViewModel.flushReadTimer`; new stats card "وقت القراءة" (`RStatsSections.readTimeCard`: today, average of reading days, best day, top 3 titles). The streak card already existed.
