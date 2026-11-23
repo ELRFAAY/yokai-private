@@ -1,0 +1,27 @@
+SG1 FIXED - FRIDAY OUTFIT TURNAROUND (small dragon, 8 angles) - paste this whole file as ONE prompt
+Fixes the errors of owner sheet 567874 (and 567607): frames 1 and 2 identical, frame 7 facing the wrong way, the three back frames identical, outfit sides mixed up.
+ATTACH: (1) SG0-friday-anchor-567610.jpg = the exact look AND the exact outfit sides; (2) SC-weekly-goal-spin-turntable-4x2-567620.jpg = how a 45-degree turntable reads and the BACK of the hood (two big spiral marks, a spine line, light dots on the back of the body). Do NOT attach 567874 / 567607.
+
+PROMPT
+A character turntable sheet: 4 columns x 2 rows = 8 equal cells (each cell 512 x 512, sheet 2048 x 1024), pure white background, no text, no labels, no cell borders, no ground shadow, no effects. The SAME small chubby green cobra dragon (short, WIDE body, big heart-shaped hood, curled tail, glossy green skin, light-green belly scales, thick dark-green outline) exactly as in the attached SG0 image, in every cell: same size, same baseline (the bottom of the coil at the same height in all cells), centred in its cell, nothing touching a cell edge. Cells are read left to right, top to bottom; the dragon turns 45 degrees from one cell to the next, so NO two cells may look the same (frames 1/2 and 5/6 must clearly differ).
+
+THE OUTFIT (identical in every cell, copied from SG0, including WHICH SIDE everything is on):
+- white galabiya (light cool grey #E6ECF2 with darker fold lines, closed dark outline): loose, round collar with 2 small buttons, loose sleeves to the wrists (the two hands uncovered), soft wide hem resting on the first coil; the green lower coil and tail stay visible below it.
+- small round white knitted cap on top of the head between the hood's upper edges (the hood stays visible, the cap never covers the eyes).
+- a folded prayer rug (burgundy red with a dark-green border, a small golden arch motif, cream fringe) draped over the dragon's OWN RIGHT shoulder = the VIEWER'S LEFT shoulder in the front view; it hangs down the front to mid torso and a little down the back. No text, no calligraphy.
+- a loop of round brown wooden prayer beads with one larger oval bead and a small tassel, held in the dragon's OWN LEFT hand = the VIEWER'S RIGHT hand in the front view, hanging to belly height. The other hand hangs relaxed at its side.
+- exactly TWO hands, both on the body's own arms; never a third hand; never hands on the head or hood.
+
+THE 8 CELLS (angle 0 = front, 90 = pure side, 180 = pure back):
+1 (0 deg) FRONT: symmetrical face and hood, both eyes visible, rug on the viewer's left shoulder, beads in the viewer's right hand.
+2 (45 deg, turned toward the viewer's LEFT) FRONT 3/4: the face and the body clearly turned, the hood's left edge overlaps part of the face, the dragon's snout points to the viewer's left, the beads hand (viewer's right side) comes forward, the rug shoulder moves away. Must look obviously different from cell 1.
+3 (90 deg) PURE SIDE PROFILE FACING THE VIEWER'S LEFT: only one eye, the hood a narrow rounded shape; the dragon's LEFT side is toward the viewer: the beads hang from the near hand in front of the galabiya; the rug is on the far shoulder and only a sliver of it shows behind the neck.
+4 (135 deg) BACK 3/4 from behind-left: the back of the hood dominates (two big spiral marks, spine line) turned a quarter, a little of the snout peeking out on the viewer's left; the rug visible on the shoulder side, the beads hand at the viewer's left edge.
+5 (180 deg) PURE BACK: perfectly symmetrical wide heart-shaped hood back with the two big spiral marks and the spine line (as in the SC turntable), the cap on top, the galabiya back with a soft centre fold, the rug hanging down the back on the VIEWER'S RIGHT, the beads hand at the VIEWER'S LEFT, the tail coil below.
+6 (225 deg) BACK 3/4 from behind-right: the mirror turn of cell 4 (a quarter turned the other way, a little of the snout peeking out on the viewer's RIGHT), the rug on the viewer's right shoulder side, the beads hand at the viewer's left. It must differ from cell 5 by the visible turn and the peeking snout.
+7 (270 deg) PURE SIDE PROFILE FACING THE VIEWER'S RIGHT: only one eye, the dragon's RIGHT side is toward the viewer: the folded rug lies on the near shoulder and hangs down its side; the beads hand is the far hand and is hidden behind the body. The head points to the viewer's RIGHT (the opposite direction of cell 3).
+8 (315 deg) FRONT 3/4 TURNED TOWARD THE VIEWER'S RIGHT: the face and body turned, the snout pointing to the viewer's right, the rug on the near (viewer's left) shoulder still visible, the beads in the far hand on the viewer's right.
+
+Quality: same line weight and colours in all cells, no extra objects, no motion lines, no stars, no shadows. The hood spirals and the belly scales stay exactly as in SG0.
+
+IF A DETAIL FAILS, repeat only that cell: e.g. "regenerate cell 7: pure side profile facing the viewer's RIGHT, the dragon's right side toward the viewer, rug on the near shoulder, beads hidden".
