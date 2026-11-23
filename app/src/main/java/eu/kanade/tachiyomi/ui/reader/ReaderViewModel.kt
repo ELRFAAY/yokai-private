@@ -153,6 +153,10 @@ class ReaderViewModel(
     @Volatile
     private var chapterReadStartTime: Long? = null
 
+    /** R: the chapter the running timer belongs to (kept explicitly: the "current chapter" can change before the flush runs). */
+    @Volatile
+    private var timedChapter: ReaderChapter? = null
+
     /** Time spent in each chapter during this reading visit (chapter id -> ms), shown between chapters. */
     private val chapterReadMillis = java.util.concurrent.ConcurrentHashMap<Long, Long>()
 
@@ -375,11 +379,13 @@ class ReaderViewModel(
     private fun loadNewChapter(chapter: ReaderChapter) {
         val loader = loader ?: return
 
+        // R: credit the time to the chapter being left RIGHT NOW (synchronously), then start timing the new one
+        flushReadTimer()
+        timedChapter = chapter
+        chapterReadStartTime = Date().time
+
         viewModelScope.launchIO {
             Logger.d { "Loading ${chapter.chapter.url}" }
-
-            flushReadTimer()
-            restartReadTimer()
 
             try {
                 loadChapter(loader, chapter)
@@ -684,7 +690,7 @@ class ReaderViewModel(
     fun getChapterReadMillis(chapter: ReaderChapter): Long {
         val id = chapter.chapter.id ?: return 0L
         val saved = chapterReadMillis[id] ?: 0L
-        val live = if (getCurrentChapter()?.chapter?.id == id) {
+        val live = if ((timedChapter ?: getCurrentChapter())?.chapter?.id == id) {
             chapterReadStartTime?.let { (Date().time - it).coerceAtLeast(0L) } ?: 0L
         } else {
             0L
@@ -694,10 +700,12 @@ class ReaderViewModel(
 
     fun restartReadTimer() {
         chapterReadStartTime = Date().time
+        if (timedChapter == null) timedChapter = getCurrentChapter()
     }
 
     fun flushReadTimer() {
-        val chapter = getCurrentChapter() ?: return
+        val chapter = timedChapter ?: getCurrentChapter() ?: return
+        timedChapter = chapter
         // Capture the session start and end RIGHT NOW. The save runs asynchronously, and
         // restartReadTimer() may reset the start before it runs, which used to record ~0 ms.
         val startTime = chapterReadStartTime
