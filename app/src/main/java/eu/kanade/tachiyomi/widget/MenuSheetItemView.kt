@@ -100,10 +100,13 @@ class MenuSheetItemView constructor(context: Context, attrs: AttributeSet?) :
         binding?.itemTextView?.setTextColor(color)
     }
 
+    /** R: true = the icon is a coloured picture (the dragon), it is never tinted flat. */
+    var keepIconColors = false
+
     fun setIconColor(@ColorInt color: Int) = binding?.itemTextView?.let {
         TextViewCompat.setCompoundDrawableTintList(
             it,
-            ColorStateList.valueOf(color),
+            if (keepIconColors) null else ColorStateList.valueOf(color),
         )
     }
 

@@ -109,7 +109,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     android:text="مستوى التنين"
-                    app:icon="@drawable/ic_r_home" />
+                    app:icon="@drawable/ic_r_dragon" />
 
                 <eu.kanade.tachiyomi.widget.MenuSheetItemView
                     android:id="@+id/hide_lists_item"

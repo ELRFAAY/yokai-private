@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-23 (see NEWEST-51).
+Last updated: 2026-11-23 (see NEWEST-59).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,13 @@ Last updated: 2026-11-23 (see NEWEST-51).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-59 (24 Nov 10:30, chat-app account, owner chose "save AND cut AND install"): the owner's new model sheets are IN THE REPO and CUT. NOT compiled, NOT built (no build until "بيلد").
+- Originals (his files 568231-568237; 568232 = byte-identical duplicate of 568231) in `branding/mascot-models/new-sheets-2026-11-24/`: `AV1-stage-portraits` (12 round heads), `IC1-icons` (8), `HAMMER` (2 poses), `AV2-costume-portraits-1-12`, `AV3-costume-portraits-13-21`, `SG-friday-8-views`.
+- Cutter: `branding/tools/make_sheets_2026_11_24.py` (fixed grid, outline-mask "core" kept opaque, light pixels outside it un-blended from white = real soft transparency for glows/halo/glass; portraits re-centred on a 384 square). Outputs also as PNG in `.../new-sheets-2026-11-24/cuts/`. Drawables (`drawable-nodpi`): `r_av_1..12` (stage portraits, same order as `r_lv_*`), `r_avc_<costume>` x21 (same names as `r_costume_*`), `r_ic_dragon|dragon_crown|egg|book|hourglass|flame|trophy|calendar` (256), `r_hammer_up` / `r_hammer_raised` (512, same scale, raised = tilted 35 deg). Checked on a dark background: clean edges, white chef hat / calendar page / eye whites solid, glows soft.
+- USED NOW: only the dragon-level menu entry (`tachi_overflow_layout.xml` `dragon_level_item`): icon `drawable-xxhdpi/ic_r_dragon.webp` (84 px = 28 dp, the dragon head) instead of the house `ic_r_home`; `MenuSheetItemView.keepIconColors` stops the flat tint, set in `OverflowDialog`. Everything else (rank-card avatar, costume avatars, tile icons, reader hammer button) has NO consumer yet: wire them when those features are coded (NEWEST-54/55). `ic_r_home` is still used elsewhere? (not checked).
+- SG 8-views sheet is saved only, NOT cut (nothing uses those angles). Its sides are NOT consistent with the canon (rug on viewer's-left shoulder, beads in viewer's-right hand in the front view): cell 2 (front 3/4) is mirrored (rug on viewer's right, beads on viewer's left); the back cells 4/5 keep the rug on the viewer's left (should be on the viewer's right from behind) and cell 6 shows no rug; cell 1 has beads in BOTH hands. Tell the owner before using it.
+- Suspects if CI fails: `OverflowDialog` (`setIconColor(0)` with `keepIconColors`), the new xxhdpi webp, `MenuSheetItemView`.
 
 ## NEWEST-58 (24 Nov, chat-app account): owner asked for prompts + reference images for everything that still needs art. Done: `branding/prompts/NEW_SHEETS_PROMPTS_2026-11-24.txt` (AV1 = 12 round stage portraits for the rank-card avatar, IC1 = 8 icons incl. the dragon icon to replace the house, HAMMER, AV2/AV3 = 21 costume portraits (optional), SG1 fixed backs (optional, last)); reference montages in `branding/mascot-models/new-sheets-2026-11-24/refs/` (stages 1-12, costumes 21, standard dragon). Owner gets the same pack as a zip in the chat. CANONICAL Friday outfit sides = SG0: rug on the VIEWER'S-LEFT shoulder, beads in the VIEWER'S-RIGHT hand (an earlier remark in the chat that 567879 was "mirrored" was wrong and nothing was flipped). If he says "crop the avatar from what exists", skip AV1-3 and crop the heads from `r_lv_*` / `r_costume_*`. Build 45350720435 (commit 3489fa5) was dispatched at his request.
 

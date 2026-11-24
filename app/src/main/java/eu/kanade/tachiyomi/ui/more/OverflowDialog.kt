@@ -137,6 +137,10 @@ class OverflowDialog(activity: MainActivity) : Dialog(activity, R.style.Overflow
             activity.showStats()
             dismiss()
         }
+        // R: the dragon-level entry shows the owner's dragon-head icon in its own colours (never tinted flat)
+        binding.dragonLevelItem.keepIconColors = true
+        binding.dragonLevelItem.setIcon(R.drawable.ic_r_dragon)
+        binding.dragonLevelItem.setIconColor(0)
         binding.dragonLevelItem.setOnClickListener {
             activity.showDragonLevel()
             dismiss()
