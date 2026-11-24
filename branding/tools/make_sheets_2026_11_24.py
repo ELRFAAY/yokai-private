@@ -4,6 +4,7 @@
   AV3  costume portraits 3x3 -> r_avc_<name>          (magician ... steampunk)
   IC1  icons 4x2             -> r_ic_<name>           (dragon head, crowned head, egg, book, hourglass, flame, trophy, calendar)
   HAMMER 2 cells             -> r_hammer_up, r_hammer_raised
+GAPS (below) lists the icons that also get their closed white gaps cleared.
 Method: every cell is cut on the sheet's fixed grid. The "core" = everything inside the dark outline (outline mask, closed, holes filled), kept
 fully opaque (so white hats, white eyes and the calendar page stay solid). Outside the core, light pixels are turned into real transparency by
 un-blending them from white (alpha from how far they are from white, colour recovered), so soft glows / halo rings / sparkles / glass keep
@@ -65,6 +66,11 @@ def to_rgba(rgb, clear_gaps=0):
     return np.dstack([out_rgb, alpha * 255]).astype(np.uint8), core
 
 
+# icons whose closed white gaps must become transparent (the trophy's handle loops, the gaps beside the hourglass glass); the calendar
+# page and the book pages are WHITE OBJECTS and stay solid
+GAPS = {'r_ic_trophy': 300, 'r_ic_hourglass': 300}
+
+
 def cut_grid(spec):
     f, cols, rows, names = spec
     im = np.asarray(Image.open(D + f).convert('RGB')).astype(np.float32)
@@ -77,7 +83,7 @@ def cut_grid(spec):
         y0, y1 = round(r * ch), round((r + 1) * ch)
         # a hair inside the grid so the grey cell borders of some sheets never get in
         cell = im[y0 + 2:y1 - 2, x0 + 2:x1 - 2]
-        res[name] = to_rgba(cell)
+        res[name] = to_rgba(cell, clear_gaps=GAPS.get(name, 0))
     return res
 
 
