@@ -59,6 +59,32 @@ object RProfileExtras {
         setPadding(0, 0, 0, dp(ctx, 8f))
     }
 
+    /** The same animated XP icon the reader counter uses (r_xp_0..10) with a text next to it, e.g. "+50". */
+    private fun xpRow(ctx: Context, text: String, sizeDp: Float = 16f, bold: Boolean = true, center: Boolean = false): View {
+        val anim = android.graphics.drawable.AnimationDrawable().apply {
+            for (i in 0..10) {
+                val id = ctx.resources.getIdentifier("r_xp_$i", "drawable", ctx.packageName)
+                if (id != 0) androidx.core.content.ContextCompat.getDrawable(ctx, id)?.let { addFrame(it, 90) }
+            }
+            isOneShot = false
+        }
+        val icon = ImageView(ctx).apply {
+            setImageDrawable(anim)
+            post { anim.start() }
+        }
+        val label = TextView(ctx).apply {
+            this.text = text
+            textSize = 12.5f
+            if (bold) setTypeface(typeface, Typeface.BOLD)
+        }
+        return LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = (if (center) Gravity.CENTER_HORIZONTAL else Gravity.START) or Gravity.CENTER_VERTICAL
+            addView(icon, LinearLayout.LayoutParams(dp(ctx, sizeDp), dp(ctx, sizeDp)))
+            addView(label, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginStart = dp(ctx, 4f) })
+        }
+    }
+
     private fun small(ctx: Context, t: String, alpha: Float = 0.7f) = TextView(ctx).apply {
         text = t
         textSize = 12.5f
@@ -134,7 +160,8 @@ object RProfileExtras {
         val ready = unlocked.filter { it.id !in done }
         c.addView(title(ctx, "🏅 الإنجازات (${unlocked.size}/${all.size})"))
         if (ready.isNotEmpty()) {
-            c.addView(small(ctx, "جاهز تجمعه: ${ready.size} إنجاز = ${ready.sumOf { it.xp }} XP", 1f))
+            c.addView(small(ctx, "جاهز تجمعه: ${ready.size} إنجاز", 1f))
+            c.addView(xpRow(ctx, "+${ready.sumOf { it.xp }}", 20f))
             c.addView(
                 button(ctx, "جمع الكل") {
                     val (n, xp) = RAchievements.claimAll(d, prefs)
@@ -175,18 +202,17 @@ object RProfileExtras {
                     cell.addView(TextView(ctx).apply { text = b.emoji; textSize = 26f; gravity = Gravity.CENTER })
                 }
                 cell.addView(TextView(ctx).apply { text = b.title; textSize = 11f; gravity = Gravity.CENTER })
-                cell.addView(
-                    TextView(ctx).apply {
-                        text = when {
-                            !isOpen -> "${RAchievements.value(b.kind, d)}/${b.target}"
-                            collected -> "✓ اتجمع"
-                            else -> "+${b.xp} XP"
-                        }
-                        textSize = 10.5f
-                        gravity = Gravity.CENTER
-                        if (isOpen && !collected) setTypeface(typeface, Typeface.BOLD)
-                    },
-                )
+                if (isOpen && !collected) {
+                    cell.addView(xpRow(ctx, "+${b.xp}", 14f, center = true))
+                } else {
+                    cell.addView(
+                        TextView(ctx).apply {
+                            text = if (!isOpen) "${RAchievements.value(b.kind, d)}/${b.target}" else "✓ اتجمع"
+                            textSize = 10.5f
+                            gravity = Gravity.CENTER
+                        },
+                    )
+                }
                 cell.setOnClickListener {
                     if (isOpen && !collected) {
                         val xp = RAchievements.claim(b, d, prefs)
