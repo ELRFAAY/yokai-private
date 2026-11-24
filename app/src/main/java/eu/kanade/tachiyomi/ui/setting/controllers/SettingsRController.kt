@@ -283,6 +283,14 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rMascotEvolve())
+                title = "تحوّل البيضة عند الترقية"
+                rIcon(R.drawable.ic_r_swap)
+                summary = "لما يرتقي التنين لمستوى جديد يتحوّل لبيضة تتشقق وتنفجر ثم يظهر بشكله الجديد. عند الإيقاف: يظهر الشكل الجديد مباشرة."
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+            }
+
+            switchPreference {
                 bindTo(preferences.rMascotTransform())
                 title = "تحويل التنين الصغير"
                 rIcon(R.drawable.ic_r_swap)

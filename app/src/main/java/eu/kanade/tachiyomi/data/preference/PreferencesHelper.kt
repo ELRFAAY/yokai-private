@@ -289,6 +289,8 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
 
     /** Mascot: small talking blips (one per letter) while a speech bubble types out; silent in silent/vibrate mode. */
     /** Mascot: tapping the little dragon turns him into a random character (knight, ninja, pirate, detective) in a cloud of smoke. */
+    fun rMascotEvolve() = preferenceStore.getBoolean("r_mascot_evolve", true) // egg evolution of the home dragon on level-up
+    fun rDragonSeenLevel() = preferenceStore.getInt("r_dragon_seen_level", 0) // last level the evolution was shown for (0 = not set yet)
     fun rMascotTransform() = preferenceStore.getBoolean("r_mascot_transform", true)
 
     /**

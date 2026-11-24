@@ -120,6 +120,8 @@ class RMascotView(context: Context) : View(context) {
     private var tfStart = 0L
     private var tfForm = 0
     private var tfSpoke = false
+    private var tfEvo = 0 // > 0 while the egg evolution plays: the new level
+
     private val tfBitmaps = HashMap<Int, Bitmap?>()
     private fun tfBitmap(id: Int): Bitmap? = tfBitmaps.getOrPut(id) { load(id) }
 
@@ -776,6 +778,21 @@ class RMascotView(context: Context) : View(context) {
      * Called by MainActivity each time the dragon appears (library / manga page). Night yawn, Friday phrase, and the
      * streak / weekly goal clips (those two need the stats, read once on a background thread).
      */
+    /** R: when the reading level went up since the last time we looked, play the egg evolution once. */
+    private fun checkEvolution() {
+        val level = eu.kanade.tachiyomi.util.RDragonLevel.info(prefs.rDragonXp().get().toLong()).level
+        val seen = prefs.rDragonSeenLevel().get()
+        prefs.rDragonSeenLevel().set(level)
+        if (seen <= 0 || level <= seen || !prefs.rMascotEvolve().get()) return
+        if (!isShown || !positioned || state != State.IDLE || asleep || tfStart != 0L) return
+        tfEvo = level
+        tfStart = SystemClock.uptimeMillis()
+        tfSpoke = false
+        tfPoofs = 0
+        if (soundPool == null && prefs.rMascotSound().get()) soundPool = createSoundPool()
+        invalidate()
+    }
+
     fun onShown() {
         val now = SystemClock.uptimeMillis()
         if (!positioned || now - lastShownCheckAt < 60_000L) return
@@ -789,12 +806,13 @@ class RMascotView(context: Context) : View(context) {
             setClipDay("friday", day)
             postDelayed({ if (isShown && state == State.IDLE && !asleep) say(FRIDAY_SAY.random(), 4200L) }, 1500L)
         }
+        checkEvolution() // XP also grows in the reader, so look at the saved level every time the dragon is shown
         if (now - lastStatsCheckAt > 30 * 60_000L) { // also keeps the dragon's level (size) up to date
             lastStatsCheckAt = now
             Thread {
                 val d = runCatching { eu.kanade.tachiyomi.ui.more.stats.StatsPresenter().getRData() }.getOrNull() ?: return@Thread
                 prefs.rDragonXp().set(eu.kanade.tachiyomi.util.RDragonLevel.xp(d.totalChapters, d.totalReadMs, prefs.rDragonXpBonus().get().toLong()).coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
-                post { onStats(d.streakNow, d.weekChapters) }
+                post { onStats(d.streakNow, d.weekChapters); checkEvolution() }
             }.start()
         }
     }
@@ -1127,6 +1145,36 @@ class RMascotView(context: Context) : View(context) {
         if (tfStart != 0L) {
             val t = now - tfStart
             val form = TF_FORMS[tfForm]
+            if (tfEvo > 0) {
+                // egg evolution: seal -> smoke -> egg (appear, wobble, cracks, burst, shell) -> smoke -> new look
+                val eggT = t - TF_SEAL - TF_WRAP - TF_CLOUD
+                val eggTotal = EGG_STEPS.sumOf { it.second }
+                if (tfPoofs == 0 && t >= TF_SEAL + TF_WRAP) { tfPoofs = 1; playPoof() }
+                if (tfPoofs == 1 && eggT >= eggTotal) { tfPoofs = 2; playPoof() }
+                val eid = when {
+                    t < TF_SEAL -> R.drawable.r_tf_seal
+                    t < TF_SEAL + TF_WRAP -> R.drawable.r_tf_wrap
+                    eggT < 0 -> R.drawable.r_tf_cloud
+                    eggT < eggTotal -> {
+                        var acc = 0L
+                        var frame = 1
+                        for ((f, ms) in EGG_STEPS) { acc += ms; if (eggT < acc) { frame = f; break } }
+                        if (frame >= 7 && !tfSpoke) {
+                            tfSpoke = true
+                            say("مبروك! وصلت للمستوى $tfEvo 🎉", 3200L)
+                        }
+                        EGG_FRAMES[frame - 1]
+                    }
+                    eggT < eggTotal + TF_CLOUD -> R.drawable.r_tf_cloud
+                    else -> 0
+                }
+                if (eid == 0) {
+                    tfStart = 0L
+                    tfEvo = 0
+                } else {
+                    tfBmp = tfBitmap(eid)
+                }
+            } else {
             // "poof!" when the smoke covers the snake and again when it turns back
             if (tfPoofs == 0 && t >= TF_SEAL + TF_WRAP) { tfPoofs = 1; playPoof() }
             if (tfPoofs == 1 && t >= TF_SEAL + TF_WRAP + TF_CLOUD + TF_HOLD) { tfPoofs = 2; playPoof() }
@@ -1149,6 +1197,7 @@ class RMascotView(context: Context) : View(context) {
             } else {
                 tfBmp = tfBitmap(id)
                 tfCostume = id == form.first
+            }
             }
         }
         if (tfBmp == null && blanketT > 0f) {
@@ -1177,7 +1226,7 @@ class RMascotView(context: Context) : View(context) {
 
         // R: a tall costume (hat, helmet) must not be cut by the top of the screen: slide the dragon down while it wears it
         var shiftTarget = 0f
-        if (tfStart != 0L) {
+        if (tfStart != 0L && tfEvo == 0) {
             val fb = tfBitmap(TF_FORMS[tfForm].first)
             if (fb != null) {
                 val hr = (fb.height * (half * 2f / 384f) - half * 2f).coerceAtLeast(0f)
@@ -1385,6 +1434,15 @@ class RMascotView(context: Context) : View(context) {
         val GOAL_SAY = listOf("عدّيت هدف الأسبوع! برافو عليك", "هدف الأسبوع خلص.. يلا الأسبوع الجاي")
         val STREAK_SAY = arrayOf("٣ أيام ورا بعض! كمّل", "أسبوع كامل من غير ما تفوّت يوم!", "٣٠ يوم ورا بعض.. إنت أسطورة")
         const val BLINK_MS = 140L
+        val EGG_FRAMES = intArrayOf(
+            R.drawable.r_egg_1, R.drawable.r_egg_2, R.drawable.r_egg_3, R.drawable.r_egg_4,
+            R.drawable.r_egg_5, R.drawable.r_egg_6, R.drawable.r_egg_7, R.drawable.r_egg_8,
+        )
+
+        /** (egg frame 1..8, ms): appear, wobble, first crack, more cracks, light, burst, empty shell. */
+        val EGG_STEPS = listOf(
+            1 to 700L, 2 to 330L, 3 to 330L, 2 to 330L, 3 to 330L, 4 to 650L, 5 to 650L, 6 to 650L, 7 to 550L, 8 to 800L,
+        )
         const val TF_SEAL = 450L
         const val TF_WRAP = 450L
         const val TF_CLOUD = 450L
