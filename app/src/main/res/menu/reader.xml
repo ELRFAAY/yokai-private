@@ -3,6 +3,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_r_hammer"
+        android:checkable="true"
+        android:title="المطرقة"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_r_chapter_note"
         android:title="ملاحظة الشبتر"
         app:showAsAction="never" />

@@ -51,6 +51,19 @@ class RFloatDragonView(context: Context) : View(context) {
         }
     var pointRight = true
 
+    /** R: hammer mode (reader toggle): every few seconds a hammer falls on its head, it squashes and shows the hurt face. */
+    var hammer = false
+        set(value) {
+            field = value
+            hitAt = 0L
+            invalidate()
+        }
+    private var hitAt = 0L
+    private var nextHitAt = 0L
+    private val hurt: Bitmap? by lazy { load(R.drawable.r_mascot_hurt) }
+    private val hammerUp: Bitmap? by lazy { load(R.drawable.r_hammer_up) }
+    private val hammerRaised: Bitmap? by lazy { load(R.drawable.r_hammer_raised) }
+
     private val density = resources.displayMetrics.density
     private val slack get() = (14 * density).toInt()
     private val still: Bitmap? by lazy { load(R.drawable.r_mascot_happy) }
@@ -278,9 +291,26 @@ class RFloatDragonView(context: Context) : View(context) {
 
     override fun onDraw(canvas: Canvas) {
         val idle = mode == Mode.HOME
+        // hammer schedule: first hit 1.2 s after it shows, then every 4.5 s (only while at home)
+        val nowMs = SystemClock.uptimeMillis()
+        if (hammer && floating && animationsOn && idle) {
+            if (nextHitAt == 0L) nextHitAt = nowMs + 1200L
+            if (hitAt == 0L && nowMs >= nextHitAt) {
+                hitAt = nowMs
+                unclipAncestors()
+            }
+        }
+        val hitT = if (hitAt != 0L) nowMs - hitAt else -1L
+        if (hitAt != 0L && hitT > HIT_MS) {
+            hitAt = 0L
+            nextHitAt = nowMs + HIT_EVERY_MS
+            restoreAncestors()
+        }
+        val hurtNow = hitT in HIT_BONK_MS..(HIT_MS - 150L)
         val bmp = when {
             mode == Mode.DRAG || mode == Mode.FLY -> scared
             mode == Mode.DIZZY -> dizzy
+            hurtNow -> hurt
             pointing -> point
             else -> null
         } ?: still ?: return
@@ -367,15 +397,61 @@ class RFloatDragonView(context: Context) : View(context) {
         canvas.save()
         canvas.translate(cx + dx + dir * poke * 5f * density, baseY + dy)
         canvas.rotate(tilt + dir * poke * 4f + spin)
-        canvas.scale(sx, sy)
+        // squash under the hammer
+        val squash = if (hitT in HIT_BONK_MS..(HIT_BONK_MS + 260L)) 1f - 0.16f * (1f - (hitT - HIT_BONK_MS) / 260f) else 1f
+        canvas.scale(sx * (2f - squash).coerceAtMost(1.1f), sy * squash)
         if (pointing && !pointRight && bmp === point) canvas.scale(-1f, 1f)
         dst.set(-side / 2f, -side, side / 2f, 0f)
         canvas.drawBitmap(bmp, null, dst, bitmapPaint)
         canvas.restore()
+
+        // the hammer: hovers tilted above, drops fast onto the head, rests a moment, then lifts away
+        if (hitT in 0..HIT_MS) {
+            val hs = side * 0.62f
+            val dragonTop = baseY + dy - side * sy
+            val impactTop = dragonTop + 0.12f * side - 0.45f * hs
+            val farTop = impactTop - 0.7f * side
+            val t = hitT
+            val top: Float
+            var alpha = 255
+            val img: Bitmap?
+            when {
+                t < 350L -> {
+                    val p = t / 350f
+                    top = farTop + sin(sec * 18f) * 2f * density
+                    alpha = (255 * p).toInt()
+                    img = hammerRaised
+                }
+                t < HIT_BONK_MS -> {
+                    val p = (t - 350L) / (HIT_BONK_MS - 350L).toFloat()
+                    top = farTop + (impactTop - farTop) * p * p
+                    img = hammerUp
+                }
+                t < 1000L -> {
+                    top = impactTop
+                    img = hammerUp
+                }
+                else -> {
+                    val p = (t - 1000L) / (HIT_MS - 1000L).toFloat()
+                    top = impactTop + (farTop - impactTop) * p
+                    alpha = (255 * (1f - p)).toInt()
+                    img = hammerRaised
+                }
+            }
+            img?.let {
+                bitmapPaint.alpha = alpha.coerceIn(0, 255)
+                dst.set(cx + dx - hs / 2f, top, cx + dx + hs / 2f, top + hs)
+                canvas.drawBitmap(it, null, dst, bitmapPaint)
+                bitmapPaint.alpha = 255
+            }
+        }
     }
 
     companion object {
         private const val GLIDE_EVERY_MS = 7000L
+        private const val HIT_MS = 1500L
+        private const val HIT_BONK_MS = 480L
+        private const val HIT_EVERY_MS = 4500L
         private const val GLIDE_MS = 900f
         private const val DOT_LIFE_MS = 800L
         private const val GLOW = 0xFF4ADE80.toInt()

@@ -347,6 +347,7 @@ private fun ReadTimeCard(readMillis: () -> Long) {
                     RFloatDragonView(ctx).apply {
                         sizeDp = 64
                         pointing = true
+                        hammer = runCatching { Injekt.get<PreferencesHelper>().rHammerMode().get() }.getOrDefault(false)
                     }
                 },
                 update = { it.pointRight = textOnRight },

@@ -592,6 +592,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        menu.findItem(R.id.action_r_hammer)?.isChecked = preferences.rHammerMode().get()
         val splitItem = menu.findItem(R.id.action_shift_double_page)
         splitItem?.isVisible = ((viewer as? PagerViewer)?.config?.doublePages ?: false) && !canShowSplitAtBottom()
         binding.chaptersSheet.shiftPageButton.isVisible = ((viewer as? PagerViewer)?.config?.doublePages ?: false) && canShowSplitAtBottom()
@@ -764,6 +765,12 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_r_chapter_note -> rShowChapterNote()
+            R.id.action_r_hammer -> {
+                val on = !preferences.rHammerMode().get()
+                preferences.rHammerMode().set(on)
+                item.isChecked = on
+                toast(if (on) "المطرقة شغالة: التنين هياخد ضربة بين الشباتر" else "المطرقة اتقفلت")
+            }
             R.id.action_shift_double_page -> {
                 shiftDoublePages()
                 manuallyShiftedPages = true

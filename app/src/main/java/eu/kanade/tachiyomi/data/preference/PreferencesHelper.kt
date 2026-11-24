@@ -317,6 +317,7 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
 
     /** The little dragon in the chapter-end card and in the statistics hovers (bob, glow shadow, sparkle trail) and points at its text. */
     fun rDragonXpBonus() = preferenceStore.getInt("r_dragon_xp_bonus", 0)
+    fun rHammerMode() = preferenceStore.getBoolean("r_hammer_mode", false)
     fun rRankCard() = preferenceStore.getBoolean("r_rank_card", true) // compact green rank card on top of the overflow menu
     fun rDragonOutfit() = preferenceStore.getString("r_dragon_outfit", "") // costume name (r_avc_<name>) used as the rank-card avatar, "" = stage portrait
     fun rDragonFloat() = preferenceStore.getBoolean("r_dragon_float", true)
