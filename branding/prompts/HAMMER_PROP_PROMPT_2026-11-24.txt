@@ -1,0 +1,11 @@
+HAMMER PROP (الشاكوش) - ONE small sheet, paste this whole file as ONE prompt
+Why: the owner wants a reader button that makes a hammer hit the little dragon on the head (then the dragon stays away while he reads). The dragon's reactions already exist (hurt, dizzy, scared, stars: `r_mascot_hurt`, `r_mascot_dizzy`, `r_mascot_scared`), so the code only needs the HAMMER itself (it rotates, swings and squashes it in code). No new dragon frames are needed.
+ATTACH (style reference only, to copy the line weight, colours and cartoon feel): `branding/mascot-models/new-sheets-2026-11-22/H3-v6-565740.jpg` (the cane-hit gag sheet) and `branding/mascot-models/new-sheets-2026-11-23/SF-streak-3-7-30-4x3-567633.jpg`.
+
+PROMPT
+A prop sheet with 2 cells side by side (each cell 512 x 512, sheet 1024 x 512), pure white background, no text, no labels, no cell borders, no ground shadow, no motion lines, no stars, no sparkles, no impact marks, no hands, no character, no arm: the object floats alone.
+The object: ONE big cartoon wooden MALLET (hammer) in the same flat-colour cartoon sticker style as the attached images: thick dark outline (same line weight), a big rounded cylinder head in warm light wood with two dark-brown metal bands near the ends and a lighter highlight stripe, a round short wooden handle in darker brown with a rounded knob at the bottom end and a small leather-strap loop. Chunky, friendly, slightly oversized head (like a toy mallet in a cartoon), NOT realistic, no blood, no damage, no rust, no spikes.
+Cell 1: the mallet UPRIGHT, handle pointing down, head at the top, exactly centred, the whole object about 400 px tall, seen from the side (the head's cylinder is visible as a rounded rectangle).
+Cell 2: the SAME mallet tilted 35 degrees clockwise (head leaning to the right, as if raised back before a swing), same size, same colours, centred.
+Both cells: identical drawing style, the same size of the head, nothing touching a cell edge, a closed outline all around.
+Optional (only if the generator can do it cleanly): a third cell (sheet 1536 x 512) with the mallet SQUASHED 12 percent along the handle direction (the head slightly flattened, as at the moment of impact), upright.
