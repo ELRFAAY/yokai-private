@@ -1,0 +1,389 @@
+package eu.kanade.tachiyomi.ui.more.stats
+
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.Shader
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import eu.kanade.tachiyomi.domain.manga.models.Manga
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import eu.kanade.tachiyomi.util.RAchievements
+import eu.kanade.tachiyomi.util.RChest
+import eu.kanade.tachiyomi.util.RDragonLevel
+import eu.kanade.tachiyomi.util.RReadLog
+import eu.kanade.tachiyomi.util.rMangaKey
+import eu.kanade.tachiyomi.util.storage.getUriCompat
+import yokai.util.coil.loadManga
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
+import java.io.File
+import java.time.LocalDate
+
+/**
+ * R: the profile sections under the header card, built from code: weekly chest, badges (collect by hand / collect all), records,
+ * monthly calendar, favourite manga and the share card. Everything reads the history, so a restored backup shows its old badges.
+ */
+object RProfileExtras {
+    private fun dp(ctx: Context, v: Float) = (v * ctx.resources.displayMetrics.density).toInt()
+
+    private fun card(ctx: Context): LinearLayout = LinearLayout(ctx).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(ctx, 14f), dp(ctx, 12f), dp(ctx, 14f), dp(ctx, 12f))
+        background = GradientDrawable().apply {
+            cornerRadius = dp(ctx, 14f).toFloat()
+            setColor(0x14808080)
+            setStroke(dp(ctx, 1f), 0x33808080)
+        }
+        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            topMargin = dp(ctx, 10f)
+        }
+    }
+
+    private fun title(ctx: Context, t: String) = TextView(ctx).apply {
+        text = t
+        textSize = 16f
+        setTypeface(typeface, Typeface.BOLD)
+        setPadding(0, 0, 0, dp(ctx, 8f))
+    }
+
+    private fun small(ctx: Context, t: String, alpha: Float = 0.7f) = TextView(ctx).apply {
+        text = t
+        textSize = 12.5f
+        this.alpha = alpha
+    }
+
+    private fun button(ctx: Context, t: String, onClick: () -> Unit) = com.google.android.material.button.MaterialButton(ctx).apply {
+        text = t
+        isAllCaps = false
+        setOnClickListener { onClick() }
+    }
+
+    /** [onChanged] runs after XP changed (collect / chest) so the header card can repaint. */
+    fun build(
+        ctx: Context,
+        root: LinearLayout,
+        d: RStatsData,
+        library: List<Manga>,
+        prefs: PreferencesHelper = Injekt.get(),
+        onChanged: () -> Unit,
+    ) {
+        root.removeAllViews()
+        fun rebuild() {
+            onChanged()
+            build(ctx, root, d, library, prefs, onChanged)
+        }
+        root.addView(chestCard(ctx, prefs, ::rebuild))
+        root.addView(badgesCard(ctx, d, prefs, ::rebuild))
+        root.addView(recordsCard(ctx, d))
+        root.addView(calendarCard(ctx, d))
+        root.addView(favouritesCard(ctx, library, prefs, ::rebuild))
+        root.addView(shareCard(ctx, d, prefs))
+    }
+
+    // ---- weekly chest ----
+    private fun chestCard(ctx: Context, prefs: PreferencesHelper, rebuild: () -> Unit): View {
+        val c = card(ctx)
+        c.addView(title(ctx, "🎁 صندوق الأسبوع"))
+        if (RChest.available(prefs)) {
+            c.addView(small(ctx, "فيه XP عشوائي. تفتحه مرة كل أسبوع."))
+            c.addView(
+                button(ctx, "افتح الصندوق") {
+                    val xp = RChest.open(prefs)
+                    if (xp > 0) {
+                        MaterialAlertDialogBuilder(ctx)
+                            .setTitle(if (xp >= 500) "🎉 الجائزة الكبرى!" else "🎁 الصندوق اتفتح")
+                            .setMessage("خدت +$xp XP")
+                            .setPositiveButton("تمام", null)
+                            .show()
+                        rebuild()
+                    }
+                },
+            )
+        } else {
+            c.addView(small(ctx, "فتحت صندوق الأسبوع ده. الصندوق الجاي الأسبوع الجاي. 😴"))
+        }
+        return c
+    }
+
+    // ---- badges ----
+    private fun badgesCard(ctx: Context, d: RStatsData, prefs: PreferencesHelper, rebuild: () -> Unit): View {
+        val c = card(ctx)
+        val done = RAchievements.claimed(prefs)
+        val all = RAchievements.all
+        val unlocked = all.filter { RAchievements.unlocked(it, d) }
+        val ready = unlocked.filter { it.id !in done }
+        c.addView(title(ctx, "🏅 الإنجازات (${unlocked.size}/${all.size})"))
+        if (ready.isNotEmpty()) {
+            c.addView(small(ctx, "جاهز تجمعه: ${ready.size} إنجاز = ${ready.sumOf { it.xp }} XP", 1f))
+            c.addView(
+                button(ctx, "جمع الكل") {
+                    val (n, xp) = RAchievements.claimAll(d, prefs)
+                    MaterialAlertDialogBuilder(ctx)
+                        .setTitle("تم الجمع")
+                        .setMessage("جمعت $n إنجاز، و+$xp XP")
+                        .setPositiveButton("تمام", null)
+                        .show()
+                    rebuild()
+                },
+            )
+        } else {
+            c.addView(small(ctx, "مفيش XP جاهز للجمع دلوقتي."))
+        }
+        // a wrapping grid of badges: ready ones first, then collected, then the 3 nearest locked ones
+        val locked = all.filter { !RAchievements.unlocked(it, d) }
+        val nearest = RAchievements.run {
+            listOf(CHAPTERS, HOURS, STREAK).mapNotNull { k -> locked.firstOrNull { it.kind == k } }
+        }
+        val shown = ready + unlocked.filter { it.id in done }.takeLast(12) + nearest
+        val cols = 4
+        for (rowStart in shown.indices step cols) {
+            val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; weightSum = cols.toFloat() }
+            for (i in rowStart until minOf(rowStart + cols, shown.size)) {
+                val b = shown[i]
+                val isOpen = RAchievements.unlocked(b, d)
+                val collected = b.id in done
+                val cell = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.VERTICAL
+                    gravity = Gravity.CENTER_HORIZONTAL
+                    setPadding(2, dp(ctx, 8f), 2, 2)
+                    alpha = if (isOpen) 1f else 0.4f
+                }
+                cell.addView(TextView(ctx).apply { text = b.emoji; textSize = 26f; gravity = Gravity.CENTER })
+                cell.addView(TextView(ctx).apply { text = b.title; textSize = 11f; gravity = Gravity.CENTER })
+                cell.addView(
+                    TextView(ctx).apply {
+                        text = when {
+                            !isOpen -> "${RAchievements.value(b.kind, d)}/${b.target}"
+                            collected -> "✓ اتجمع"
+                            else -> "+${b.xp} XP"
+                        }
+                        textSize = 10.5f
+                        gravity = Gravity.CENTER
+                        if (isOpen && !collected) setTypeface(typeface, Typeface.BOLD)
+                    },
+                )
+                cell.setOnClickListener {
+                    if (isOpen && !collected) {
+                        val xp = RAchievements.claim(b, d, prefs)
+                        if (xp > 0) {
+                            Toast.makeText(ctx, "+$xp XP", Toast.LENGTH_SHORT).show()
+                            rebuild()
+                        }
+                    } else {
+                        Toast.makeText(ctx, b.desc + if (isOpen) "" else " (${RAchievements.value(b.kind, d)}/${b.target})", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                row.addView(cell, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            }
+            c.addView(row)
+        }
+        return c
+    }
+
+    // ---- records ----
+    private fun recordsCard(ctx: Context, d: RStatsData): View {
+        val c = card(ctx)
+        c.addView(title(ctx, "🏆 الأرقام القياسية"))
+        val best = d.dayCounts.maxByOrNull { it.value }
+        val rt = runCatching { RReadLog.summary() }.getOrNull()
+        c.addView(small(ctx, "أطول سلسلة: ${d.streakBest} يوم", 1f))
+        if (best != null) {
+            c.addView(small(ctx, "أكتر يوم قراءة: ${best.value} شابتر (${LocalDate.ofEpochDay(best.key)})", 1f))
+        }
+        if (rt != null && rt.bestDayMs > 0) {
+            c.addView(small(ctx, "أطول يوم وقت: ${RReadLog.format(rt.bestDayMs)} (${rt.bestDay})", 1f))
+        }
+        c.addView(small(ctx, "إجمالي الشباتر: ${d.totalChapters} • الساعات: ${d.totalReadMs / 3_600_000L}", 1f))
+        return c
+    }
+
+    // ---- calendar: last 12 weeks, GitHub style ----
+    private fun calendarCard(ctx: Context, d: RStatsData): View {
+        val c = card(ctx)
+        c.addView(title(ctx, "📅 تقويم القراءة (آخر 12 أسبوع)"))
+        val today = LocalDate.now()
+        // columns = weeks (oldest first), rows = Sat..Fri; the last column is this week
+        val weeks = 12
+        val startOfThisWeek = today.minusDays(((today.dayOfWeek.value + 1) % 7).toLong()) // Saturday = week start
+        val grid = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_HORIZONTAL }
+        val max = (d.dayCounts.values.maxOrNull() ?: 1).coerceAtLeast(1)
+        val size = dp(ctx, 18f)
+        val gap = dp(ctx, 3f)
+        for (w in 0 until weeks) {
+            val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+            for (r in 0 until 7) {
+                val day = startOfThisWeek.minusWeeks((weeks - 1 - w).toLong()).plusDays(r.toLong())
+                val n = if (day.isAfter(today)) -1 else d.dayCounts[day.toEpochDay()] ?: 0
+                val cell = View(ctx).apply {
+                    background = GradientDrawable().apply {
+                        cornerRadius = dp(ctx, 3f).toFloat()
+                        setColor(
+                            when {
+                                n < 0 -> Color.TRANSPARENT
+                                n == 0 -> 0x22808080
+                                else -> {
+                                    val level = (n * 4f / max).coerceIn(1f, 4f)
+                                    Color.argb(((0.30f + 0.17f * level) * 255).toInt(), 0x2E, 0xB8, 0x5C)
+                                }
+                            },
+                        )
+                    }
+                    if (n >= 0) setOnClickListener { Toast.makeText(ctx, "$day: $n شابتر", Toast.LENGTH_SHORT).show() }
+                }
+                col.addView(cell, LinearLayout.LayoutParams(size, size).apply { setMargins(gap / 2, gap / 2, gap / 2, gap / 2) })
+            }
+            grid.addView(col)
+        }
+        c.addView(grid)
+        c.addView(small(ctx, "كل مربع = يوم. كل ما اللون أغمق، قرأت أكتر."))
+        return c
+    }
+
+    // ---- favourites ----
+    private fun favouritesCard(ctx: Context, library: List<Manga>, prefs: PreferencesHelper, rebuild: () -> Unit): View {
+        val c = card(ctx)
+        c.addView(title(ctx, "⭐ مانجاتي المفضلة"))
+        val keys = prefs.rFavManga().get().split("\n").filter { it.isNotBlank() }
+        val favs = keys.mapNotNull { k -> library.firstOrNull { rMangaKey(it.source, it.url) == k } }
+        val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_HORIZONTAL }
+        favs.forEach { m ->
+            val img = ImageView(ctx).apply {
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                clipToOutline = true
+                background = GradientDrawable().apply { cornerRadius = dp(ctx, 10f).toFloat(); setColor(0x22808080) }
+                runCatching { loadManga(m) }
+            }
+            row.addView(img, LinearLayout.LayoutParams(dp(ctx, 92f), dp(ctx, 132f)).apply { setMargins(dp(ctx, 5f), 0, dp(ctx, 5f), 0) })
+        }
+        if (favs.isEmpty()) c.addView(small(ctx, "اختار لحد 3 مانجا يظهروا هنا."))
+        c.addView(row)
+        c.addView(
+            button(ctx, if (favs.isEmpty()) "اختار المفضلة" else "غيّر المفضلة") {
+                val sorted = library.distinctBy { it.id }.sortedBy { it.title.lowercase() }
+                val titles = sorted.map { it.title }.toTypedArray()
+                val picked = BooleanArray(sorted.size) { i -> sorted[i].let { rMangaKey(it.source, it.url) } in keys }
+                var dlg: androidx.appcompat.app.AlertDialog? = null
+                dlg = MaterialAlertDialogBuilder(ctx)
+                    .setTitle("اختار لحد 3")
+                    .setMultiChoiceItems(titles, picked) { _, which, checked ->
+                        picked[which] = checked
+                        if (picked.count { it } > 3) {
+                            picked[which] = false
+                            dlg?.listView?.setItemChecked(which, false)
+                            Toast.makeText(ctx, "لحد 3 بس", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    .setPositiveButton("حفظ") { _, _ ->
+                        prefs.rFavManga().set(sorted.filterIndexed { i, _ -> picked[i] }.joinToString("\n") { rMangaKey(it.source, it.url) })
+                        rebuild()
+                    }
+                    .setNegativeButton("إلغاء", null)
+                    .show()
+            },
+        )
+        return c
+    }
+
+    // ---- share card ----
+    private fun shareCard(ctx: Context, d: RStatsData, prefs: PreferencesHelper): View {
+        val c = card(ctx)
+        c.addView(title(ctx, "📤 كارت المشاركة"))
+        c.addView(small(ctx, "صورة فيها مستواك وأهم أرقامك. احفظها أو ابعتها."))
+        c.addView(
+            button(ctx, "شارك الكارت") {
+                runCatching {
+                    val bmp = drawShareBitmap(ctx, d, prefs)
+                    val dir = File(ctx.cacheDir, "r_share").apply { mkdirs() }
+                    val f = File(dir, "yokai_profile.png")
+                    f.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "image/png"
+                        putExtra(Intent.EXTRA_STREAM, f.getUriCompat(ctx))
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    ctx.startActivity(Intent.createChooser(send, "مشاركة الكارت"))
+                }.onFailure { Toast.makeText(ctx, "تعذّر إنشاء الكارت", Toast.LENGTH_SHORT).show() }
+            },
+        )
+        return c
+    }
+
+    private fun drawShareBitmap(ctx: Context, d: RStatsData, prefs: PreferencesHelper): Bitmap {
+        val w = 1080
+        val h = 640
+        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val cv = Canvas(bmp)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG)
+        p.shader = LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), 0xFF1F4D2E.toInt(), 0xFF2E7D45.toInt(), Shader.TileMode.CLAMP)
+        cv.drawRoundRect(0f, 0f, w.toFloat(), h.toFloat(), 48f, 48f, p)
+        p.shader = null
+        val info = RDragonLevel.info(prefs.rDragonXp().get().toLong())
+        // avatar
+        val pic = prefs.rProfileAvatar().get()
+        val avatar = (if (pic.isNotBlank() && File(pic).exists()) runCatching { android.graphics.BitmapFactory.decodeFile(pic) }.getOrNull() else null)
+            ?: runCatching {
+                val res = eu.kanade.tachiyomi.util.RDragonLook.portraitId(ctx, prefs)
+                if (res != 0) android.graphics.BitmapFactory.decodeResource(ctx.resources, res) else null
+            }.getOrNull()
+        if (avatar != null) {
+            val r = 120f
+            val save = cv.save()
+            val path = android.graphics.Path().apply { addCircle(60f + r, 60f + r, r, android.graphics.Path.Direction.CW) }
+            cv.clipPath(path)
+            cv.drawBitmap(avatar, null, android.graphics.RectF(60f, 60f, 60f + 2 * r, 60f + 2 * r), p)
+            cv.restoreToCount(save)
+        }
+        p.color = Color.WHITE
+        p.typeface = Typeface.DEFAULT_BOLD
+        p.textSize = 76f
+        cv.drawText("LV. ${info.level}", 330f, 150f, p)
+        p.typeface = Typeface.DEFAULT
+        p.textSize = 38f
+        p.alpha = 220
+        cv.drawText("${info.xp} XP", 330f, 205f, p)
+        p.alpha = 255
+        // XP bar
+        p.color = 0x33FFFFFF
+        cv.drawRoundRect(330f, 232f, 1020f, 252f, 10f, 10f, p)
+        p.color = 0xFF63B3FF.toInt()
+        cv.drawRoundRect(330f, 232f, 330f + 690f * info.progress, 252f, 10f, 10f, p)
+        // numbers
+        val stats = listOf(
+            "${d.totalChapters}" to "شابتر",
+            "${d.totalReadMs / 3_600_000L}" to "ساعة",
+            "${d.streakBest}" to "أطول سلسلة",
+            "${RAchievements.all.count { RAchievements.unlocked(it, d) }}" to "إنجاز",
+        )
+        stats.forEachIndexed { i, (v, label) ->
+            val cx = 60f + 120f + i * 250f
+            p.color = Color.WHITE
+            p.textAlign = Paint.Align.CENTER
+            p.typeface = Typeface.DEFAULT_BOLD
+            p.textSize = 78f
+            cv.drawText(v, cx + 30f, 470f, p)
+            p.typeface = Typeface.DEFAULT
+            p.textSize = 34f
+            p.alpha = 200
+            cv.drawText(label, cx + 30f, 520f, p)
+            p.alpha = 255
+        }
+        p.textAlign = Paint.Align.RIGHT
+        p.textSize = 28f
+        p.alpha = 150
+        cv.drawText("Yokai R", w - 50f, h - 36f, p)
+        return bmp
+    }
+}

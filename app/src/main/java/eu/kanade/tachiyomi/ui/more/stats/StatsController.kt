@@ -48,6 +48,8 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     val presenter = StatsPresenter()
     private val prefs: PreferencesHelper by injectLazy()
     private var rData: RStatsData? = null
+    private var rHeader: android.view.View? = null
+    private var rExtras: android.widget.LinearLayout? = null
 
     private val mangaDistinct = presenter.mangaDistinct
     private var scoresList = emptyList<Double>()
@@ -120,14 +122,20 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
             0,
         )
         // header card of the profile: avatar + level + XP bar (same card as the menu's)
+        val header = eu.kanade.tachiyomi.ui.more.RRankCardView(ctx)
+        rHeader = header
         box.addView(
-            eu.kanade.tachiyomi.ui.more.RRankCardView(ctx),
+            header,
             1,
             android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                 topMargin = (10 * ctx.resources.displayMetrics.density).toInt()
                 bottomMargin = (6 * ctx.resources.displayMetrics.density).toInt()
             },
         )
+        // weekly chest, badges, records, calendar, favourites, share: filled when the history is read (handleExtraSections)
+        val extras = android.widget.LinearLayout(ctx).apply { orientation = android.widget.LinearLayout.VERTICAL }
+        rExtras = extras
+        box.addView(extras, 2)
         if (start == RHubTabs.STATS) binding.statsScrollView.post { binding.statsScrollView.scrollTo(0, binding.rExtraStats.top) }
     }
 
@@ -391,14 +399,25 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     /** R: streak, weekly goal, top 5, hours, month comparison, genre / source donut. */
     private fun handleExtraSections() {
         val ctx = activity ?: return
-        if (!prefs.rStatsExtra().get()) {
-            binding.rExtraStats.isVisible = false
-            return
-        }
+        val showTiles = prefs.rStatsExtra().get()
+        if (!showTiles) binding.rExtraStats.isVisible = false
         // the history pass runs off the main thread so the screen opens at once
         viewScope.launch {
             try {
                 val data = rData ?: withContext(Dispatchers.IO) { presenter.getRData() }.also { rData = it }
+                rExtras?.let { ex ->
+                    RProfileExtras.build(ctx, ex, data, mangaDistinct.map { it.manga }) {
+                        // XP changed: repaint the header card in place
+                        (rHeader?.parent as? android.view.ViewGroup)?.let { parent ->
+                            val i = parent.indexOfChild(rHeader)
+                            val fresh = eu.kanade.tachiyomi.ui.more.RRankCardView(ctx)
+                            parent.removeViewAt(i)
+                            parent.addView(fresh, i, rHeader?.layoutParams)
+                            rHeader = fresh
+                        }
+                    }
+                }
+                if (!showTiles) return@launch
                 binding.rHeroAvg.text = "%.1f".format(data.dailyAvg)
                 binding.rExtraStats.isVisible = true
                 RStatsSections.build(ctx, binding.rExtraStats, data, prefs.rWeeklyGoal().get()) { showGoalDialog() }

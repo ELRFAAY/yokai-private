@@ -178,7 +178,10 @@ class StatsPresenter(
             val rest = sorted.drop(n).sumOf { it.value }
             return if (rest > 0) head + ("غيرها" to rest) else head
         }
+        val dayCounts = HashMap<Long, Int>()
+        rowDays.forEach { dayCounts[it] = (dayCounts[it] ?: 0) + 1 }
         return RStatsData(
+            dayCounts = dayCounts,
             streakNow = cur,
             totalChapters = rows.mapNotNull { it.chapter.id }.distinct().size,
             totalReadMs = runBlocking { handler.awaitOneOrNull { historyQueries.getTotalReadDuration() }?.sum?.toLong() } ?: 0L,
@@ -205,6 +208,7 @@ class StatsPresenter(
 class RTopManga(val manga: Manga, val chapters: Int, val timeMs: Long)
 
 class RStatsData(
+    val dayCounts: Map<Long, Int> = emptyMap(), // epoch day -> chapters read that day
     val streakNow: Int,
     val totalChapters: Int,
     val totalReadMs: Long,
