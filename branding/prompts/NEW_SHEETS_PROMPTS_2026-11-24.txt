@@ -1,0 +1,101 @@
+NEW SHEETS - PROMPTS + REFERENCE IMAGES (24 Nov 2026)
+كل برومبت تحته سطر ATTACH = الصور اللي ترفقها معاه من فولدر refs. الصور مترقمة، والأرقام هي اللي في الأسماء. الصق كل برومبت لوحده، وصورة واحدة أو اتنين مرفقين كفاية.
+
+الترتيب اللي أنصح بيه:
+ 1) AV1  صور الوش الدايرية للـ 12 مرحلة (لبطاقة الرتبة)  <- الأهم
+ 2) IC1  شيت الأيقونات (بدل أيقونة البيت + أيقونات مربعات الإحصائيات)
+ 3) HAMMER  الشاكوش (زرار القارئ)
+ 4) اختياري: AV2 و AV3  صور الوش بالأوتفيتات الـ 21 (لو مش عايز الكود يقص الوش من صور الأوتفيتات الموجودة)
+ 5) اختياري وفي الآخر: SG1  ضهر لبس الجمعة (مفيش حاجة في الكود بتستخدمه دلوقتي)
+
+تصحيح مني: الجنب الصح للبس الجمعة هو اللي في SG0 بالظبط: المصلية على كتف يسار المشاهد، والسبحة في إيد يمين المشاهد. الصورة 567879 اللي بعتها لي مطابقة لـ SG0 وما تتقلبش (كلامي إنها غلط كان على المواصفات القديمة). كل الشيتات المقصوصة في التطبيق على نفس الجنب.
+
+قواعد ثابتة لكل الشيتات (مكررة جوه كل برومبت): التنين الصغير جسمه قصير وعريض، إيدين اتنين بس (إيدين الجسم نفسه)، خلفية بيضا صافية، من غير أي كتابة أو أرقام أو حدود خانات أو ظل أرضي.
+
+================================================================
+AV1 - STAGE PORTRAITS (12 round-avatar heads)  [needed for the rank card]
+Why: the rank card shows a ROUND avatar of the dragon. Each of the 12 growth stages needs a close-up head portrait that still looks like THAT stage (the full-body stages already exist). The app will crop it with a circle.
+ATTACH: refs/03_stages-1-to-12_left-to-right-top-to-bottom.png (the 12 stages, the order you must follow) + refs/04_levels-1-6-original-sheet.jpg (line weight and colours).
+
+PROMPT
+A portrait sheet of 12 cells: 4 columns x 3 rows, all cells the same size, pure white background, no text, no numbers, no labels, no cell borders, no ground shadow. Cells are read left to right, top to bottom = growth stages 1 to 12, in EXACTLY the order of the first attached image. Each cell shows the HEAD PORTRAIT of the same little cobra-dragon as that stage in the attached image: same hood shape, same colours, same markings, same horns / antlers / crown / gem / whiskers / spikes / halo / glow, same thick dark outline, same flat-colour cartoon sticker style.
+Framing (identical in all 12 cells): the head and the whole hood seen from the front, eyes looking at the viewer, the neck ends in a rounded bust cut at the top of the chest (the light belly scales begin there). NO hands, NO arms, NO coil, NO tail, NO body below the chest. The hood width is the SAME in every cell (about 70 percent of the cell width) and the head is centred, so the 12 portraits line up when switched. Everything that matters (the tips of horns, antlers, the crown, the gem) must fit inside a CIRCLE touching the middle of the four cell edges at 90 percent of the cell size, because the app cuts a circle. Glow, halo rings and sparkles may fade out softly but must also stay inside the cell. Nothing touches a cell edge.
+The 12 stages (copy from the image, do not redesign): 1 light green, plain hood, tiny fangs; 2 darker green, small brow bump; 3 two small horns and hood stripes; 4 two curved horns, small side spikes, gold hood markings; 5 dark green, long swept-back horns, spikes around the hood; 6 gold antlers, a small gold diamond on the forehead, golden eyes; 7 gold antlers, red gem on the forehead, long thin whiskers; 8 pale antlers, red gem, side fins, a soft golden glow; 9 gold antlers, small gold crown, a thin gold halo ring; 10 pale antlers, a large thin halo ring, small sparkles; 11 gold antlers, crown, small stars above, teal glow; 12 pale antlers, crescent-moon marks, spiky hood edge, soft mint glow.
+Expression in every cell: the same calm friendly smile as the stage image.
+
+================================================================
+IC1 - ICON SHEET (8 icons)  [replaces the house icon, and icons for the statistics tiles]
+Why: the dragon-level menu item has a placeholder HOUSE icon; the statistics screen is becoming a grid of tiles, one icon per tile. Icon 1 is the main one.
+ATTACH: refs/06_standard-little-dragon-front.png (the character) + refs/02_style_streak-sheet.jpg (line weight and colours) + refs/09_rank-card-look.jpg (the look of the screen where the icons live).
+
+PROMPT
+An icon sheet of 8 cells: 4 columns x 2 rows, equal cells, pure white background, no text, no numbers, no letters, no cell borders, no ground shadow. Every icon is ONE simple bold object, centred, filling about 70 percent of its cell, drawn so it still reads when shrunk to 48 pixels: thick dark-green outline (same weight as the attached images), flat colours, only 3 or 4 colours per icon, almost no small details, nothing touching a cell edge. Style = the same cartoon sticker style as the attached little green cobra dragon (glossy green, light-green belly scales, gold accents).
+Cells, left to right, top to bottom:
+1 the little dragon's HEAD only, front view, big heart-shaped hood, friendly smile (the main menu icon);
+2 the same head wearing a small gold crown;
+3 a speckled green dragon EGG with a small crack and a tiny curl of green tail peeking out (no hands);
+4 an open book with a small green dragon tail curling out of the pages;
+5 an hourglass with green sand and a gold frame;
+6 a flame in green and gold (reading streak);
+7 a gold trophy cup with a small green dragon head on the front of the cup;
+8 a calendar page with a bold green check mark.
+Rules: the dragon head in cells 1, 2, 7 is the same character and the same drawing, only the crown differs. No hands anywhere. No second character.
+
+================================================================
+HAMMER - reader button prop (2 cells)
+ATTACH: refs/01_style_cane-gag-sheet.jpg + refs/02_style_streak-sheet.jpg (style only).
+
+PROMPT
+A prop sheet with 2 cells side by side (each cell 512 x 512, sheet 1024 x 512), pure white background, no text, no labels, no cell borders, no ground shadow, no motion lines, no stars, no sparkles, no impact marks, no hands, no character, no arm: the object floats alone.
+The object: ONE big cartoon wooden MALLET (hammer) in the same flat-colour cartoon sticker style as the attached images: thick dark outline (same line weight), a big rounded cylinder head in warm light wood with two dark-brown metal bands near the ends and a lighter highlight stripe, a round short wooden handle in darker brown with a rounded knob at the bottom end and a small leather-strap loop. Chunky, friendly, slightly oversized head (like a toy mallet in a cartoon), NOT realistic, no blood, no damage, no rust, no spikes.
+Cell 1: the mallet UPRIGHT, handle pointing down, head at the top, exactly centred, the whole object about 400 px tall, seen from the side (the head's cylinder is visible as a rounded rectangle).
+Cell 2: the SAME mallet tilted 35 degrees clockwise (head leaning to the right, as if raised back before a swing), same size, same colours, centred.
+Both cells: identical drawing style, the same size of the head, nothing touching a cell edge, a closed outline all around.
+Optional (only if the generator can do it cleanly): a third cell (sheet 1536 x 512) with the mallet SQUASHED 12 percent along the handle direction (the head slightly flattened, as at the moment of impact), upright.
+
+================================================================
+AV2 - COSTUME PORTRAITS 1-12  (OPTIONAL: only if you do not want the code to crop the heads from the existing costume pictures)
+Why: when the owner picks an outfit, the round avatar must show the dragon wearing it.
+ATTACH: refs/05_costumes-21_left-to-right-top-to-bottom_alphabetical.png (the outfits, in the order to follow) + refs/06_standard-little-dragon-front.png (the character) + refs/04_levels-1-6-original-sheet.jpg (line weight).
+
+PROMPT
+A portrait sheet of 12 cells: 4 columns x 3 rows, equal cells, pure white background, no text, no labels, no cell borders, no ground shadow. Every cell = the HEAD PORTRAIT of the same standard little green cobra-dragon (second attached image) wearing the outfit of one costume from the first attached image, in this order: 1 alchemist, 2 astronaut, 3 bonsai, 4 builder, 5 chef, 6 detective, 7 doctor, 8 executive, 9 explorer, 10 firefighter, 11 guard, 12 knight. Copy each outfit exactly from the costume image: the hat / helmet / headwear sits on the head WITH the hood still visible, plus the collar, scarf, tie or top of the garment at the bottom of the portrait. Framing identical in all cells: front view, eyes to the viewer, calm friendly smile, head and the whole hood centred, hood width about 65 percent of the cell width, a rounded bust cut at the top of the chest. NO hands, NO arms, NO coil, NO tail. The headwear and everything important fit inside a circle at 90 percent of the cell size (the app cuts a circle). Same thick dark-green outline and flat-colour cartoon sticker style as the attached images. Nothing touches a cell edge.
+
+================================================================
+AV3 - COSTUME PORTRAITS 13-21  (OPTIONAL, same rules as AV2)
+ATTACH: the same three images as AV2.
+
+PROMPT
+Exactly like AV2 but a sheet of 9 cells: 3 columns x 3 rows, in this order: 1 magician, 2 opera singer, 3 painter, 4 pharaoh, 5 pilot, 6 pirate, 7 rock star, 8 scribe, 9 steampunk. Same framing, same circle safe area, same rules, same character, same style. (These are costumes 13 to 21 of the first attached image.)
+
+================================================================
+SG1 - FRIDAY OUTFIT TURNAROUND, FIXED BACKS  (OPTIONAL, do it last: nothing in the code uses these angles now)
+ATTACH: refs/07_SG0-friday-anchor.jpg (the exact look AND the exact sides of the outfit) + refs/08_SC-turntable.jpg (how a 45-degree turntable reads, and the good BACK of the hood). Do NOT attach 567874 or 567607.
+
+PROMPT
+PROMPT
+A character turntable sheet: 4 columns x 2 rows = 8 equal cells (each cell 512 x 512, sheet 2048 x 1024), pure white background, no text, no labels, no cell borders, no ground shadow, no effects. The SAME small chubby green cobra dragon (short, WIDE body, big heart-shaped hood, curled tail, glossy green skin, light-green belly scales, thick dark-green outline) exactly as in the attached SG0 image, in every cell: same size, same baseline (the bottom of the coil at the same height in all cells), centred in its cell, nothing touching a cell edge. Cells are read left to right, top to bottom; the dragon turns 45 degrees from one cell to the next, so NO two cells may look the same (frames 1/2 and 5/6 must clearly differ).
+
+THE OUTFIT (identical in every cell, copied from SG0, including WHICH SIDE everything is on):
+- white galabiya (light cool grey #E6ECF2 with darker fold lines, closed dark outline): loose, round collar with 2 small buttons, loose sleeves to the wrists (the two hands uncovered), soft wide hem resting on the first coil; the green lower coil and tail stay visible below it.
+- small round white knitted cap on top of the head between the hood's upper edges (the hood stays visible, the cap never covers the eyes).
+- a folded prayer rug (burgundy red with a dark-green border, a small golden arch motif, cream fringe) draped over the dragon's OWN RIGHT shoulder = the VIEWER'S LEFT shoulder in the front view; it hangs down the front to mid torso and a little down the back. No text, no calligraphy.
+- a loop of round brown wooden prayer beads with one larger oval bead and a small tassel, held in the dragon's OWN LEFT hand = the VIEWER'S RIGHT hand in the front view, hanging to belly height. The other hand hangs relaxed at its side.
+- exactly TWO hands, both on the body's own arms; never a third hand; never hands on the head or hood.
+
+THE 8 CELLS (angle 0 = front, 90 = pure side, 180 = pure back):
+1 (0 deg) FRONT: symmetrical face and hood, both eyes visible, rug on the viewer's left shoulder, beads in the viewer's right hand.
+2 (45 deg, turned toward the viewer's LEFT) FRONT 3/4: the face and the body clearly turned, the hood's left edge overlaps part of the face, the dragon's snout points to the viewer's left, the beads hand (viewer's right side) comes forward, the rug shoulder moves away. Must look obviously different from cell 1.
+3 (90 deg) PURE SIDE PROFILE FACING THE VIEWER'S LEFT: only one eye, the hood a narrow rounded shape; the dragon's LEFT side is toward the viewer: the beads hang from the near hand in front of the galabiya; the rug is on the far shoulder and only a sliver of it shows behind the neck.
+4 (135 deg) BACK 3/4 from behind-left: the back of the hood dominates (two big spiral marks, spine line) turned a quarter, a little of the snout peeking out on the viewer's left; the rug visible on the shoulder side, the beads hand at the viewer's left edge.
+5 (180 deg) PURE BACK: perfectly symmetrical wide heart-shaped hood back with the two big spiral marks and the spine line (as in the SC turntable), the cap on top, the galabiya back with a soft centre fold, the rug hanging down the back on the VIEWER'S RIGHT, the beads hand at the VIEWER'S LEFT, the tail coil below.
+6 (225 deg) BACK 3/4 from behind-right: the mirror turn of cell 4 (a quarter turned the other way, a little of the snout peeking out on the viewer's RIGHT), the rug on the viewer's right shoulder side, the beads hand at the viewer's left. It must differ from cell 5 by the visible turn and the peeking snout.
+7 (270 deg) PURE SIDE PROFILE FACING THE VIEWER'S RIGHT: only one eye, the dragon's RIGHT side is toward the viewer: the folded rug lies on the near shoulder and hangs down its side; the beads hand is the far hand and is hidden behind the body. The head points to the viewer's RIGHT (the opposite direction of cell 3).
+8 (315 deg) FRONT 3/4 TURNED TOWARD THE VIEWER'S RIGHT: the face and body turned, the snout pointing to the viewer's right, the rug on the near (viewer's left) shoulder still visible, the beads in the far hand on the viewer's right.
+
+Quality: same line weight and colours in all cells, no extra objects, no motion lines, no stars, no shadows. The hood spirals and the belly scales stay exactly as in SG0.
+
+IF A DETAIL FAILS, repeat only that cell: e.g. "regenerate cell 7: pure side profile facing the viewer's RIGHT, the dragon's right side toward the viewer, rug on the near shoulder, beads hidden".
+
+================================================================
+WHAT ELSE I NEED FROM YOU: nothing else for sheets. The XP icon = your gif (already saved). The effects sheet (SX) and the 12 stages are already in. If you say "crop the avatar from what exists", skip AV1/AV2/AV3 and I will cut the heads from the current pictures.
