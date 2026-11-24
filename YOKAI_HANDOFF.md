@@ -16,6 +16,8 @@ Last updated: 2026-11-23 (see NEWEST-76).
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
 
+## NEWEST-77 (24 Nov 15:21): the owner SENT THE EGG EVOLUTION SHEET (NEWEST-70): saved `branding/mascot-models/new-sheets-2026-11-24/egg/EGG-569149.jpg` (4x2 on white: 1 appear with sparkles + smoke, 2-3 wobble L/R, 4 first crack + glow, 5 more cracks + shard, 6 many cracks + light, 7 burst + light + shards, 8 empty half shell). NOT cut yet. He said "wait" for more; do not cut until he says go.
+
 ## NEWEST-76 (24 Nov, chat-app account): OPEN TASK 1 (antlers of levels 8/10/11) DONE, NOT built. `make_dragon_levels.py` v4: after the glow removal it closes the opaque outline in the top 38% of the dragon (`ANTLER_CLOSE`) and fills what it encloses with the ORIGINAL sheet pixels, alpha 1 (white background excluded). All 12 `r_lv_*` re-cut; checked on a dark background: antlers/crown solid. Note: my own duplicate of steps 2-3 (rank card + XP combo) was dropped because other accounts had already pushed those (branch `backup/my-dup-steps-2-3` is local only, ignore it).
 
 ## NEWEST-75 (24 Nov 15:15): MESSAGE TO THE NEXT ACCOUNT (the previous one hit 90% of its limit). Branch `fix/stats-and-name-clean`, last pushed commit = `git ls-remote --heads origin fix/stats-and-name-clean` (the stop hook "unpushed commits" is a FALSE alarm of the shallow clone). Egyptian Arabic, short. Build ONLY when he says "بيلد". Never use the GitHub token he pasted earlier.
