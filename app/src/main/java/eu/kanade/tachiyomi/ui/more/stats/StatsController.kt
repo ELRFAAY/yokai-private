@@ -56,7 +56,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
 
     /** R: the "الإنجازات" tab: hides the rest of the page (remembering what was visible) and shows only the tabs + the badges. */
     private fun showAchievements(on: Boolean) {
-        val box = binding.statsScrollView.getChildAt(0) as? android.widget.ViewGroup ?: return
+        val box = binding.statsScrollView.getChildAt(0) as? android.view.ViewGroup ?: return
         val ach = rAch ?: return
         if (on) {
             if (ach.visibility == android.view.View.VISIBLE) return
