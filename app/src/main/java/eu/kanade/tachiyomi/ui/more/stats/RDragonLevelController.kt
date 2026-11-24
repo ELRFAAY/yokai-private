@@ -15,6 +15,7 @@ import android.widget.TextView
 import eu.kanade.tachiyomi.databinding.RDragonLevelControllerBinding
 import eu.kanade.tachiyomi.ui.base.controller.BaseLegacyController
 import eu.kanade.tachiyomi.util.RDragonLevel
+import eu.kanade.tachiyomi.util.system.getResourceColor
 import eu.kanade.tachiyomi.util.view.scrollViewWith
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -55,7 +56,7 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
     private fun show(d: RStatsData) {
         val ctx = binding.root.context
         val dp = ctx.resources.displayMetrics.density
-        val textColor = eu.kanade.tachiyomi.util.system.getResourceColor(android.R.attr.textColorPrimary)
+        val textColor = ctx.getResourceColor(android.R.attr.textColorPrimary)
         val c = binding.levelContainer
         c.removeAllViews()
         val xp = RDragonLevel.xp(d.totalChapters, d.totalReadMs)
