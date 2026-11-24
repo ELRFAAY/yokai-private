@@ -120,6 +120,8 @@ class RFloatDragonView(context: Context) : View(context) {
         }
     }
 
+    private val lookPrefs: eu.kanade.tachiyomi.data.preference.PreferencesHelper by uy.kohesive.injekt.injectLazy()
+    private val wornCache = HashMap<Int, Bitmap?>()
     private fun load(id: Int): Bitmap? = runCatching { BitmapFactory.decodeResource(resources, id) }.getOrNull()
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -307,7 +309,9 @@ class RFloatDragonView(context: Context) : View(context) {
             restoreAncestors()
         }
         val hurtNow = hitT in HIT_BONK_MS..(HIT_MS - 150L)
-        val bmp = when {
+        val wornId = runCatching { eu.kanade.tachiyomi.util.RDragonLook.resId(context, lookPrefs) }.getOrDefault(0)
+        val worn = if (wornId != 0) wornCache.getOrPut(wornId) { load(wornId) } else null
+        val bmp = worn ?: when {
             mode == Mode.DRAG || mode == Mode.FLY -> scared
             mode == Mode.DIZZY -> dizzy
             hurtNow -> hurt
@@ -401,7 +405,13 @@ class RFloatDragonView(context: Context) : View(context) {
         val squash = if (hitT in HIT_BONK_MS..(HIT_BONK_MS + 260L)) 1f - 0.16f * (1f - (hitT - HIT_BONK_MS) / 260f) else 1f
         canvas.scale(sx * (2f - squash).coerceAtMost(1.1f), sy * squash)
         if (pointing && !pointRight && bmp === point) canvas.scale(-1f, 1f)
-        dst.set(-side / 2f, -side, side / 2f, 0f)
+        if (worn != null) {
+            val stage = eu.kanade.tachiyomi.util.RDragonLook.isStage(lookPrefs.rDragonOutfit().get())
+            val kk = if (stage) minOf(side / bmp.width, side / bmp.height) else side / 384f
+            dst.set(-bmp.width * kk / 2f, -bmp.height * kk, bmp.width * kk / 2f, 0f)
+        } else {
+            dst.set(-side / 2f, -side, side / 2f, 0f)
+        }
         canvas.drawBitmap(bmp, null, dst, bitmapPaint)
         canvas.restore()
 

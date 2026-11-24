@@ -1160,6 +1160,18 @@ class RMascotView(context: Context) : View(context) {
                 else -> bedSleep
             }
         }
+        // R: the look the owner put on the dragon (costume or stage picture) replaces every normal frame
+        var wornFit = false
+        if (tfBmp == null && blanketT <= 0f) {
+            val wid = eu.kanade.tachiyomi.util.RDragonLook.resId(context, prefs)
+            if (wid != 0) {
+                tfBmp = tfBitmap(wid)
+                if (tfBmp != null) {
+                    wornFit = eu.kanade.tachiyomi.util.RDragonLook.isStage(prefs.rDragonOutfit().get())
+                    tfCostume = !wornFit
+                }
+            }
+        }
         val current = tfBmp ?: shownBitmap ?: return
         val previous = if (tfBmp == null && fade < 1f && !fromSheet && !shownSheet) fromBitmap else null
 
@@ -1190,7 +1202,12 @@ class RMascotView(context: Context) : View(context) {
             canvas.rotate(-deg)
         }
         canvas.scale(scaleXSpring.value * (1f - breath * 0.5f), scaleYSpring.value * (1f + breath))
-        if (tfBmp != null && tfCostume) {
+        if (tfBmp != null && wornFit) {
+            // a stage picture: fit into the dragon's square, bottom on the same line
+            val k = minOf(half * 2f / tfBmp.width, half * 2f / tfBmp.height)
+            val w2 = tfBmp.width * k / 2f
+            dest.set(-w2, half - tfBmp.height * k, w2, half)
+        } else if (tfBmp != null && tfCostume) {
             // a costume has the dragon's own pixel scale and bottom line: exactly the normal size, tall hats reach higher
             val kk = half * 2f / 384f
             val w2 = tfBmp.width * kk / 2f

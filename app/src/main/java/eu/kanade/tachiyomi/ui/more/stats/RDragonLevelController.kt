@@ -15,6 +15,7 @@ import android.widget.TextView
 import eu.kanade.tachiyomi.databinding.RDragonLevelControllerBinding
 import eu.kanade.tachiyomi.ui.base.controller.BaseLegacyController
 import eu.kanade.tachiyomi.util.RDragonLevel
+import eu.kanade.tachiyomi.util.RDragonLook
 import eu.kanade.tachiyomi.util.system.getResourceColor
 import eu.kanade.tachiyomi.util.view.scrollViewWith
 import kotlinx.coroutines.Dispatchers
@@ -83,38 +84,78 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
         val info = RDragonLevel.info(xp)
         prefs.rDragonXp().set(xp.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
 
-        c.addView(
-            ImageView(ctx).apply {
-                setImageResource(RDragonLevel.PICTURES[info.level - 1])
-                adjustViewBounds = true
-            },
-            LinearLayout.LayoutParams((220 * dp).toInt(), (250 * dp).toInt()).apply {
-                gravity = Gravity.CENTER_HORIZONTAL
-                topMargin = (8 * dp).toInt()
-            },
-        )
-        c.addView(txt("المستوى ${info.level} من ${RDragonLevel.STARTS.size}", 24f, true, textColor))
-        c.addView(
-            ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal).apply {
-                max = 1000
-                progress = (info.progress * 1000).toInt()
-            },
-            LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (14 * dp).toInt()).apply {
-                topMargin = (12 * dp).toInt()
-                bottomMargin = (6 * dp).toInt()
-            },
-        )
+        val green = 0xFF2E7D32.toInt()
+        val greenDark = 0xFF14341A.toInt()
+        val gold = 0xFFFFD54F.toInt()
+        fun bg(top: Int, bottom: Int, r: Float, stroke: Int = 0) = android.graphics.drawable.GradientDrawable(
+            android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(top, bottom),
+        ).apply { cornerRadius = r * dp; if (stroke != 0) setStroke((2 * dp).toInt(), stroke) }
+        fun lp(w: Int, h: Int, top: Int = 0, bottom: Int = 0) =
+            LinearLayout.LayoutParams(w, h).apply { topMargin = (top * dp).toInt(); bottomMargin = (bottom * dp).toInt() }
+        val MATCH = LinearLayout.LayoutParams.MATCH_PARENT
+        val WRAP = LinearLayout.LayoutParams.WRAP_CONTENT
+
+        // hero card: the big picture of the chosen stage, its name, the wear button, then level + animated xp bar
+        val hero = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            background = bg(0xFF1F5A26.toInt(), greenDark, 24f)
+            setPadding((16 * dp).toInt(), (14 * dp).toInt(), (16 * dp).toInt(), (16 * dp).toInt())
+        }
+        val heroImg = ImageView(ctx).apply { adjustViewBounds = true }
+        hero.addView(heroImg, lp((200 * dp).toInt(), (230 * dp).toInt()))
+        val heroName = txt("", 20f, true, Color.WHITE)
+        hero.addView(heroName)
+        val heroSub = txt("", 12f, false, Color.WHITE, 0.75f)
+        hero.addView(heroSub)
+        val wear = android.widget.Button(ctx).apply {
+            setTextColor(greenDark); isAllCaps = false
+            background = bg(gold, 0xFFFFB300.toInt(), 22f)
+            setPadding((22 * dp).toInt(), 0, (22 * dp).toInt(), 0)
+        }
+        hero.addView(wear, lp(WRAP, (42 * dp).toInt(), 8, 0).apply { gravity = Gravity.CENTER_HORIZONTAL })
+        c.addView(hero, lp(MATCH, WRAP, 8, 12))
+
+        var preview = info.level
+        fun refreshHero() {
+            heroImg.setImageResource(RDragonLevel.PICTURES[preview - 1])
+            val locked = preview > info.level
+            heroImg.colorFilter = if (locked) ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f); setScale(0.3f, 0.3f, 0.3f, 1f) }) else null
+            heroName.text = "المرحلة $preview"
+            val worn = prefs.rDragonOutfit().get() == RDragonLook.stageValue(preview)
+            heroSub.text = if (locked) "تتفتح عند ${ltr("${RDragonLevel.STARTS[preview - 1]} XP")}" else if (worn) "لابسها دلوقتي" else if (preview == info.level) "مرحلتك الحالية" else "مرحلة فتحتها"
+            wear.visibility = if (locked) View.GONE else View.VISIBLE
+            wear.text = if (worn) "✓ لابسه (اضغط للشكل العادي)" else "ألبسه للتنين"
+        }
+        wear.setOnClickListener {
+            val v = RDragonLook.stageValue(preview)
+            prefs.rDragonOutfit().set(if (prefs.rDragonOutfit().get() == v) "" else v)
+            refreshHero()
+            android.widget.Toast.makeText(ctx, "اتغير شكل التنين", android.widget.Toast.LENGTH_SHORT).show()
+        }
+
+        // level + xp: the number counts up and the bar fills
+        val lvText = txt("المستوى ${info.level} من ${RDragonLevel.STARTS.size}", 22f, true, textColor)
+        c.addView(lvText)
+        val bar = ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal).apply { max = 1000; progress = 0 }
+        c.addView(bar, lp(MATCH, (14 * dp).toInt(), 10, 6))
         val next = info.nextAt
-        c.addView(
-            txt(
-                if (next != null) {
-                    "${ltr("${info.xp} / $next XP")}  ·  فاضل ${ltr("${info.left} XP")} للمستوى ${info.level + 1}"
+        val xpText = txt("", 15f, false, textColor)
+        c.addView(xpText)
+        android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 900
+            addUpdateListener {
+                val f = it.animatedValue as Float
+                bar.progress = (info.progress * 1000 * f).toInt()
+                val shown = (info.xp * f).toLong()
+                xpText.text = if (next != null) {
+                    "${ltr("$shown / $next XP")}  ·  فاضل ${ltr("${info.left} XP")} للمستوى ${info.level + 1}"
                 } else {
-                    "${ltr("${info.xp} XP")}  ·  وصلت لأعلى مستوى"
-                },
-                15f, false, textColor,
-            ),
-        )
+                    "${ltr("$shown XP")}  ·  وصلت لأعلى مستوى"
+                }
+            }
+            start()
+        }
         val hours = d.totalReadMs / 3_600_000f
         c.addView(
             txt(
@@ -123,39 +164,46 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
                 13f, false, textColor, 0.7f,
             ).apply { setPadding(0, (10 * dp).toInt(), 0, (16 * dp).toInt()) },
         )
-        c.addView(txt("كل المراحل", 18f, true, textColor).apply { setPadding(0, 0, 0, (8 * dp).toInt()) })
+        c.addView(txt("كل المراحل (اضغط على واحدة تشوفها)", 16f, true, textColor).apply { setPadding(0, 0, 0, (8 * dp).toInt()) })
 
+        // stage cards (3 per row); the picked one has a gold ring and shows in the hero
+        val cards = ArrayList<Pair<Int, LinearLayout>>()
+        fun refreshCards() {
+            cards.forEach { (lvl, card) ->
+                val open = lvl <= info.level
+                card.background = bg(if (open) 0xFF245F2C.toInt() else 0xFF2A2A2A.toInt(), if (open) greenDark else 0xFF161616.toInt(), 16f, if (lvl == preview) gold else 0)
+            }
+        }
         val cols = 3
         for (rowStart in RDragonLevel.PICTURES.indices step cols) {
             val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; weightSum = cols.toFloat() }
             for (i in rowStart until minOf(rowStart + cols, RDragonLevel.PICTURES.size)) {
                 val level = i + 1
                 val open = level <= info.level
-                val cell = FrameLayout(ctx)
-                val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
+                val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(6, 8, 6, 8) }
                 col.addView(
                     ImageView(ctx).apply {
                         setImageResource(RDragonLevel.PICTURES[i])
                         adjustViewBounds = true
-                        if (!open) {
-                            colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f); setScale(0.25f, 0.25f, 0.25f, 1f) })
-                        }
+                        if (!open) colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f); setScale(0.3f, 0.3f, 0.3f, 1f) })
                     },
-                    LinearLayout.LayoutParams((96 * dp).toInt(), (110 * dp).toInt()),
+                    lp(MATCH, (92 * dp).toInt()),
                 )
-                col.addView(txt(if (open) "مستوى $level" else "مستوى $level 🔒", 12f, open, textColor, if (open) 1f else 0.6f))
-                if (!open) col.addView(txt(ltr("${RDragonLevel.STARTS[i]} XP"), 11f, false, textColor, 0.5f))
-                cell.addView(col, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT))
-                row.addView(cell, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                col.addView(txt(if (open) "مستوى $level" else "🔒 مستوى $level", 12f, open, Color.WHITE, if (open) 1f else 0.6f))
+                if (!open) col.addView(txt(ltr("${RDragonLevel.STARTS[i]} XP"), 10f, false, Color.WHITE, 0.5f))
+                col.setOnClickListener { preview = level; refreshHero(); refreshCards() }
+                cards += level to col
+                row.addView(col, LinearLayout.LayoutParams(0, WRAP, 1f).apply { setMargins((4 * dp).toInt(), (4 * dp).toInt(), (4 * dp).toInt(), (4 * dp).toInt()) })
             }
-            c.addView(row, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = (10 * dp).toInt() })
+            c.addView(row, lp(MATCH, WRAP, 0, 4))
         }
+        refreshHero(); refreshCards()
         buildDress(ctx, dress, info.level, textColor, dp)
     }
 
-    /** R: the outfits ("accessories"): the 21 costumes unlock with the level (costume k opens at level 2 + k/2); tap one to wear it. */
+    /** R: the outfits: full-body pictures (no round crop), all unlocked; tap = wear it on the dragon (every place that draws it). */
     private fun buildDress(ctx: android.content.Context, box: LinearLayout, level: Int, textColor: Int, dp: Float) {
-        box.addView(txt("الأزياء: اختار اللي عايز تلبسه للتنين", 16f, true, textColor).apply { setPadding(0, (8 * dp).toInt(), 0, (10 * dp).toInt()) })
+        box.addView(txt("الأزياء: اضغط على واحد يلبسه التنين", 16f, true, textColor).apply { setPadding(0, (8 * dp).toInt(), 0, (10 * dp).toInt()) })
         val names = listOf(
             "alchemist", "astronaut", "bonsai", "builder", "chef", "detective", "doctor", "executive", "explorer", "firefighter", "guard",
             "knight", "magician", "opera", "painter", "pharaoh", "pilot", "pirate", "rockstar", "scribe", "steampunk",
@@ -164,57 +212,47 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
             "الكيميائي", "رائد الفضاء", "البونساي", "البنّاء", "الشيف", "المحقق", "الدكتور", "المدير", "المستكشف", "الإطفائي", "الحارس",
             "الفارس", "الساحر", "الأوبرا", "الرسام", "الفرعون", "الطيار", "القرصان", "نجم الروك", "الكاتب", "ستيم بانك",
         )
-        // entries: (outfit name or "" = plain stage look, picture, label, unlock level)
-        class E(val name: String, val pic: Int, val label: String, val need: Int)
+        class E(val name: String, val pic: Int, val label: String)
         val entries = ArrayList<E>()
-        entries += E("", RDragonLevel.PICTURES[(level - 1).coerceIn(0, 11)], "الشكل العادي", 1)
+        entries += E("", RDragonLevel.PICTURES[(level - 1).coerceIn(0, 11)], "الشكل العادي")
         names.forEachIndexed { k, n ->
-            val id = ctx.resources.getIdentifier("r_avc_$n", "drawable", ctx.packageName)
-            if (id != 0) entries += E(n, id, labels[k], 2 + k / 2)
+            val id = ctx.resources.getIdentifier("r_costume_$n", "drawable", ctx.packageName)
+            if (id != 0) entries += E(n, id, labels[k])
+        }
+        val gold = 0xFFFFD54F.toInt()
+        val cells = ArrayList<Pair<E, LinearLayout>>()
+        fun repaint() {
+            val cur = prefs.rDragonOutfit().get().let { if (RDragonLook.isStage(it)) "" else it }
+            cells.forEach { (e, cell) ->
+                cell.background = android.graphics.drawable.GradientDrawable(
+                    android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFF245F2C.toInt(), 0xFF14341A.toInt()),
+                ).apply {
+                    cornerRadius = 16 * dp
+                    if (e.name == cur) setStroke((2 * dp).toInt(), gold)
+                }
+            }
         }
         val cols = 3
-        val rowsViews = ArrayList<LinearLayout>()
-        fun refresh() {
-            val cur = prefs.rDragonOutfit().get()
-            rowsViews.forEach { it.removeAllViews() }
-            rowsViews.clear()
-        }
-        val selectedBorder = ctx.getResourceColor(com.google.android.material.R.attr.colorSecondary)
         for (rowStart in entries.indices step cols) {
             val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; weightSum = cols.toFloat() }
             for (i in rowStart until minOf(rowStart + cols, entries.size)) {
                 val e = entries[i]
-                val open = level >= e.need
-                val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(4, 4, 4, 4) }
-                val img = ImageView(ctx).apply {
-                    setImageResource(e.pic)
-                    adjustViewBounds = true
-                    if (!open) colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f); setScale(0.25f, 0.25f, 0.25f, 1f) })
+                val cell = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(6, 8, 6, 8) }
+                cell.addView(
+                    ImageView(ctx).apply { setImageResource(e.pic); adjustViewBounds = true; scaleType = ImageView.ScaleType.FIT_CENTER },
+                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (110 * dp).toInt()),
+                )
+                cell.addView(txt(e.label, 11f, true, Color.WHITE))
+                cell.setOnClickListener {
+                    prefs.rDragonOutfit().set(e.name)
+                    repaint()
+                    android.widget.Toast.makeText(ctx, "اتغير شكل التنين", android.widget.Toast.LENGTH_SHORT).show()
                 }
-                col.addView(img, LinearLayout.LayoutParams((88 * dp).toInt(), (88 * dp).toInt()))
-                val cap = txt(if (open) e.label else "${e.label} 🔒 مستوى ${e.need}", 11f, open, textColor, if (open) 1f else 0.55f)
-                col.addView(cap)
-                fun mark() {
-                    val on = open && prefs.rDragonOutfit().get() == e.name
-                    col.setBackgroundColor(if (on) (selectedBorder and 0x00FFFFFF) or 0x33000000 else 0)
-                }
-                mark()
-                col.setOnClickListener {
-                    if (!open) {
-                        android.widget.Toast.makeText(ctx, "يتفتح عند مستوى ${e.need}", android.widget.Toast.LENGTH_SHORT).show()
-                    } else {
-                        prefs.rDragonOutfit().set(e.name)
-                        // repaint every cell's highlight
-                        for (r in 0 until box.childCount) (box.getChildAt(r) as? LinearLayout)?.let { rv ->
-                            for (k in 0 until rv.childCount) (rv.getChildAt(k) as? LinearLayout)?.tag?.let { t -> (t as? Runnable)?.run() }
-                        }
-                    }
-                }
-                col.tag = Runnable { mark() }
-                row.addView(col, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                cells += e to cell
+                row.addView(cell, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins((4 * dp).toInt(), (4 * dp).toInt(), (4 * dp).toInt(), (4 * dp).toInt()) })
             }
-            box.addView(row, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = (8 * dp).toInt() })
+            box.addView(row)
         }
-        refresh()
+        repaint()
     }
 }

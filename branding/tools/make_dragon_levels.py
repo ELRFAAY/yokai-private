@@ -58,8 +58,15 @@ def stage(file, n, cols=3, rows=2):
         if cr == r and cc == c:
             keep |= m
     out = rgba.copy()
-    out[..., 3] = np.where(keep, out[..., 3], 0)
+    # v3 (24 Nov): NO glow / aura / halo ring: the owner wants the dragon only. Keep the main body piece of the core (+ a 3 px edge for the soft
+    # anti-aliased outline) and drop every other piece (rings, sparkles, glow).
     kc = core & keep
+    cl, kn = ndi.label(ndi.binary_dilation(kc, iterations=6))
+    if kn > 1:
+        sizes = ndi.sum(kc, cl, range(1, kn + 1))
+        kc = kc & (cl == (1 + int(np.argmax(sizes))))
+    keep = keep & ndi.binary_dilation(kc, iterations=3)
+    out[..., 3] = np.where(keep, out[..., 3], 0)
     ys, xs = np.nonzero(out[..., 3] > 8)
     y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
     return out[y0:y1, x0:x1], kc[y0:y1, x0:x1]

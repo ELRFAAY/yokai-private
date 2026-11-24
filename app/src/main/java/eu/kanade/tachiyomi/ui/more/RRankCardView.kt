@@ -41,9 +41,14 @@ class RRankCardView(context: Context) : LinearLayout(context) {
                 override fun getOutline(v: View, o: Outline) = o.setOval(0, 0, v.width, v.height)
             }
             clipToOutline = true
-            val outfit = prefs.rDragonOutfit().get()
-            val res = if (outfit.isNotBlank()) context.resources.getIdentifier("r_avc_$outfit", "drawable", context.packageName) else 0
-            setImageResource(if (res != 0) res else avatarOf(info.level))
+            val pic = prefs.rProfileAvatar().get()
+            val bmp = if (pic.isNotBlank() && java.io.File(pic).exists()) runCatching { android.graphics.BitmapFactory.decodeFile(pic) }.getOrNull() else null
+            if (bmp != null) {
+                setImageBitmap(bmp)
+            } else {
+                val res = eu.kanade.tachiyomi.util.RDragonLook.portraitId(context, prefs)
+                setImageResource(if (res != 0) res else avatarOf(info.level))
+            }
         }
         addView(avatar, LayoutParams(52.dpToPx, 52.dpToPx))
 
