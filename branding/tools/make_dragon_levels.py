@@ -27,7 +27,8 @@ PICK = [  # stage: (file, cell 1-6)
     ('growth-B-567721.jpg', 3), ('growth-B-567721.jpg', 4), ('growth-B-567721.jpg', 5),
 ]
 CORE_H = 300  # px: the body (outline silhouette) of every stage is scaled to this height
-ANTLER_CLOSE = 4  # closing steps that seal the antler outlines before their inside is filled
+RAW_DARK = 205  # raw mean brightness at or below this = outline / shade, not glow or white
+ANTLER_CLOSE = 9  # closing steps that seal the antler outlines before their inside is filled
 GAP_MIN = 200  # px: closed white gaps at least this big become transparent
 _cache = {}
 
@@ -70,16 +71,24 @@ def stage(file, n, cols=3, rows=2):
     out[..., 3] = np.where(keep, out[..., 3], 0)
     # v4: the antlers (and crown parts) are PALE inside a dark outline, so the white-un-blend made their insides transparent. Close the outline and
     # fill what it encloses in the top part of the dragon with the ORIGINAL pixels, fully opaque.
-    solid = (out[..., 3] > 110) & keep
+    # v5: seal the outline from the RAW pixels too (the antler outline is a thin brown line on a pale glow, the alpha of the faint tips is too low)
+    near = ndi.binary_dilation(keep, iterations=10)
+    rawdark = (raw.mean(axis=2) <= RAW_DARK) & near
+    solid = ((out[..., 3] > 40) & keep) | rawdark
     cys = np.nonzero(kc.any(axis=1))[0]
     zone = np.zeros_like(solid)
     zone[: cys.min() + int(0.38 * (cys.max() - cys.min())) + 1] = True
     closed = ndi.binary_closing(solid, structure=np.ones((3, 3)), iterations=ANTLER_CLOSE)
-    filled = ndi.binary_fill_holes(closed) & ~solid & zone
+    filled = (ndi.binary_fill_holes(closed) | closed) & ~solid & zone
     white_bg = (raw.min(axis=2) >= 250) & ((raw.max(axis=2) - raw.min(axis=2)) < 6)
-    fill = filled & ~white_bg
+    fill = (filled & ndi.binary_dilation(solid, iterations=5)) | (rawdark & zone)
     out[..., :3] = np.where(fill[..., None], raw.astype(np.uint8), out[..., :3])
     out[..., 3] = np.where(fill, 255, out[..., 3])
+    # v5: drop loose bits (stars above the crown, specks): keep only what touches the body core
+    vis2 = out[..., 3] > 8
+    lab2, n2 = ndi.label(ndi.binary_dilation(vis2, iterations=2))
+    ok = np.unique(lab2[ndi.binary_dilation(kc, iterations=3) & (lab2 > 0)])
+    out[..., 3] = np.where(np.isin(lab2, ok[ok > 0]) & vis2, out[..., 3], 0)
     ys, xs = np.nonzero(out[..., 3] > 8)
     y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
     return out[y0:y1, x0:x1], kc[y0:y1, x0:x1]
