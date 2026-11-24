@@ -340,7 +340,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         try {
             rCobra = RReaderCobraView(
                 this,
-                enabled = { preferences.rReaderCobra().get() },
+                enabled = { preferences.rReaderCobra().get() && !preferences.rHammerMode().get() },
                 canShow = { !menuVisible && viewer != null && !isFinishing && !isDestroyed },
                 soundOn = { preferences.rReaderCobraSound().get() },
                 nightOn = { preferences.rReaderCobraNight().get() },
@@ -773,7 +773,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 val on = !preferences.rHammerMode().get()
                 preferences.rHammerMode().set(on)
                 item.isChecked = on
-                toast(if (on) "المطرقة شغالة: التنين هياخد ضربة بين الشباتر" else "المطرقة اتقفلت")
+                toast(if (on) "المطرقة شغالة: مفيش تنانين وانت بتقرا، والتنين بياخد ضربة بين الشباتر" else "المطرقة اتقفلت")
             }
             R.id.action_shift_double_page -> {
                 shiftDoublePages()

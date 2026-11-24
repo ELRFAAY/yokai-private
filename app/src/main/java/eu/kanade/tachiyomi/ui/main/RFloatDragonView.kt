@@ -409,7 +409,8 @@ class RFloatDragonView(context: Context) : View(context) {
         if (hitT in 0..HIT_MS) {
             val hs = side * 0.62f
             val dragonTop = baseY + dy - side * sy
-            val impactTop = dragonTop + 0.12f * side - 0.45f * hs
+            // the sprite has the HEAD at the top and the handle below: it is drawn upside down so the head (bottom 3% = bbox end) lands on the dragon
+            val impactTop = dragonTop + 0.10f * side - 0.97f * hs
             val farTop = impactTop - 0.7f * side
             val t = hitT
             val top: Float
@@ -441,7 +442,10 @@ class RFloatDragonView(context: Context) : View(context) {
             img?.let {
                 bitmapPaint.alpha = alpha.coerceIn(0, 255)
                 dst.set(cx + dx - hs / 2f, top, cx + dx + hs / 2f, top + hs)
+                canvas.save()
+                canvas.rotate(180f, cx + dx, top + hs / 2f)
                 canvas.drawBitmap(it, null, dst, bitmapPaint)
+                canvas.restore()
                 bitmapPaint.alpha = 255
             }
         }
