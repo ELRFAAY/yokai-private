@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-23 (see NEWEST-61).
+Last updated: 2026-11-23 (see NEWEST-76).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,8 @@ Last updated: 2026-11-23 (see NEWEST-61).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-76 (24 Nov, chat-app account): OPEN TASK 1 (antlers of levels 8/10/11) DONE, NOT built. `make_dragon_levels.py` v4: after the glow removal it closes the opaque outline in the top 38% of the dragon (`ANTLER_CLOSE`) and fills what it encloses with the ORIGINAL sheet pixels, alpha 1 (white background excluded). All 12 `r_lv_*` re-cut; checked on a dark background: antlers/crown solid. Note: my own duplicate of steps 2-3 (rank card + XP combo) was dropped because other accounts had already pushed those (branch `backup/my-dup-steps-2-3` is local only, ignore it).
 
 ## NEWEST-75 (24 Nov 15:15): MESSAGE TO THE NEXT ACCOUNT (the previous one hit 90% of its limit). Branch `fix/stats-and-name-clean`, last pushed commit = `git ls-remote --heads origin fix/stats-and-name-clean` (the stop hook "unpushed commits" is a FALSE alarm of the shallow clone). Egyptian Arabic, short. Build ONLY when he says "بيلد". Never use the GitHub token he pasted earlier.
 STATE: build 45397401199 (`dc8ef84`: worn look, new level/outfit screen, levels without glow, README logo, hammer head, no dragons in hammer mode, XP combo v1) = GREEN. Pushed AFTER it and NOT built: `5348417` XP doubling (`RXp.multiplier = 2^(count-1)`, cap x1024: 10, 20, 40, 80 ... per chapter, session gap 30 min; he asked for exactly this, my first reading of "multiplier" was wrong). Tell him the cap is mine.
