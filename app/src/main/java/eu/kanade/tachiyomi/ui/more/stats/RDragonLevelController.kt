@@ -63,7 +63,7 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
         val textColor = ctx.getResourceColor(android.R.attr.textColorPrimary)
         val c = binding.levelContainer
         c.removeAllViews()
-        val xp = RDragonLevel.xp(d.totalChapters, d.totalReadMs)
+        val xp = RDragonLevel.xp(d.totalChapters, d.totalReadMs, prefs.rDragonXpBonus().get().toLong())
         val info = RDragonLevel.info(xp)
         prefs.rDragonXp().set(xp.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
 

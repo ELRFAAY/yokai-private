@@ -663,6 +663,13 @@ class ReaderViewModel(
     }
 
     private suspend fun onChapterReadComplete(readerChapter: ReaderChapter) {
+        // R: XP only the first time the chapter becomes read, and not in incognito
+        if (!readerChapter.chapter.read && !preferences.incognitoMode().get()) {
+            try {
+                eu.kanade.tachiyomi.util.RXp.onChapterRead(Injekt.get<android.app.Application>(), preferences)
+            } catch (_: Exception) {
+            }
+        }
         readerChapter.chapter.read = true
         updateTrackChapterAfterReading(readerChapter)
         deleteChapterIfNeeded(readerChapter)

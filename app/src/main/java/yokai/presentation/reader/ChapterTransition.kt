@@ -359,10 +359,22 @@ private fun ReadTimeCard(readMillis: () -> Long) {
             )
         }
         Spacer(Modifier.width(12.dp))
-        Text(
-            text = "قعدت ${formatReadTime(millis)} في الفصل ده",
-            style = MaterialTheme.typography.bodyLarge,
-        )
+        Column {
+            Text(
+                text = "قعدت ${formatReadTime(millis)} في الفصل ده",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            // R: the XP this chapter gave and the combo multiplier of the session
+            val gain = eu.kanade.tachiyomi.util.RXp.lastGain
+            if (gain > 0) {
+                val mult = eu.kanade.tachiyomi.util.RXp.lastMultiplier
+                Text(
+                    text = "+$gain XP" + if (mult > 1f) "  (كومبو ×${if (mult % 1f == 0f) mult.toInt().toString() else mult.toString()} · شبتر ${eu.kanade.tachiyomi.util.RXp.lastCombo})" else "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = androidx.compose.ui.graphics.Color(0xFF8BC34A),
+                )
+            }
+        }
     }
 }
 
