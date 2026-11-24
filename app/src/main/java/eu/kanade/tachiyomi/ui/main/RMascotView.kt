@@ -75,7 +75,9 @@ class RMascotView(context: Context) : View(context) {
     private var half = 36f * density
 
     private fun refreshSize() {
-        half = prefs.rDragonSize().get().coerceIn(40, 160) / 2f * density
+        // the dragon grows with reading: x0.80 at level 1 up to x1.15 at level 12 (RDragonLevel)
+        half = prefs.rDragonSize().get().coerceIn(40, 160) / 2f * density *
+            eu.kanade.tachiyomi.util.RDragonLevel.sizeFactor(eu.kanade.tachiyomi.util.RDragonLevel.info(prefs.rDragonXp().get().toLong()).level)
     }
 
     /** Extra height of the current costume above the normal dragon (tall hats): the speech bubble sits above it. */
@@ -787,10 +789,11 @@ class RMascotView(context: Context) : View(context) {
             setClipDay("friday", day)
             postDelayed({ if (isShown && state == State.IDLE && !asleep) say(FRIDAY_SAY.random(), 4200L) }, 1500L)
         }
-        if ((prefs.rMascotStreak().get() || prefs.rMascotGoalSpin().get()) && now - lastStatsCheckAt > 30 * 60_000L) {
+        if (now - lastStatsCheckAt > 30 * 60_000L) { // also keeps the dragon's level (size) up to date
             lastStatsCheckAt = now
             Thread {
                 val d = runCatching { eu.kanade.tachiyomi.ui.more.stats.StatsPresenter().getRData() }.getOrNull() ?: return@Thread
+                prefs.rDragonXp().set(eu.kanade.tachiyomi.util.RDragonLevel.xp(d.totalChapters, d.totalReadMs).coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
                 post { onStats(d.streakNow, d.weekChapters) }
             }.start()
         }

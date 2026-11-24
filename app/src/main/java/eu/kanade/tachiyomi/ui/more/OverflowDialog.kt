@@ -131,8 +131,14 @@ class OverflowDialog(activity: MainActivity) : Dialog(activity, R.style.Overflow
             dismiss()
         }
 
+        // R: "الإحصائيات" is now called "الملف الشخصي", and the dragon's level screen sits right under it
+        binding.statsItem.text = "الملف الشخصي"
         binding.statsItem.setOnClickListener {
             activity.showStats()
+            dismiss()
+        }
+        binding.dragonLevelItem.setOnClickListener {
+            activity.showDragonLevel()
             dismiss()
         }
 

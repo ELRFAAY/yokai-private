@@ -1431,6 +1431,10 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
         router.pushController(StatsController().withFadeTransaction())
     }
 
+    fun showDragonLevel() {
+        router.pushController(eu.kanade.tachiyomi.ui.more.stats.RDragonLevelController().withFadeTransaction())
+    }
+
     /** R: opens one hidden list's manga in the normal library look (used by the hidden-files vault). */
     fun showRVaultList(title: String, categoryId: Int) {
         router.pushController(

@@ -180,6 +180,8 @@ class StatsPresenter(
         }
         return RStatsData(
             streakNow = cur,
+            totalChapters = rows.mapNotNull { it.chapter.id }.distinct().size,
+            totalReadMs = runBlocking { handler.awaitOneOrNull { historyQueries.getTotalReadDuration() }?.sum?.toLong() } ?: 0L,
             streakBest = best,
             top = top,
             hours = hours,
@@ -204,6 +206,8 @@ class RTopManga(val manga: Manga, val chapters: Int, val timeMs: Long)
 
 class RStatsData(
     val streakNow: Int,
+    val totalChapters: Int,
+    val totalReadMs: Long,
     val streakBest: Int,
     val top: List<RTopManga>,
     val hours: IntArray,

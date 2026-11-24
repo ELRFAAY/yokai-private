@@ -311,6 +311,7 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     fun rMascotGoalSpin() = preferenceStore.getBoolean("r_mascot_goal_spin", true) // SC + SC2: spins when the weekly goal is passed
     fun rMascotStreak() = preferenceStore.getBoolean("r_mascot_streak", true) // SF: 3 / 7 / 30 day streak, once a day
     fun rMascotFriday() = preferenceStore.getBoolean("r_mascot_friday", true) // SG: Friday outfit and a short reminder
+    fun rDragonXp() = preferenceStore.getInt("r_dragon_xp", 0) // chapters + 4 x hours read, refreshed whenever the stats are read (RDragonLevel)
     fun rMascotClipDays() = preferenceStore.getString("r_mascot_clip_days", "") // "streak=<epochDay>;goal=<epochDay of the week start>;friday=<epochDay>;night=<epochDay>"
     fun rMascotFall() = preferenceStore.getBoolean("r_mascot_fall", true)
 

@@ -55,7 +55,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     /**
      * Returns the toolbar title to show when this controller is attached.
      */
-    override fun getTitle() = if (prefs.rStatsProfile().get()) "بروفايل" else activity?.getString(MR.strings.statistics)
+    override fun getTitle() = if (prefs.rStatsProfile().get()) "الملف الشخصي" else activity?.getString(MR.strings.statistics)
 
     override fun createBinding(inflater: LayoutInflater) = StatsControllerBinding.inflate(inflater)
 
