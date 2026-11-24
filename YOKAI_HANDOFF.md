@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-23 (see NEWEST-76).
+Last updated: 2026-11-23 (see NEWEST-81).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,17 @@ Last updated: 2026-11-23 (see NEWEST-76).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-81 (24 Nov 20:32): NEXT STEP = PROFILE UPGRADE (owner's list; nothing coded yet, NOT built; build only on "بيلد"). He said: do ALL of 1,3,4,5,6,7 EXCEPT 2, and put them in ONE build together with the egg evolution (NEWEST-79), pushed.
+1. ACHIEVEMENT BADGES: first chapter, 100 chapters, streak 7 days and 30 days, 100 reading hours (more are fine). Locked = grey, unlocked = glowing, tap = shows its condition. EACH badge gives XP that the user COLLECTS himself (a "collect" button on the badge, then XP is added to the bonus: `r_dragon_xp_bonus`; remember claimed badges in a pref).
+   IMPORT RULE (key): a user who used the OLD app (original Yokai/Mihon), made a backup and restored it here must get the badges he already earned: badges are computed from the restored HISTORY (total chapters read, total read time, longest streak from the history table), NOT from counters that start at install. E.g. 10000 chapters read before = all the chapter badges unlocked at once, each one with its XP to collect. So the badge check must run over the existing database (RStatsData / history) and be re-evaluated after a restore.
+3. RECORDS next to the current stats: best reading day, longest streak, longest session.
+4. SHARE CARD: one image with the banner, level and top numbers; save or share.
+5. FAVOURITE MANGA: pin 3 covers shown on the profile.
+6. MONTHLY CALENDAR: GitHub-style squares, each day coloured by how much was read.
+7. CLEAN THE INSIDE of the profile screen: section order, uniform spacing, colours matching Settings.
+8. WEEKLY LOGIN BOX (new): a login/chest once per week: opening it gives a RANDOM amount of XP (random or tiered). Store last-opened week in a pref, show on the profile, small animation.
+Each new feature gets its own switch in Settings > R. Item 2 (costumes unlocked by badges) is NOT wanted now.
 
 ## NEWEST-80 (24 Nov 16:10): OWNER FEEDBACK + PLAN FOR TOMORROW (when the credits of all accounts are back). He CAN wear the level pictures/costumes on the home dragon (works), BUT he dislikes them: the cuts are not clean, they are static (no smooth movement), so he keeps using the MAIN home-menu dragon. WANTS: every level form and every costume gets ITS OWN animation + frames (own sheet/clips like the main dragon: idle, blink, talk, etc.), smooth. Do NOT iterate on the static `r_lv_*` / `r_costume_*` pictures any more; tomorrow's plan = the per-level frames/motion project (NEWEST-78 item 2 + sheets L01-L12 + egg), written as ONE plan with prompts. Today (small, safe): the profile screen (`StatsController.setupHubTabs`) now shows the compact rank card (avatar + level + XP bar) under the tabs as a header (code, NOT compiled/built). Profile-inside improvements still wait for his choice (NEWEST-78 item 3).
 
