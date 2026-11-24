@@ -1,0 +1,2 @@
+Open a new chat inside the Yokai project, attach ELRFAAY/yokai-private (access push) and send: "كمّل من YOKAI_HANDOFF.md، اقرا NEWEST-75 الأول".
+It starts with: the antlers of levels 8, 10, 11 (cut wrong, pale parts transparent), then answers his 2 questions (Google backup, the 'Konayo' tracker: ask him for the exact name), then waits for his word "بيلد" (XP doubling commit 5348417 is pushed but not built).
