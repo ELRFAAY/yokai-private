@@ -137,25 +137,16 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
         // level + xp: the number counts up and the bar fills
         val lvText = txt("المستوى ${info.level} من ${RDragonLevel.STARTS.size}", 22f, true, textColor)
         c.addView(lvText)
-        val bar = ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal).apply { max = 1000; progress = 0 }
-        c.addView(bar, lp(MATCH, (14 * dp).toInt(), 10, 6))
+        val xpBar = eu.kanade.tachiyomi.ui.more.RXpBar(ctx, textColor)
+        c.addView(xpBar, lp(MATCH, WRAP, 10, 6))
+        xpBar.bind(info)
         val next = info.nextAt
-        val xpText = txt("", 15f, false, textColor)
-        c.addView(xpText)
-        android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 900
-            addUpdateListener {
-                val f = it.animatedValue as Float
-                bar.progress = (info.progress * 1000 * f).toInt()
-                val shown = (info.xp * f).toLong()
-                xpText.text = if (next != null) {
-                    "${ltr("$shown / $next XP")}  ·  فاضل ${ltr("${info.left} XP")} للمستوى ${info.level + 1}"
-                } else {
-                    "${ltr("$shown XP")}  ·  وصلت لأعلى مستوى"
-                }
-            }
-            start()
-        }
+        c.addView(
+            txt(
+                if (next != null) "فاضل ${ltr("${info.left} XP")} للمستوى ${info.level + 1}" else "وصلت لأعلى مستوى",
+                13f, false, textColor, 0.8f,
+            ),
+        )
         val hours = d.totalReadMs / 3_600_000f
         c.addView(
             txt(

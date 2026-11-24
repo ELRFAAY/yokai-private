@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-23 (see NEWEST-81).
+Last updated: 2026-11-23 (see NEWEST-82).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,8 @@ Last updated: 2026-11-23 (see NEWEST-81).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-82 (24 Nov 20:40): OWNER ORDER: do the profile step by step: FIRST arrange the profile, THEN badges. DONE (code, NOT compiled/built): new XP bar `ui/more/RXpBar.kt` (ref1 style: "LV. N" left, thin rounded blue bar, big "XP" right, "now / next" under it), used in `RRankCardView` and the dragon level screen (`RDragonLevelController`). TODO next: arrange/clean the profile screen inside (item 7 of NEWEST-81), then BADGES with the owner's FIXED LADDER (his words): chapters 10, then 5 -> 10 -> 15 -> 20 -> 25 -> 30 ... up to 50 (steps of 5 after the first), after 50 steps of 50 (100, 150, 200 ...), after 100 steps of 100?? (his example: "after 50 it is 100, after 100 it is 150": ask/decide the exact ladder and show him), going up to 100,000 chapters, and it must stay EASY to reach: about one badge per week of normal reading. Every badge gives XP that must be COLLECTED BY HAND; there must be a "جمع الكل" (collect all) button that collects every ready badge at once and shows a message with how many badges and how much XP were collected. The owner expects to open the new version and collect his existing XP at once (badges come from the old history, see NEWEST-81).
 
 ## NEWEST-81 (24 Nov 20:32): NEXT STEP = PROFILE UPGRADE (owner's list; nothing coded yet, NOT built; build only on "بيلد"). He said: do ALL of 1,3,4,5,6,7 EXCEPT 2, and put them in ONE build together with the egg evolution (NEWEST-79), pushed.
 1. ACHIEVEMENT BADGES: first chapter, 100 chapters, streak 7 days and 30 days, 100 reading hours (more are fine). Locked = grey, unlocked = glowing, tap = shows its condition. EACH badge gives XP that the user COLLECTS himself (a "collect" button on the badge, then XP is added to the bonus: `r_dragon_xp_bonus`; remember claimed badges in a pref).

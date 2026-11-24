@@ -10,7 +10,6 @@ import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.TextView
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.util.RDragonLevel
@@ -59,18 +58,10 @@ class RRankCardView(context: Context) : LinearLayout(context) {
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         })
-        col.addView(ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal).apply {
-            max = 1000
-            progress = (info.progress * 1000).toInt()
-            progressTintList = android.content.res.ColorStateList.valueOf(0xFFFFD54F.toInt())
-            progressBackgroundTintList = android.content.res.ColorStateList.valueOf(0x44FFFFFF)
-        }, LayoutParams(LayoutParams.MATCH_PARENT, 8.dpToPx).apply { topMargin = 6.dpToPx; bottomMargin = 4.dpToPx })
-        col.addView(TextView(context).apply {
-            val left = info.left
-            text = "⁦$xp XP⁩" + if (left != null) "  •  ⁦$left⁩ لحد المستوى الجاي" else "  •  أعلى مستوى"
-            setTextColor(0xCCFFFFFF.toInt())
-            textSize = 12f
-        })
+        col.addView(
+            RXpBar(context, Color.WHITE).apply { bind(info, animate = false) },
+            LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { topMargin = 6.dpToPx },
+        )
         addView(col, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = 12.dpToPx })
     }
 
