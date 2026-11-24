@@ -7,7 +7,7 @@ import uy.kohesive.injekt.api.get
 
 /**
  * R: XP per finished chapter with a combo. A reading session = chapters finished with gaps under 30 minutes.
- * Chapters 1-4 of a session x1, 5-9 x1.5, 10-19 x2, 20+ x3 (approved by the owner). The base is
+ * Chapter 1 of a session x1, 2-3 x1.5, 4-6 x2, 7+ x3 (24 Nov: made faster after the owner saw only flat 10 XP; the first table 1-4 x1, 5-9 x1.5, 10-19 x2, 20+ x3 was too slow). The base is
  * [RDragonLevel.XP_PER_CHAPTER]; the extra part is saved in `r_dragon_xp_bonus` so the history based total stays valid.
  */
 object RXp {
@@ -64,9 +64,9 @@ object RXp {
     }
 
     fun multiplier(count: Int): Float = when {
-        count >= 20 -> 3f
-        count >= 10 -> 2f
-        count >= 5 -> 1.5f
+        count >= 7 -> 3f
+        count >= 4 -> 2f
+        count >= 2 -> 1.5f
         else -> 1f
     }
 
