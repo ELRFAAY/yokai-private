@@ -18,6 +18,13 @@ object RAchievements {
     const val STREAK = 2
 
     class Badge(val id: String, val kind: Int, val target: Long, val xp: Int) {
+        /** 1 bronze, 2 silver, 3 gold, 4 diamond (by how hard the target is). */
+        val tier get() = when (kind) {
+            CHAPTERS -> if (target < 100) 1 else if (target < 1000) 2 else if (target < 10000) 3 else 4
+            HOURS -> if (target < 10) 1 else if (target < 100) 2 else if (target < 500) 3 else 4
+            else -> if (target < 14) 1 else if (target < 60) 2 else if (target < 200) 3 else 4
+        }
+        fun iconName() = "r_badge_" + (when (kind) { CHAPTERS -> "c"; HOURS -> "h"; else -> "s" }) + tier
         val emoji get() = when (kind) { CHAPTERS -> "📖"; HOURS -> "⏱"; else -> "🔥" }
         val title get() = when (kind) {
             CHAPTERS -> "$target شابتر"

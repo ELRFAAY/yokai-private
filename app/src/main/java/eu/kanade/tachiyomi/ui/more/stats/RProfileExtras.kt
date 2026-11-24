@@ -97,6 +97,13 @@ object RProfileExtras {
     private fun chestCard(ctx: Context, prefs: PreferencesHelper, rebuild: () -> Unit): View {
         val c = card(ctx)
         c.addView(title(ctx, "🎁 صندوق الأسبوع"))
+        val chestPic = ctx.resources.getIdentifier(if (RChest.available(prefs)) "r_badge_chest" else "r_badge_chest_open", "drawable", ctx.packageName)
+        if (chestPic != 0) {
+            c.addView(
+                ImageView(ctx).apply { setImageResource(chestPic) },
+                LinearLayout.LayoutParams(dp(ctx, 84f), dp(ctx, 84f)).apply { gravity = Gravity.CENTER_HORIZONTAL; bottomMargin = dp(ctx, 6f) },
+            )
+        }
         if (RChest.available(prefs)) {
             c.addView(small(ctx, "فيه XP عشوائي. تفتحه مرة كل أسبوع."))
             c.addView(
@@ -161,7 +168,12 @@ object RProfileExtras {
                     setPadding(2, dp(ctx, 8f), 2, 2)
                     alpha = if (isOpen) 1f else 0.4f
                 }
-                cell.addView(TextView(ctx).apply { text = b.emoji; textSize = 26f; gravity = Gravity.CENTER })
+                val iconId = ctx.resources.getIdentifier(if (isOpen) b.iconName() else "r_badge_lock", "drawable", ctx.packageName)
+                if (iconId != 0) {
+                    cell.addView(ImageView(ctx).apply { setImageResource(iconId) }, LinearLayout.LayoutParams(dp(ctx, 54f), dp(ctx, 54f)))
+                } else {
+                    cell.addView(TextView(ctx).apply { text = b.emoji; textSize = 26f; gravity = Gravity.CENTER })
+                }
                 cell.addView(TextView(ctx).apply { text = b.title; textSize = 11f; gravity = Gravity.CENTER })
                 cell.addView(
                     TextView(ctx).apply {
