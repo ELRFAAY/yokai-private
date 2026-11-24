@@ -18,7 +18,22 @@ import kotlin.math.max
  * frame with the wanted shape ([aspect] = width / height, [round] = circle frame); [rotate] turns it 90 degrees;
  * [render] returns what is inside the frame.
  */
-class RCropView(context: Context, private var bitmap: Bitmap, private val aspect: Float, private val round: Boolean) : View(context) {
+class RCropView(context: Context, private var bitmap: Bitmap, aspectIn: Float, private val round: Boolean) : View(context) {
+    /** aspectIn <= 0 means "the picture's own shape": nothing is forced, the whole picture is kept unless the user crops it. */
+    private var followImage = aspectIn <= 0f
+    private var aspect = if (followImage) imageAspect() else aspectIn
+
+    private fun imageAspect() = (bitmap.width.toFloat() / bitmap.height).coerceIn(0.4f, 5f)
+
+    val imageWidth: Int get() = bitmap.width
+
+    /** [a] <= 0 = the picture's own shape, otherwise a fixed width / height. */
+    fun setAspect(a: Float) {
+        followImage = a <= 0f
+        aspect = if (followImage) imageAspect() else a
+        layoutFrame()
+    }
+
     private val matrix = Matrix()
     private val frame = RectF()
     private val shade = Paint().apply { color = Color.argb(150, 0, 0, 0) }
@@ -43,6 +58,13 @@ class RCropView(context: Context, private var bitmap: Bitmap, private val aspect
     )
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        layoutFrame()
+    }
+
+    private fun layoutFrame() {
+        val w = width
+        val h = height
+        if (w == 0 || h == 0) return
         val pad = 16f * resources.displayMetrics.density
         var fw = w - 2 * pad
         var fh = fw / aspect
@@ -70,7 +92,8 @@ class RCropView(context: Context, private var bitmap: Bitmap, private val aspect
     fun rotate() {
         val m = Matrix().apply { postRotate(90f) }
         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, m, true)
-        fit()
+        if (followImage) aspect = imageAspect()
+        layoutFrame()
     }
 
     private fun values() = FloatArray(9).also { matrix.getValues(it) }
@@ -152,4 +175,42 @@ class RCropView(context: Context, private var bitmap: Bitmap, private val aspect
         }
         return out
     }
+}
+
+/** The crop dialog's content: the crop view, a rotate button and (for banners) the shape buttons: as is / wide / square. */
+fun cropDialogBox(ctx: Context, crop: RCropView, allowAspect: Boolean): android.widget.LinearLayout {
+    val d = ctx.resources.displayMetrics.density
+    val box = android.widget.LinearLayout(ctx).apply { orientation = android.widget.LinearLayout.VERTICAL }
+    box.addView(crop, android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, (320 * d).toInt()))
+    val row = android.widget.LinearLayout(ctx).apply {
+        orientation = android.widget.LinearLayout.HORIZONTAL
+        gravity = android.view.Gravity.CENTER
+    }
+    fun button(label: String, action: () -> Unit) {
+        row.addView(
+            com.google.android.material.button.MaterialButton(ctx, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                text = label
+                textSize = 12f
+                setPadding((6 * d).toInt(), 0, (6 * d).toInt(), 0)
+                setOnClickListener { action() }
+            },
+            android.widget.LinearLayout.LayoutParams(0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = (2 * d).toInt()
+                marginEnd = (2 * d).toInt()
+            },
+        )
+    }
+    button("تدوير ٩٠°") { crop.rotate() }
+    if (allowAspect) {
+        button("كما هي") { crop.setAspect(0f) }
+        button("عريض") { crop.setAspect(2.2f) }
+        button("مربع") { crop.setAspect(1f) }
+    }
+    box.addView(
+        row,
+        android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            topMargin = (8 * d).toInt()
+        },
+    )
+    return box
 }

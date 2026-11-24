@@ -52,6 +52,9 @@ class RStatsProfileView(
     private val onSurface = context.getResourceColor(MR.attr.colorOnSurface)
 
     private val avatar = ImageView(context)
+    private val bannerRow = FrameLayout(context)
+    private val bannerCardView = MaterialCardView(context)
+    private val avatarSize = (76 * density).toInt()
     private val pager = RecyclerView(context)
     private val snap = PagerSnapHelper()
     private var current = 0
@@ -69,10 +72,10 @@ class RStatsProfileView(
         setPadding(0, pad, 0, (14 * density).toInt())
 
         // one frame: the banner takes the whole width, the round picture sits on its bottom edge, the name goes below
-        val row = FrameLayout(context).apply { clipChildren = false }
+        val row = bannerRow.apply { clipChildren = false }
 
         // small round profile picture
-        val size = (76 * density).toInt()
+        val size = avatarSize
         avatar.apply {
             scaleType = ImageView.ScaleType.CENTER_CROP
             background = GradientDrawable().apply {
@@ -94,7 +97,7 @@ class RStatsProfileView(
         }
 
         // big banner next to it
-        val bannerCard = MaterialCardView(context).apply {
+        val bannerCard = bannerCardView.apply {
             radius = 20 * density
             cardElevation = 0f
             setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 50))
@@ -129,6 +132,7 @@ class RStatsProfileView(
                     val view = snap.findSnapView(layoutManager) ?: return
                     current = recyclerView.getChildAdapterPosition(view).coerceAtLeast(0)
                     updateDots(current)
+                    fitBannerHeight()
                 }
             })
         }
@@ -211,7 +215,51 @@ class RStatsProfileView(
         buildDots()
         current = current.coerceIn(0, (banners.size - 1).coerceAtLeast(0))
         updateDots(current)
+        fitBannerHeight()
         restartFlipping()
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        if (w != oldw) post { fitBannerHeight() }
+    }
+
+    /**
+     * Banners keep their own shape (nothing forced, nothing cropped) and ALL of them sit on the same bottom line, right
+     * above the round picture. The view is as tall as the tallest banner, so a taller banner only adds its extra height
+     * at the TOP; a shorter one leaves empty space above it. Nothing below the banner moves when you swipe between them.
+     */
+    private fun fitBannerHeight() {
+        val d = density
+        val w = if (width > 0) width else resources.displayMetrics.widthPixels
+        fun heightOf(path: String): Int {
+            val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            android.graphics.BitmapFactory.decodeFile(path, o)
+            val raw = if (o.outWidth > 0 && o.outHeight > 0) (w.toFloat() * o.outHeight / o.outWidth).toInt() else (150 * d).toInt()
+            return raw.coerceIn((90 * d).toInt(), (380 * d).toInt())
+        }
+        val heights = banners.map { heightOf(it) }
+        val maxH = heights.maxOrNull() ?: (150 * d).toInt()
+        val cur = heights.getOrNull(current) ?: maxH
+        val top = maxH - cur
+        val cardLp = bannerCardView.layoutParams as? FrameLayout.LayoutParams ?: return
+        val rowLp = bannerRow.layoutParams ?: return
+        if (cardLp.height != cur || cardLp.topMargin != top) {
+            cardLp.height = cur
+            cardLp.topMargin = top
+            bannerCardView.layoutParams = cardLp
+        }
+        val rowH = maxH + avatarSize / 2
+        if (rowLp.height != rowH) {
+            rowLp.height = rowH
+            bannerRow.layoutParams = rowLp
+        }
+        val dotsLp = dots.layoutParams as? FrameLayout.LayoutParams
+        val dotsTop = top + (8 * d).toInt()
+        if (dotsLp != null && dotsLp.topMargin != dotsTop) {
+            dotsLp.topMargin = dotsTop
+            dots.layoutParams = dotsLp
+        }
     }
 
     private fun buildDots() {
@@ -456,21 +504,8 @@ class RStatsProfileView(
         val path = banners.getOrNull(idx) ?: return
         scope.launch {
             val bmp = decode(path, 2048) ?: return@launch
-            val crop = RCropView(context, bmp, 2.2f, false)
-            val box = LinearLayout(context).apply {
-                orientation = LinearLayout.VERTICAL
-                addView(crop, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (300 * density).toInt()))
-                addView(
-                    com.google.android.material.button.MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                        text = "تدوير ٩٠°"
-                        setOnClickListener { crop.rotate() }
-                    },
-                    LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                        gravity = Gravity.CENTER_HORIZONTAL
-                        topMargin = (8 * density).toInt()
-                    },
-                )
-            }
+            val crop = RCropView(context, bmp, 0f, false) // the picture's own shape; the buttons change it
+            val box = cropDialogBox(context, crop, true)
             MaterialAlertDialogBuilder(context)
                 .setTitle("تعديل وقص")
                 .setView(box)
@@ -479,7 +514,7 @@ class RStatsProfileView(
                         val newPath = withContext(Dispatchers.IO) {
                             try {
                                 val out = java.io.File(java.io.File(context.filesDir, "r_profile").apply { mkdirs() }, "img_${System.currentTimeMillis()}_e.jpg")
-                                out.outputStream().use { crop.render(1080).compress(Bitmap.CompressFormat.JPEG, 92, it) }
+                                out.outputStream().use { crop.render(minOf(1600, crop.imageWidth)).compress(Bitmap.CompressFormat.JPEG, 92, it) }
                                 out.absolutePath.takeIf { out.length() > 0 }
                             } catch (_: Exception) {
                                 null
@@ -542,7 +577,7 @@ class RStatsProfileView(
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             val image = ImageView(parent.context).apply {
-                scaleType = ImageView.ScaleType.CENTER_CROP
+                scaleType = ImageView.ScaleType.FIT_CENTER // the picture as it is: never cropped
                 layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                 setBackgroundColor(Color.TRANSPARENT)
             }

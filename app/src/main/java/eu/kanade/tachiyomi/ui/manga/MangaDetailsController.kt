@@ -1162,7 +1162,7 @@ class MangaDetailsController :
                 intent.putExtra(ReaderActivity.VISIBLE_CHAPTERS, chapterRange)
                 startActivity(intent, bundle)
             } else {
-                startActivity(ReaderActivity.newIntent(this, manga!!, chapter))
+                startActivity(ReaderActivity.newIntent(this, manga!!, chapter).putExtra("r_from_details", true))
             }
         }
     }

@@ -205,22 +205,8 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
                     return@launch
                 }
                 val avatar = requestCode == REQ_AVATAR
-                val crop = RCropView(ctx, bmp, if (avatar) 1f else 2.2f, avatar)
-                val d = ctx.resources.displayMetrics.density
-                val box = android.widget.LinearLayout(ctx).apply {
-                    orientation = android.widget.LinearLayout.VERTICAL
-                    addView(crop, android.widget.LinearLayout.LayoutParams(-1, (300 * d).toInt()))
-                    addView(
-                        com.google.android.material.button.MaterialButton(ctx, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                            text = "تدوير ٩٠°"
-                            setOnClickListener { crop.rotate() }
-                        },
-                        android.widget.LinearLayout.LayoutParams(-2, -2).apply {
-                            gravity = android.view.Gravity.CENTER_HORIZONTAL
-                            topMargin = (8 * d).toInt()
-                        },
-                    )
-                }
+                val crop = RCropView(ctx, bmp, if (avatar) 1f else 0f, avatar) // banner: the picture's own shape, no forced size
+                val box = cropDialogBox(ctx, crop, !avatar)
                 ctx.materialAlertDialog()
                     .setTitle(if (uris.size > 1) "تعديل وقص (${index + 1}/${uris.size})" else "تعديل وقص")
                     .setView(box)
@@ -229,7 +215,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
                         viewScope.launch {
                             val ok = withContext(Dispatchers.IO) {
                                 try {
-                                    out.outputStream().use { crop.render(if (avatar) 512 else 1080).compress(android.graphics.Bitmap.CompressFormat.JPEG, 92, it) }
+                                    out.outputStream().use { crop.render(if (avatar) 512 else minOf(1600, crop.imageWidth)).compress(android.graphics.Bitmap.CompressFormat.JPEG, 92, it) }
                                     out.length() > 0
                                 } catch (_: Exception) {
                                     false

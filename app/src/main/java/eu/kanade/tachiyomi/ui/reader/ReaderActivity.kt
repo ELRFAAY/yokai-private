@@ -911,6 +911,11 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             if (now - rLastDetailsTap < 2500) return@setOnClickListener
             rLastDetailsTap = now
             viewModel.manga?.id?.let { id ->
+                // R: the manga page that opened this reader is still right behind it: going back to it is instant
+                if (intent.getBooleanExtra("r_from_details", false)) {
+                    onBackPressedDispatcher.onBackPressed()
+                    return@let
+                }
                 val intent = SearchActivity.openMangaIntent(this, id)
                     .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
                 startActivity(intent)
