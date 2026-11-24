@@ -97,23 +97,28 @@ object RProfileExtras {
         setOnClickListener { onClick() }
     }
 
-    /** [onChanged] runs after XP changed (collect / chest) so the header card can repaint. */
+    /**
+     * Profile sections. [ach] = the "الإنجازات" tab (weekly chest, badges with a type filter, records); [root] = profile
+     * (calendar, favourites, share). [onChanged] runs after XP changed (collect / chest) so the header card can repaint.
+     */
     fun build(
         ctx: Context,
         root: LinearLayout,
+        ach: LinearLayout,
         d: RStatsData,
         library: List<Manga>,
         prefs: PreferencesHelper = Injekt.get(),
         onChanged: () -> Unit,
     ) {
         root.removeAllViews()
+        ach.removeAllViews()
         fun rebuild() {
             onChanged()
-            build(ctx, root, d, library, prefs, onChanged)
+            build(ctx, root, ach, d, library, prefs, onChanged)
         }
-        root.addView(chestCard(ctx, prefs, ::rebuild))
-        root.addView(badgesCard(ctx, d, prefs, ::rebuild))
-        root.addView(recordsCard(ctx, d))
+        ach.addView(chestCard(ctx, prefs, ::rebuild))
+        ach.addView(badgesCard(ctx, d, prefs, ::rebuild))
+        ach.addView(recordsCard(ctx, d))
         root.addView(calendarCard(ctx, d))
         root.addView(favouritesCard(ctx, library, prefs, ::rebuild))
         root.addView(shareCard(ctx, d, prefs))
@@ -151,7 +156,10 @@ object RProfileExtras {
         return c
     }
 
-    // ---- badges ----
+    // ---- badges: one list per type, with a filter ----
+    /** -1 all, 0 chapters, 1 hours, 2 streak, 3 ready to collect. Kept while the screen is open. */
+    private var badgeFilter = -1
+
     private fun badgesCard(ctx: Context, d: RStatsData, prefs: PreferencesHelper, rebuild: () -> Unit): View {
         val c = card(ctx)
         val done = RAchievements.claimed(prefs)
@@ -159,6 +167,15 @@ object RProfileExtras {
         val unlocked = all.filter { RAchievements.unlocked(it, d) }
         val ready = unlocked.filter { it.id !in done }
         c.addView(title(ctx, "🏅 الإنجازات (${unlocked.size}/${all.size})"))
+        // overall progress
+        c.addView(
+            android.widget.ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal).apply {
+                max = all.size
+                progress = unlocked.size
+                progressTintList = android.content.res.ColorStateList.valueOf(0xFF2E7D45.toInt())
+            },
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(ctx, 8f)).apply { bottomMargin = dp(ctx, 8f) },
+        )
         if (ready.isNotEmpty()) {
             c.addView(small(ctx, "جاهز تجمعه: ${ready.size} إنجاز", 1f))
             c.addView(xpRow(ctx, "+${ready.sumOf { it.xp }}", 20f))
@@ -176,59 +193,126 @@ object RProfileExtras {
         } else {
             c.addView(small(ctx, "مفيش XP جاهز للجمع دلوقتي."))
         }
-        // a wrapping grid of badges: ready ones first, then collected, then the 3 nearest locked ones
-        val locked = all.filter { !RAchievements.unlocked(it, d) }
-        val nearest = RAchievements.run {
-            listOf(CHAPTERS, HOURS, STREAK).mapNotNull { k -> locked.firstOrNull { it.kind == k } }
+        // type filter
+        val names = listOf("الكل", "شباتر", "ساعات", "سلسلة", "جاهز")
+        val values = listOf(-1, 0, 1, 2, 3)
+        val ids = IntArray(names.size) { View.generateViewId() }
+        val group = com.google.android.material.button.MaterialButtonToggleGroup(ctx).apply {
+            isSingleSelection = true
+            isSelectionRequired = true
         }
-        val shown = ready + unlocked.filter { it.id in done }.takeLast(12) + nearest
-        val cols = 4
-        for (rowStart in shown.indices step cols) {
-            val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; weightSum = cols.toFloat() }
-            for (i in rowStart until minOf(rowStart + cols, shown.size)) {
-                val b = shown[i]
-                val isOpen = RAchievements.unlocked(b, d)
-                val collected = b.id in done
-                val cell = LinearLayout(ctx).apply {
-                    orientation = LinearLayout.VERTICAL
-                    gravity = Gravity.CENTER_HORIZONTAL
-                    setPadding(2, dp(ctx, 8f), 2, 2)
-                    alpha = if (isOpen) 1f else 0.4f
-                }
-                val iconId = ctx.resources.getIdentifier(if (isOpen) b.iconName() else "r_badge_lock", "drawable", ctx.packageName)
-                if (iconId != 0) {
-                    cell.addView(ImageView(ctx).apply { setImageResource(iconId) }, LinearLayout.LayoutParams(dp(ctx, 54f), dp(ctx, 54f)))
-                } else {
-                    cell.addView(TextView(ctx).apply { text = b.emoji; textSize = 26f; gravity = Gravity.CENTER })
-                }
-                cell.addView(TextView(ctx).apply { text = b.title; textSize = 11f; gravity = Gravity.CENTER })
-                if (isOpen && !collected) {
-                    cell.addView(xpRow(ctx, "+${b.xp}", 14f, center = true))
-                } else {
-                    cell.addView(
-                        TextView(ctx).apply {
-                            text = if (!isOpen) "${RAchievements.value(b.kind, d)}/${b.target}" else "✓ اتجمع"
-                            textSize = 10.5f
-                            gravity = Gravity.CENTER
-                        },
-                    )
-                }
-                cell.setOnClickListener {
-                    if (isOpen && !collected) {
-                        val xp = RAchievements.claim(b, d, prefs)
-                        if (xp > 0) {
-                            Toast.makeText(ctx, "+$xp XP", Toast.LENGTH_SHORT).show()
-                            rebuild()
-                        }
-                    } else {
-                        Toast.makeText(ctx, b.desc + if (isOpen) "" else " (${RAchievements.value(b.kind, d)}/${b.target})", Toast.LENGTH_SHORT).show()
+        names.forEachIndexed { i, n ->
+            group.addView(
+                com.google.android.material.button.MaterialButton(ctx, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                    id = ids[i]; text = n; textSize = 12f; isAllCaps = false; insetTop = 0; insetBottom = 0; minWidth = 0
+                    setPadding(0, 0, 0, 0)
+                },
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+            )
+        }
+        group.check(ids[values.indexOf(badgeFilter).coerceAtLeast(0)])
+        c.addView(group, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(ctx, 10f) })
+        val list = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+        c.addView(list)
+
+        fun fill() {
+            list.removeAllViews()
+            val sections = listOf(
+                RAchievements.CHAPTERS to "📖 الشباتر",
+                RAchievements.HOURS to "⏱ ساعات القراءة",
+                RAchievements.STREAK to "🔥 أيام السلسلة",
+            )
+            sections.forEach { (kind, label) ->
+                if (badgeFilter in 0..2 && badgeFilter != kind) return@forEach
+                var items = all.filter { it.kind == kind }
+                if (badgeFilter == 3) items = items.filter { RAchievements.unlocked(it, d) && it.id !in done }
+                if (items.isEmpty()) return@forEach
+                val got = all.count { it.kind == kind && RAchievements.unlocked(it, d) }
+                val total = all.count { it.kind == kind }
+                list.addView(
+                    TextView(ctx).apply {
+                        text = "$label  ($got/$total)"
+                        textSize = 14f
+                        setTypeface(typeface, Typeface.BOLD)
+                        setPadding(0, dp(ctx, 14f), 0, dp(ctx, 4f))
+                    },
+                )
+                val cols = 4
+                for (rowStart in items.indices step cols) {
+                    val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; weightSum = cols.toFloat() }
+                    for (i in rowStart until minOf(rowStart + cols, items.size)) {
+                        row.addView(badgeCell(ctx, items[i], d, prefs, done, rebuild), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
                     }
+                    list.addView(row)
                 }
-                row.addView(cell, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             }
-            c.addView(row)
+            if (list.childCount == 0) list.addView(small(ctx, "مفيش حاجة هنا."))
         }
+        group.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                badgeFilter = values[ids.indexOf(checkedId).coerceAtLeast(0)]
+                fill()
+            }
+        }
+        fill()
         return c
+    }
+
+    private fun badgeCell(
+        ctx: Context,
+        b: RAchievements.Badge,
+        d: RStatsData,
+        prefs: PreferencesHelper,
+        done: Set<String>,
+        rebuild: () -> Unit,
+    ): View {
+        val isOpen = RAchievements.unlocked(b, d)
+        val collected = b.id in done
+        val cell = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(2, dp(ctx, 8f), 2, dp(ctx, 4f))
+        }
+        val iconId = ctx.resources.getIdentifier(b.iconName(), "drawable", ctx.packageName)
+        if (iconId != 0) {
+            cell.addView(
+                ImageView(ctx).apply {
+                    setImageResource(iconId)
+                    if (!isOpen) {
+                        alpha = 0.45f
+                        colorFilter = android.graphics.ColorMatrixColorFilter(android.graphics.ColorMatrix().apply { setSaturation(0f) })
+                    }
+                },
+                LinearLayout.LayoutParams(dp(ctx, 56f), dp(ctx, 56f)),
+            )
+        } else {
+            cell.addView(TextView(ctx).apply { text = b.emoji; textSize = 26f; gravity = Gravity.CENTER })
+        }
+        cell.addView(TextView(ctx).apply { text = b.title; textSize = 11f; gravity = Gravity.CENTER; alpha = if (isOpen) 1f else 0.6f })
+        if (isOpen && !collected) {
+            cell.addView(xpRow(ctx, "+${b.xp}", 14f, center = true))
+        } else {
+            cell.addView(
+                TextView(ctx).apply {
+                    text = if (!isOpen) "${RAchievements.value(b.kind, d)}/${b.target}" else "✓ اتجمع"
+                    textSize = 10.5f
+                    gravity = Gravity.CENTER
+                    alpha = 0.7f
+                },
+            )
+        }
+        cell.setOnClickListener {
+            if (isOpen && !collected) {
+                val xp = RAchievements.claim(b, d, prefs)
+                if (xp > 0) {
+                    Toast.makeText(ctx, "+$xp XP", Toast.LENGTH_SHORT).show()
+                    rebuild()
+                }
+            } else {
+                Toast.makeText(ctx, b.desc + if (isOpen) "" else " (${RAchievements.value(b.kind, d)}/${b.target})", Toast.LENGTH_SHORT).show()
+            }
+        }
+        return cell
     }
 
     // ---- records ----

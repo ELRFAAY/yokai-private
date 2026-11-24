@@ -16,13 +16,14 @@ import eu.kanade.tachiyomi.util.view.withFadeTransaction
 object RHubTabs {
     const val PROFILE = 0
     const val STATS = 1
-    const val LEVEL = 2
-    const val DRESS = 3
+    const val ACH = 2 // badges, chest, records
+    const val LEVEL = 3 // the dragon screen; DRESS is its inner switch (level | outfits), not a top tab
+    const val DRESS = 4
 
     /** Tab the next screen opens on (set before pushing / replacing a controller). */
     @Volatile var pendingTab = PROFILE
 
-    private val labels = arrayOf("الملف الشخصي", "الإحصائيات", "مستوى التنين", "الأزياء")
+    private val labels = arrayOf("الملف الشخصي", "الإحصائيات", "الإنجازات", "مستوى التنين")
 
     /** A small scrollable-free toggle group. [onSelect] gets the tab index; the caller decides how to react. */
     fun build(ctx: Context, selected: Int, onSelect: (Int) -> Unit): View {
@@ -52,7 +53,7 @@ object RHubTabs {
         return group
     }
 
-    /** Moves to the screen that owns [tab]: tabs 0-1 live in the statistics screen, 2-3 in the dragon screen. */
+    /** Moves to the screen that owns [tab]: tabs 0-2 live in the statistics screen, LEVEL (and its DRESS switch) in the dragon screen. */
     fun go(router: Router, tab: Int, fromDragonScreen: Boolean) {
         pendingTab = tab
         val toDragon = tab == LEVEL || tab == DRESS

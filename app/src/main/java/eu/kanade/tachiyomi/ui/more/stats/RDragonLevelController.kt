@@ -71,12 +71,29 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
             c.visibility = if (t == RHubTabs.DRESS) View.GONE else View.VISIBLE
             dress.visibility = if (t == RHubTabs.DRESS) View.VISIBLE else View.GONE
         }
-        val startTab = RHubTabs.pendingTab.coerceIn(RHubTabs.LEVEL, RHubTabs.DRESS)
+        val startTab = if (RHubTabs.pendingTab == RHubTabs.DRESS) RHubTabs.DRESS else RHubTabs.LEVEL
         root.addView(
-            RHubTabs.build(ctx, startTab) { tab ->
-                if (tab == RHubTabs.LEVEL || tab == RHubTabs.DRESS) showTab(tab) else RHubTabs.go(router, tab, fromDragonScreen = true)
+            RHubTabs.build(ctx, RHubTabs.LEVEL) { tab ->
+                if (tab != RHubTabs.LEVEL) RHubTabs.go(router, tab, fromDragonScreen = true)
             },
         )
+        // inner switch: dragon level | outfits (one place for both, as the owner asked)
+        val inner = com.google.android.material.button.MaterialButtonToggleGroup(ctx).apply {
+            isSingleSelection = true
+            isSelectionRequired = true
+        }
+        val innerIds = intArrayOf(View.generateViewId(), View.generateViewId())
+        listOf("المستوى", "الأزياء").forEachIndexed { i, t ->
+            inner.addView(
+                com.google.android.material.button.MaterialButton(ctx, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                    id = innerIds[i]; text = t; isAllCaps = false
+                },
+                LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
+            )
+        }
+        inner.check(innerIds[if (startTab == RHubTabs.DRESS) 1 else 0])
+        inner.addOnButtonCheckedListener { _, id, checked -> if (checked) showTab(if (id == innerIds[1]) RHubTabs.DRESS else RHubTabs.LEVEL) }
+        root.addView(inner, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = (10 * dp).toInt() })
         root.addView(c)
         root.addView(dress)
         showTab(startTab)

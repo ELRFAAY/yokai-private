@@ -50,6 +50,31 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     private var rData: RStatsData? = null
     private var rHeader: android.view.View? = null
     private var rExtras: android.widget.LinearLayout? = null
+    private var rAch: android.widget.LinearLayout? = null
+    private var rTabsView: android.view.View? = null
+    private val rHiddenByAch = ArrayList<android.view.View>()
+
+    /** R: the "الإنجازات" tab: hides the rest of the page (remembering what was visible) and shows only the tabs + the badges. */
+    private fun showAchievements(on: Boolean) {
+        val box = binding.statsScrollView.getChildAt(0) as? android.widget.ViewGroup ?: return
+        val ach = rAch ?: return
+        if (on) {
+            if (ach.visibility == android.view.View.VISIBLE) return
+            rHiddenByAch.clear()
+            for (i in 0 until box.childCount) {
+                val v = box.getChildAt(i)
+                if (v === rTabsView || v === ach) continue
+                if (v.visibility == android.view.View.VISIBLE) { rHiddenByAch.add(v); v.visibility = android.view.View.GONE }
+            }
+            ach.visibility = android.view.View.VISIBLE
+            binding.statsScrollView.scrollTo(0, 0)
+        } else {
+            if (ach.visibility != android.view.View.VISIBLE) return
+            ach.visibility = android.view.View.GONE
+            rHiddenByAch.forEach { it.visibility = android.view.View.VISIBLE }
+            rHiddenByAch.clear()
+        }
+    }
 
     private val mangaDistinct = presenter.mangaDistinct
     private var scoresList = emptyList<Double>()
@@ -110,17 +135,17 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     private fun setupHubTabs() {
         val ctx = activity ?: return
         val box = binding.statsScrollView.getChildAt(0) as? android.widget.LinearLayout ?: return
-        val start = RHubTabs.pendingTab.coerceIn(RHubTabs.PROFILE, RHubTabs.STATS)
-        box.addView(
-            RHubTabs.build(ctx, start) { tab ->
-                when (tab) {
-                    RHubTabs.PROFILE -> binding.statsScrollView.smoothScrollTo(0, 0)
-                    RHubTabs.STATS -> binding.statsScrollView.smoothScrollTo(0, binding.rExtraStats.top)
-                    else -> RHubTabs.go(router, tab, fromDragonScreen = false)
-                }
-            },
-            0,
-        )
+        val start = RHubTabs.pendingTab.coerceIn(RHubTabs.PROFILE, RHubTabs.ACH)
+        val tabsView = RHubTabs.build(ctx, start) { tab ->
+            when (tab) {
+                RHubTabs.PROFILE -> { showAchievements(false); binding.statsScrollView.smoothScrollTo(0, 0) }
+                RHubTabs.STATS -> { showAchievements(false); binding.statsScrollView.post { binding.statsScrollView.smoothScrollTo(0, binding.rExtraStats.top) } }
+                RHubTabs.ACH -> showAchievements(true)
+                else -> RHubTabs.go(router, tab, fromDragonScreen = false)
+            }
+        }
+        box.addView(tabsView, 0)
+        rTabsView = tabsView
         // header card of the profile: avatar + level + XP bar (same card as the menu's)
         val header = eu.kanade.tachiyomi.ui.more.RRankCardView(ctx)
         rHeader = header
@@ -136,6 +161,11 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
         val extras = android.widget.LinearLayout(ctx).apply { orientation = android.widget.LinearLayout.VERTICAL }
         rExtras = extras
         box.addView(extras, 2)
+        // the "الإنجازات" tab content (chest, badges with a type filter, records) lives in its own container
+        val ach = android.widget.LinearLayout(ctx).apply { orientation = android.widget.LinearLayout.VERTICAL; visibility = android.view.View.GONE }
+        rAch = ach
+        box.addView(ach, 3)
+        if (start == RHubTabs.ACH) binding.statsScrollView.post { showAchievements(true) }
         if (start == RHubTabs.STATS) binding.statsScrollView.post { binding.statsScrollView.scrollTo(0, binding.rExtraStats.top) }
     }
 
@@ -405,8 +435,9 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
         viewScope.launch {
             try {
                 val data = rData ?: withContext(Dispatchers.IO) { presenter.getRData() }.also { rData = it }
-                rExtras?.let { ex ->
-                    RProfileExtras.build(ctx, ex, data, mangaDistinct.map { it.manga }) {
+                val achBox = rAch
+                if (rExtras != null && achBox != null) rExtras?.let { ex ->
+                    RProfileExtras.build(ctx, ex, achBox, data, mangaDistinct.map { it.manga }) {
                         // XP changed: repaint the header card in place
                         (rHeader?.parent as? android.view.ViewGroup)?.let { parent ->
                             val i = parent.indexOfChild(rHeader)
