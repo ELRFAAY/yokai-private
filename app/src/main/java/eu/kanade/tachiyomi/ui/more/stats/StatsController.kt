@@ -119,6 +119,15 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
             },
             0,
         )
+        // header card of the profile: avatar + level + XP bar (same card as the menu's)
+        box.addView(
+            eu.kanade.tachiyomi.ui.more.RRankCardView(ctx),
+            1,
+            android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = (10 * ctx.resources.displayMetrics.density).toInt()
+                bottomMargin = (6 * ctx.resources.displayMetrics.density).toInt()
+            },
+        )
         if (start == RHubTabs.STATS) binding.statsScrollView.post { binding.statsScrollView.scrollTo(0, binding.rExtraStats.top) }
     }
 
