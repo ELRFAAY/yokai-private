@@ -62,6 +62,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     override fun onViewCreated(view: View) {
         super.onViewCreated(view)
         scrollViewWith(binding.statsScrollView, true)
+        setupHubTabs()
         setupProfile()
         // R: the heavy part (a track query per manga, download counts, history) runs off the main thread, so the
         // screen opens at once and the numbers fill in a moment later (before: the screen froze about 2 seconds)
@@ -103,6 +104,24 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     }
 
     /** R: profile (round picture + flipping banners + name) at the very top of the statistics. */
+    /** R: the merged screen's top switcher (profile / statistics / dragon level / outfits). */
+    private fun setupHubTabs() {
+        val ctx = activity ?: return
+        val box = binding.statsScrollView.getChildAt(0) as? android.widget.LinearLayout ?: return
+        val start = RHubTabs.pendingTab.coerceIn(RHubTabs.PROFILE, RHubTabs.STATS)
+        box.addView(
+            RHubTabs.build(ctx, start) { tab ->
+                when (tab) {
+                    RHubTabs.PROFILE -> binding.statsScrollView.smoothScrollTo(0, 0)
+                    RHubTabs.STATS -> binding.statsScrollView.smoothScrollTo(0, binding.rExtraStats.top)
+                    else -> RHubTabs.go(router, tab, fromDragonScreen = false)
+                }
+            },
+            0,
+        )
+        if (start == RHubTabs.STATS) binding.statsScrollView.post { binding.statsScrollView.scrollTo(0, binding.rExtraStats.top) }
+    }
+
     private fun setupProfile() {
         profileView = null
         if (!prefs.rStatsProfile().get()) return

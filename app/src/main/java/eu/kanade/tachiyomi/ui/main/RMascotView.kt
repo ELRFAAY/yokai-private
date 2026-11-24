@@ -793,7 +793,7 @@ class RMascotView(context: Context) : View(context) {
             lastStatsCheckAt = now
             Thread {
                 val d = runCatching { eu.kanade.tachiyomi.ui.more.stats.StatsPresenter().getRData() }.getOrNull() ?: return@Thread
-                prefs.rDragonXp().set(eu.kanade.tachiyomi.util.RDragonLevel.xp(d.totalChapters, d.totalReadMs).coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+                prefs.rDragonXp().set(eu.kanade.tachiyomi.util.RDragonLevel.xp(d.totalChapters, d.totalReadMs, prefs.rDragonXpBonus().get().toLong()).coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
                 post { onStats(d.streakNow, d.weekChapters) }
             }.start()
         }

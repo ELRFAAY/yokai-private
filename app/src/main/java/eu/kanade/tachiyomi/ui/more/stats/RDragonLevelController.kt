@@ -61,8 +61,24 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
         val ctx = binding.root.context
         val dp = ctx.resources.displayMetrics.density
         val textColor = ctx.getResourceColor(android.R.attr.textColorPrimary)
-        val c = binding.levelContainer
-        c.removeAllViews()
+        val root = binding.levelContainer
+        root.removeAllViews()
+        // R: the merged screen: tabs on top, then either the level view or the outfits view
+        val c = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+        val dress = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; visibility = View.GONE }
+        fun showTab(t: Int) {
+            c.visibility = if (t == RHubTabs.DRESS) View.GONE else View.VISIBLE
+            dress.visibility = if (t == RHubTabs.DRESS) View.VISIBLE else View.GONE
+        }
+        val startTab = RHubTabs.pendingTab.coerceIn(RHubTabs.LEVEL, RHubTabs.DRESS)
+        root.addView(
+            RHubTabs.build(ctx, startTab) { tab ->
+                if (tab == RHubTabs.LEVEL || tab == RHubTabs.DRESS) showTab(tab) else RHubTabs.go(router, tab, fromDragonScreen = true)
+            },
+        )
+        root.addView(c)
+        root.addView(dress)
+        showTab(startTab)
         val xp = RDragonLevel.xp(d.totalChapters, d.totalReadMs, prefs.rDragonXpBonus().get().toLong())
         val info = RDragonLevel.info(xp)
         prefs.rDragonXp().set(xp.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
@@ -134,5 +150,71 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
             }
             c.addView(row, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = (10 * dp).toInt() })
         }
+        buildDress(ctx, dress, info.level, textColor, dp)
+    }
+
+    /** R: the outfits ("accessories"): the 21 costumes unlock with the level (costume k opens at level 2 + k/2); tap one to wear it. */
+    private fun buildDress(ctx: android.content.Context, box: LinearLayout, level: Int, textColor: Int, dp: Float) {
+        box.addView(txt("الأزياء: اختار اللي عايز تلبسه للتنين", 16f, true, textColor).apply { setPadding(0, (8 * dp).toInt(), 0, (10 * dp).toInt()) })
+        val names = listOf(
+            "alchemist", "astronaut", "bonsai", "builder", "chef", "detective", "doctor", "executive", "explorer", "firefighter", "guard",
+            "knight", "magician", "opera", "painter", "pharaoh", "pilot", "pirate", "rockstar", "scribe", "steampunk",
+        )
+        val labels = listOf(
+            "الكيميائي", "رائد الفضاء", "البونساي", "البنّاء", "الشيف", "المحقق", "الدكتور", "المدير", "المستكشف", "الإطفائي", "الحارس",
+            "الفارس", "الساحر", "الأوبرا", "الرسام", "الفرعون", "الطيار", "القرصان", "نجم الروك", "الكاتب", "ستيم بانك",
+        )
+        // entries: (outfit name or "" = plain stage look, picture, label, unlock level)
+        class E(val name: String, val pic: Int, val label: String, val need: Int)
+        val entries = ArrayList<E>()
+        entries += E("", RDragonLevel.PICTURES[(level - 1).coerceIn(0, 11)], "الشكل العادي", 1)
+        names.forEachIndexed { k, n ->
+            val id = ctx.resources.getIdentifier("r_avc_$n", "drawable", ctx.packageName)
+            if (id != 0) entries += E(n, id, labels[k], 2 + k / 2)
+        }
+        val cols = 3
+        val rowsViews = ArrayList<LinearLayout>()
+        fun refresh() {
+            val cur = prefs.rDragonOutfit().get()
+            rowsViews.forEach { it.removeAllViews() }
+            rowsViews.clear()
+        }
+        val selectedBorder = ctx.getResourceColor(com.google.android.material.R.attr.colorSecondary)
+        for (rowStart in entries.indices step cols) {
+            val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; weightSum = cols.toFloat() }
+            for (i in rowStart until minOf(rowStart + cols, entries.size)) {
+                val e = entries[i]
+                val open = level >= e.need
+                val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(4, 4, 4, 4) }
+                val img = ImageView(ctx).apply {
+                    setImageResource(e.pic)
+                    adjustViewBounds = true
+                    if (!open) colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f); setScale(0.25f, 0.25f, 0.25f, 1f) })
+                }
+                col.addView(img, LinearLayout.LayoutParams((88 * dp).toInt(), (88 * dp).toInt()))
+                val cap = txt(if (open) e.label else "${e.label} 🔒 مستوى ${e.need}", 11f, open, textColor, if (open) 1f else 0.55f)
+                col.addView(cap)
+                fun mark() {
+                    val on = open && prefs.rDragonOutfit().get() == e.name
+                    col.setBackgroundColor(if (on) (selectedBorder and 0x00FFFFFF) or 0x33000000 else 0)
+                }
+                mark()
+                col.setOnClickListener {
+                    if (!open) {
+                        android.widget.Toast.makeText(ctx, "يتفتح عند مستوى ${e.need}", android.widget.Toast.LENGTH_SHORT).show()
+                    } else {
+                        prefs.rDragonOutfit().set(e.name)
+                        // repaint every cell's highlight
+                        for (r in 0 until box.childCount) (box.getChildAt(r) as? LinearLayout)?.let { rv ->
+                            for (k in 0 until rv.childCount) (rv.getChildAt(k) as? LinearLayout)?.tag?.let { t -> (t as? Runnable)?.run() }
+                        }
+                    }
+                }
+                col.tag = Runnable { mark() }
+                row.addView(col, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            }
+            box.addView(row, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = (8 * dp).toInt() })
+        }
+        refresh()
     }
 }

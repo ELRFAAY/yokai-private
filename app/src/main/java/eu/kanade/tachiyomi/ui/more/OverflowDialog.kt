@@ -146,12 +146,16 @@ class OverflowDialog(activity: MainActivity) : Dialog(activity, R.style.Overflow
             dismiss()
         }
 
-        // R: compact rank card on top of the menu (switch in Settings > R)
+        // R: compact rank card on top of the menu (switch in Settings > R). It opens ONE merged screen (profile /
+        // statistics / dragon level / outfits), so the two separate rows are hidden while the card is on.
         if (preferences.rRankCard().get()) {
             binding.rankCardHolder.isVisible = true
+            binding.statsItem.isVisible = false
+            binding.dragonLevelItem.isVisible = false
             binding.rankCardHolder.addView(RRankCardView(context).apply {
                 setOnClickListener {
-                    activity.showDragonLevel()
+                    eu.kanade.tachiyomi.ui.more.stats.RHubTabs.pendingTab = eu.kanade.tachiyomi.ui.more.stats.RHubTabs.PROFILE
+                    activity.showStats()
                     dismiss()
                 }
             })
