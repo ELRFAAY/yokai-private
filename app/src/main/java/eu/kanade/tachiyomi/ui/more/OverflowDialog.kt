@@ -146,6 +146,17 @@ class OverflowDialog(activity: MainActivity) : Dialog(activity, R.style.Overflow
             dismiss()
         }
 
+        // R: compact rank card on top of the menu (switch in Settings > R)
+        if (preferences.rRankCard().get()) {
+            binding.rankCardHolder.isVisible = true
+            binding.rankCardHolder.addView(RRankCardView(context).apply {
+                setOnClickListener {
+                    activity.showDragonLevel()
+                    dismiss()
+                }
+            })
+        }
+
         // R: the hidden-files vault moved to the library's filter sheet (RVault); this old row stays hidden
         binding.hideListsItem.isVisible = false
 

@@ -52,12 +52,24 @@
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp">
 
+                <FrameLayout
+                    android:id="@+id/rank_card_holder"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="4dp"
+                    android:visibility="gone"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
                 <eu.kanade.tachiyomi.widget.MenuSheetItemView
                     android:id="@+id/incognito_mode_item"
                     android:layout_width="0dp"
                     app:layout_constraintWidth_min="wrap"
                     android:layout_height="wrap_content"
-                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/rank_card_holder"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintBottom_toTopOf="@id/divider"

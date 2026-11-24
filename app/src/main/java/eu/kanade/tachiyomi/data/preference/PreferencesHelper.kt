@@ -316,6 +316,8 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     fun rMascotFall() = preferenceStore.getBoolean("r_mascot_fall", true)
 
     /** The little dragon in the chapter-end card and in the statistics hovers (bob, glow shadow, sparkle trail) and points at its text. */
+    fun rRankCard() = preferenceStore.getBoolean("r_rank_card", true) // compact green rank card on top of the overflow menu
+    fun rDragonOutfit() = preferenceStore.getString("r_dragon_outfit", "") // costume name (r_avc_<name>) used as the rank-card avatar, "" = stage portrait
     fun rDragonFloat() = preferenceStore.getBoolean("r_dragon_float", true)
 
     /** Mascot: when the app is opened the little dragon drops in from the top right and says how long you were away. */

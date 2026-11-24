@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-23 (see NEWEST-60).
+Last updated: 2026-11-23 (see NEWEST-61).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,10 @@ Last updated: 2026-11-23 (see NEWEST-60).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-61 (24 Nov, chat-app account): owner said "work step by step, push everything". Plan = tasks: (2) rank card, (3) XP per chapter + combo + end card, (4) reader hammer, (5) stats tile grid. NOT compiled, NOT built (no build until "بيلد").
+- STEP 2 DONE (code, uncompiled): `ui/more/RRankCardView.kt` = compact green card (round avatar `r_av_<level>` or costume `r_avc_<pref r_dragon_outfit>`, "مستوى N", yellow progress bar, XP + xp left; reads pref `r_dragon_xp`). Inserted at the TOP of the overflow menu via `rank_card_holder` FrameLayout in `tachi_overflow_layout.xml` (incognito item now hangs under it); `OverflowDialog` fills it when `rRankCard()` (`r_rank_card`, default on); tap = dragon level screen. Switch in Settings > R. New prefs: `rRankCard`, `rDragonOutfit`. NOT done: outfit PICKER UI (pref exists, no screen sets it), ref1-style level screen restyle, XP gif.
+- Compile suspects: `RRankCardView` (`injectLazy` import, `setOval`, `progressTintList`), `OverflowDialog` `context`.
 
 ## NEWEST-60 (24 Nov 10:45, chat-app account): owner disliked the CUT of the level pictures (screenshot of stage 8: opaque cream disc + jagged white fringe on the antlers). Fixed. NOT compiled, NOT built (no build until "بيلد").
 - Cause: `make_dragon_levels.py` (old) treated everything not white as solid, so soft glows / halo rings of stages 8, 9, 10, 12 became opaque cream/white discs and the antler tips got a white fringe.

@@ -344,6 +344,14 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rRankCard())
+                title = "بطاقة الرتبة في القائمة"
+                rIcon(R.drawable.ic_r_hotel)
+                summary = "بطاقة خضرا فوق قائمة التطبيق: صورة التنين الدايرية حسب مرحلته، ومستواك وشريط التقدم والـ XP. " +
+                    "تدوس عليها تفتح شاشة مستوى التنين. عند الإيقاف: تختفي."
+            }
+
+            switchPreference {
                 bindTo(preferences.rDragonFloat())
                 title = "التنين الصغير: الطيران والإشارة"
                 rIcon(R.drawable.ic_r_hotel)
