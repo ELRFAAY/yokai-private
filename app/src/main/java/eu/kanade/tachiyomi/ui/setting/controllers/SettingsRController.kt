@@ -369,6 +369,46 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rMascotGreet())
+                title = "التنين الصغير: تحية عند فتح صفحة مانجا"
+                rIcon(R.drawable.ic_r_home)
+                summary = "يلوّح لك بيده لما تفتح صفحة مانجا (مع الجملة العشوائية لو طلعت). عند الإيقاف: بدون تحية."
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+            }
+
+            switchPreference {
+                bindTo(preferences.rMascotNight())
+                title = "التنين الصغير: الليل"
+                rIcon(R.drawable.ic_r_home)
+                summary = "من ١٢ بالليل لـ ٥ الفجر يتثاءب بطاقية النوم لما يظهر. عند الإيقاف: زي النهار."
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+            }
+
+            switchPreference {
+                bindTo(preferences.rMascotGoalSpin())
+                title = "التنين الصغير: لفّة الهدف الأسبوعي"
+                rIcon(R.drawable.ic_r_home)
+                summary = "لما تعدّي هدفك الأسبوعي يلف لفّة ويدوخ ويرجع (مرة في الأسبوع). عند الإيقاف: بدون لفّة."
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+            }
+
+            switchPreference {
+                bindTo(preferences.rMascotStreak())
+                title = "التنين الصغير: احتفال السلسلة"
+                rIcon(R.drawable.ic_r_home)
+                summary = "لما سلسلة القراءة توصل ٣ أو ٧ أو ٣٠ يوم يحتفل (مرة في اليوم). عند الإيقاف: بدون احتفال."
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+            }
+
+            switchPreference {
+                bindTo(preferences.rMascotFriday())
+                title = "التنين الصغير: لبس الجمعة"
+                rIcon(R.drawable.ic_r_home)
+                summary = "يوم الجمعة يلبس جلابية وطاقية ويفكّرك تصلي على النبي. عند الإيقاف: شكله العادي."
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+            }
+
+            switchPreference {
                 bindTo(preferences.rMascotWelcome())
                 title = "التنين الصغير: الترحيب عند فتح التطبيق"
                 rIcon(R.drawable.ic_r_home)

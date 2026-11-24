@@ -270,6 +270,7 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
         rMascot?.visibility = if (show) View.VISIBLE else View.GONE
         // R: a random opinion when a manga page opens (see RMascotView.reactToManga)
         if (show && controller is eu.kanade.tachiyomi.ui.manga.MangaDetailsController) rMascot?.reactToManga()
+        if (show) rMascot?.onShown()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

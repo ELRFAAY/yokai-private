@@ -304,6 +304,14 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
 
     /** Mascot: after a minute without touching the phone the little dragon says goodnight, pulls a blanket up and sleeps. */
     fun rMascotSleep() = preferenceStore.getBoolean("r_mascot_sleep", true)
+
+    // R: the little dragon's clips from the 2026-11-23 sheets (each has its own switch in Settings > R)
+    fun rMascotGreet() = preferenceStore.getBoolean("r_mascot_greet", true) // SA: waves when a manga page opens
+    fun rMascotNight() = preferenceStore.getBoolean("r_mascot_night", true) // SD: yawns in a sleep cap between 00:00 and 04:59
+    fun rMascotGoalSpin() = preferenceStore.getBoolean("r_mascot_goal_spin", true) // SC + SC2: spins when the weekly goal is passed
+    fun rMascotStreak() = preferenceStore.getBoolean("r_mascot_streak", true) // SF: 3 / 7 / 30 day streak, once a day
+    fun rMascotFriday() = preferenceStore.getBoolean("r_mascot_friday", true) // SG: Friday outfit and a short reminder
+    fun rMascotClipDays() = preferenceStore.getString("r_mascot_clip_days", "") // "streak=<epochDay>;goal=<epochDay of the week start>;friday=<epochDay>;night=<epochDay>"
     fun rMascotFall() = preferenceStore.getBoolean("r_mascot_fall", true)
 
     /** The little dragon in the chapter-end card and in the statistics hovers (bob, glow shadow, sparkle trail) and points at its text. */

@@ -687,8 +687,26 @@ class RMascotView(context: Context) : View(context) {
                 frameSprite = true
             }
         }
+        var sheet = false
+        if (!sage && idle && !asleep && tfStart == 0L) {
+            val cf = clipFrame(now)
+            if (cf != null) {
+                bitmap = cf
+                sheet = true
+            } else if (mood == Mood.HAPPY && !frameSprite && isFriday()) {
+                // Friday outfit (SG0); the mouth moves with the words (SG3: 0 closed smile, 1 small o, 2 open smile)
+                val typing = bubbleText != null && now < bubbleUntil && bubbleShown < (bubbleText?.length ?: 0)
+                val id = if (typing) SG_TALK[(bubbleShown % 3)] else R.drawable.r_sg0
+                tfBitmap(id)?.let {
+                    bitmap = it
+                    sheet = true
+                }
+            }
+        }
+        if (sheet) frameSprite = true
         if (bitmap !== shownBitmap) {
             fromBitmap = shownBitmap
+            fromSheet = shownSheet
             fade = if (fromBitmap == null) 1f else 0f
             fadeSeconds = when {
                 sage != shownSage -> 0.25f // changing into / out of the wise old snake
@@ -700,12 +718,105 @@ class RMascotView(context: Context) : View(context) {
         }
         shownMood = mood
         shownSage = sage
+        shownSheet = sheet
         shownFrameSprite = frameSprite
         if (fade < 1f) fade = (fade + dt / fadeSeconds).coerceAtMost(1f)
     }
 
     /** Called by MainActivity on every touch anywhere in the app: restarts the sleep timer and wakes the dragon up. */
     private var lastOpinionAt = 0L
+
+    // ---- R: clips cut from the owner's 2026-11-23 sheets (branding/tools/make_dragon_sheet_cells.py, drawables r_sa_* ... r_sg3_*).
+    // Their frames share one scale and one floor line, so they are drawn like a costume: k = half * 2 / 384, bottom at +half.
+    private class Clip(val ids: IntArray, val frameMs: Long, val holdLastMs: Long = 0L)
+
+    private var clip: Clip? = null
+    private var clipStart = 0L
+    private var shownSheet = false // the sprite on screen is a sheet frame (drawn with the costume scale, not squeezed into a square)
+    private var fromSheet = false
+    private var lastGreetAt = 0L
+    private var lastShownCheckAt = 0L
+    private var lastStatsCheckAt = 0L
+
+    private fun isFriday() = java.time.LocalDate.now().dayOfWeek == java.time.DayOfWeek.FRIDAY && prefs.rMascotFriday().get()
+
+    /** Plays [c] once, if the dragon is free (sitting still, awake, not in a transformation). */
+    private fun playClip(c: Clip) {
+        if (state != State.IDLE || asleep || tfStart != 0L || fallPhase != 0) return
+        clip = c
+        clipStart = SystemClock.uptimeMillis()
+        postInvalidateOnAnimation()
+    }
+
+    private fun clipFrame(now: Long): Bitmap? {
+        val c = clip ?: return null
+        val t = now - clipStart
+        val i = (t / c.frameMs).toInt()
+        if (i >= c.ids.size && t >= c.ids.size * c.frameMs + c.holdLastMs) {
+            clip = null
+            return null
+        }
+        return tfBitmap(c.ids[i.coerceAtMost(c.ids.size - 1)])
+    }
+
+    // "key=epochDay;key=epochDay": each clip that is once a day / once a week remembers when it last played
+    private fun clipDay(key: String): Long = prefs.rMascotClipDays().get().split(';')
+        .firstOrNull { it.startsWith("$key=") }?.substringAfter('=')?.toLongOrNull() ?: -1L
+
+    private fun setClipDay(key: String, day: Long) {
+        val rest = prefs.rMascotClipDays().get().split(';').filter { it.isNotBlank() && !it.startsWith("$key=") }
+        prefs.rMascotClipDays().set((rest + "$key=$day").joinToString(";"))
+    }
+
+    private fun today() = java.time.LocalDate.now().toEpochDay()
+
+    /**
+     * Called by MainActivity each time the dragon appears (library / manga page). Night yawn, Friday phrase, and the
+     * streak / weekly goal clips (those two need the stats, read once on a background thread).
+     */
+    fun onShown() {
+        val now = SystemClock.uptimeMillis()
+        if (!positioned || now - lastShownCheckAt < 60_000L) return
+        lastShownCheckAt = now
+        val day = today()
+        if (prefs.rMascotNight().get() && java.time.LocalTime.now().hour in 0..4 && clipDay("night") != day) {
+            setClipDay("night", day)
+            postDelayed({ playClip(Clip(SD_YAWN, 420L, 900L)) }, 900L)
+        }
+        if (isFriday() && clipDay("friday") != day) {
+            setClipDay("friday", day)
+            postDelayed({ if (isShown && state == State.IDLE && !asleep) say(FRIDAY_SAY.random(), 4200L) }, 1500L)
+        }
+        if ((prefs.rMascotStreak().get() || prefs.rMascotGoalSpin().get()) && now - lastStatsCheckAt > 30 * 60_000L) {
+            lastStatsCheckAt = now
+            Thread {
+                val d = runCatching { eu.kanade.tachiyomi.ui.more.stats.StatsPresenter().getRData() }.getOrNull() ?: return@Thread
+                post { onStats(d.streakNow, d.weekChapters) }
+            }.start()
+        }
+    }
+
+    private fun onStats(streak: Int, weekChapters: Int) {
+        val day = today()
+        val goal = prefs.rWeeklyGoal().get()
+        if (prefs.rMascotGoalSpin().get() && goal > 0 && weekChapters > goal && clipDay("goal") != day / 7) {
+            setClipDay("goal", day / 7)
+            playClip(Clip(SC_SPIN + SC2_AFTER, 110L, 1200L)) // spin (SC) then dizzy and back (SC2)
+            say(GOAL_SAY.random(), 3600L)
+            return
+        }
+        val tier = when {
+            streak >= 30 -> 2
+            streak >= 7 -> 1
+            streak >= 3 -> 0
+            else -> -1
+        }
+        if (prefs.rMascotStreak().get() && tier >= 0 && clipDay("streak") != day) {
+            setClipDay("streak", day)
+            playClip(Clip(SF_ROWS[tier], 320L, 900L)) // row 1 = 3 days, row 2 = 7, row 3 = 30
+            say(STREAK_SAY[tier], 3200L)
+        }
+    }
 
     // ---- R: the fall gag. 0 none, 1 falling, 2 dizzy on the floor, 3 climbing back up, 4 falling again, 5 dizzy on the floor (longer)
     private var fallPhase = 0
@@ -719,6 +830,10 @@ class RMascotView(context: Context) : View(context) {
      */
     fun reactToManga() {
         val now = SystemClock.uptimeMillis()
+        if (positioned && prefs.rMascotGreet().get() && !isFriday() && now - lastGreetAt > 30_000L) {
+            lastGreetAt = now
+            postDelayed({ playClip(Clip(SA_WAVE, 170L, 500L)) }, 500L) // SA greeting
+        }
         if (!positioned || now - lastOpinionAt < 20_000L || Math.random() > 0.7) return
         lastOpinionAt = now
         postDelayed(
@@ -1043,7 +1158,7 @@ class RMascotView(context: Context) : View(context) {
             }
         }
         val current = tfBmp ?: shownBitmap ?: return
-        val previous = if (tfBmp == null && fade < 1f) fromBitmap else null
+        val previous = if (tfBmp == null && fade < 1f && !fromSheet && !shownSheet) fromBitmap else null
 
         // R: a tall costume (hat, helmet) must not be cut by the top of the screen: slide the dragon down while it wears it
         var shiftTarget = 0f
@@ -1077,6 +1192,12 @@ class RMascotView(context: Context) : View(context) {
             val kk = half * 2f / 384f
             val w2 = tfBmp.width * kk / 2f
             val h = tfBmp.height * kk
+            dest.set(-w2, half - h, w2, half)
+            headroom = (h - half * 2f).coerceAtLeast(0f)
+        } else if (tfBmp == null && shownSheet) {
+            val kk = half * 2f / 384f
+            val w2 = current.width * kk / 2f
+            val h = current.height * kk
             dest.set(-w2, half - h, w2, half)
             headroom = (h - half * 2f).coerceAtLeast(0f)
         } else if (tfBmp != null) {
@@ -1227,6 +1348,22 @@ class RMascotView(context: Context) : View(context) {
     }
 
     private companion object {
+        // clips from the 2026-11-23 sheets. Frame orders were read off the sheets (see branding/mascot-models/cutouts-2026-11-23)
+        val SA_WAVE = intArrayOf(R.drawable.r_sa_0, R.drawable.r_sa_2, R.drawable.r_sa_3, R.drawable.r_sa_4, R.drawable.r_sa_5, R.drawable.r_sa_3, R.drawable.r_sa_2, R.drawable.r_sa_0)
+        val SD_YAWN = intArrayOf(R.drawable.r_sd_0, R.drawable.r_sd_1, R.drawable.r_sd_2, R.drawable.r_sd_3, R.drawable.r_sd_4, R.drawable.r_sd_5)
+        val SC_SPIN = intArrayOf(R.drawable.r_sc_0, R.drawable.r_sc_1, R.drawable.r_sc_2, R.drawable.r_sc_3, R.drawable.r_sc_4, R.drawable.r_sc_5, R.drawable.r_sc_6, R.drawable.r_sc_7)
+        val SC2_AFTER = intArrayOf(R.drawable.r_sc2_0, R.drawable.r_sc2_1, R.drawable.r_sc2_2, R.drawable.r_sc2_3, R.drawable.r_sc2_4, R.drawable.r_sc2_5)
+        val SF_ROWS = arrayOf(
+            intArrayOf(R.drawable.r_sf_0, R.drawable.r_sf_1, R.drawable.r_sf_2, R.drawable.r_sf_3),
+            intArrayOf(R.drawable.r_sf_4, R.drawable.r_sf_5, R.drawable.r_sf_6, R.drawable.r_sf_7),
+            intArrayOf(R.drawable.r_sf_8, R.drawable.r_sf_9, R.drawable.r_sf_10, R.drawable.r_sf_11),
+        )
+        val SG_TALK = intArrayOf(R.drawable.r_sg3_0, R.drawable.r_sg3_2, R.drawable.r_sg3_1)
+
+        // sentences are the owner's drafts, not approved yet
+        val FRIDAY_SAY = listOf("ما تنساش تصلي على النبي ﷺ", "جمعة مباركة! صلّي على النبي ﷺ", "النهارده الجمعة.. سورة الكهف؟")
+        val GOAL_SAY = listOf("عدّيت هدف الأسبوع! برافو عليك", "هدف الأسبوع خلص.. يلا الأسبوع الجاي")
+        val STREAK_SAY = arrayOf("٣ أيام ورا بعض! كمّل", "أسبوع كامل من غير ما تفوّت يوم!", "٣٠ يوم ورا بعض.. إنت أسطورة")
         const val BLINK_MS = 140L
         const val TF_SEAL = 450L
         const val TF_WRAP = 450L
