@@ -5,8 +5,10 @@ import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import androidx.core.content.ContextCompat
 import co.touchlab.kermit.Logger
 import com.github.mikephil.charting.charts.BarChart
@@ -50,19 +52,73 @@ object RStatsSections {
         onGoalClick: () -> Unit,
     ) {
         root.removeAllViews()
-        listOf<() -> View?>(
-            { streakCard(ctx, d) },
-            { goalCard(ctx, d, goal, onGoalClick) },
-            { readTimeCard(ctx) },
-            { topCard(ctx, d) },
-            { hoursCard(ctx, d) },
-            { monthCard(ctx, d) },
-            { donutCard(ctx, d) },
-        ).forEach { make ->
-            try {
-                make()?.let { root.addView(it) }
-            } catch (e: Exception) {
-                Logger.e(e) { "R stats section failed" }
+        val rt = try { eu.kanade.tachiyomi.util.RReadLog.summary() } catch (e: Exception) { null }
+        // each tile = one topic: a square with an icon, a big number and a label; tap = the full card in a dialog
+        class Tile(val emoji: String, val label: String, val value: String, val make: () -> View?)
+        val tiles = listOf(
+            Tile("🔥", "السلسلة", "${d.streakNow}") { streakCard(ctx, d) },
+            Tile("🎯", "هدف الأسبوع", if (goal > 0) "${d.weekChapters}/$goal" else "—") { goalCard(ctx, d, goal, onGoalClick) },
+            Tile("⏱️", "وقت القراءة", rt?.let { eu.kanade.tachiyomi.util.RReadLog.format(it.todayMs) } ?: "—") { readTimeCard(ctx) },
+            Tile("🏆", "الأكتر قراءة", "${d.top.size}") { topCard(ctx, d) },
+            Tile("🕒", "ساعات اليوم", "${d.hours.indices.maxByOrNull { d.hours[it] } ?: 0}:00") { hoursCard(ctx, d) },
+            Tile("📅", "الشهر", "${d.monthNow}") { monthCard(ctx, d) },
+            Tile("🍩", "مقروء / غير مقروء", "${d.totalChapters}") { donutCard(ctx, d) },
+        )
+        val cols = 2
+        var row: LinearLayout? = null
+        tiles.forEachIndexed { i, t ->
+            if (i % cols == 0) {
+                row = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    weightSum = cols.toFloat()
+                    layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                        .apply { bottomMargin = ctx.dp(10) }
+                }
+                root.addView(row)
+            }
+            val tile = MaterialCardView(ctx).apply {
+                radius = ctx.dp(18).toFloat()
+                cardElevation = 0f
+                setCardBackgroundColor(ctx.getResourceColor(com.google.android.material.R.attr.colorSurfaceVariant))
+                isClickable = true
+                layoutParams = LinearLayout.LayoutParams(0, ctx.dp(112), 1f).apply {
+                    marginStart = ctx.dp(5)
+                    marginEnd = ctx.dp(5)
+                }
+            }
+            val box = vBox(ctx).apply {
+                gravity = Gravity.CENTER
+                setPadding(ctx.dp(8), ctx.dp(8), ctx.dp(8), ctx.dp(8))
+            }
+            box.addView(text(ctx, t.emoji, 26f))
+            box.addView(text(ctx, t.value, 20f, bold = true))
+            box.addView(text(ctx, t.label, 12f, secondary = true))
+            tile.addView(box, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            tile.setOnClickListener {
+                try {
+                    val v = t.make() ?: return@setOnClickListener
+                    (v.layoutParams as? LinearLayout.LayoutParams)?.bottomMargin = 0
+                    val pad = ctx.dp(12)
+                    val holder = ScrollView(ctx).apply {
+                        setPadding(pad, pad, pad, pad)
+                        addView(v)
+                    }
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(ctx)
+                        .setTitle(t.label)
+                        .setView(holder)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show()
+                } catch (e: Exception) {
+                    Logger.e(e) { "R stats tile failed" }
+                }
+            }
+            // entrance: fade + rise, one after the other
+            tile.alpha = 0f
+            tile.translationY = ctx.dp(18).toFloat()
+            tile.animate().alpha(1f).translationY(0f).setStartDelay(i * 70L).setDuration(320L).start()
+            row?.addView(tile)
+            if (i == tiles.lastIndex && tiles.size % cols != 0) {
+                row?.addView(View(ctx), LinearLayout.LayoutParams(0, 1, 1f).apply { marginStart = ctx.dp(5); marginEnd = ctx.dp(5) })
             }
         }
     }
