@@ -20,6 +20,7 @@ import eu.kanade.tachiyomi.util.view.scrollViewWith
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 /**
  * R: the little dragon's level screen (3-dot menu > "مستوى التنين"): the current level, the xp to the next one, how the xp is
@@ -41,6 +42,9 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
             if (d != null) show(d)
         }
     }
+
+    /** R: an LTR island inside the Arabic text, so "9867 / 15000 XP" and "7135 × 1 XP" keep the order they are written in, with Latin digits. */
+    private fun ltr(s: String) = "\u2066$s\u2069"
 
     private fun txt(text: String, sp: Float, bold: Boolean = false, color: Int = Color.WHITE, alpha: Float = 1f) =
         TextView(binding.root.context).apply {
@@ -87,14 +91,19 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
         val next = info.nextAt
         c.addView(
             txt(
-                if (next != null) "${info.xp} / $next XP  ·  فاضل ${info.left} XP للمستوى ${info.level + 1}" else "${info.xp} XP  ·  وصلت لأعلى مستوى",
+                if (next != null) {
+                    "${ltr("${info.xp} / $next XP")}  ·  فاضل ${ltr("${info.left} XP")} للمستوى ${info.level + 1}"
+                } else {
+                    "${ltr("${info.xp} XP")}  ·  وصلت لأعلى مستوى"
+                },
                 15f, false, textColor,
             ),
         )
         val hours = d.totalReadMs / 3_600_000f
         c.addView(
             txt(
-                "الشباتر: ${d.totalChapters} × ${RDragonLevel.XP_PER_CHAPTER} XP\nالساعات: ${"%.1f".format(hours)} × ${RDragonLevel.XP_PER_HOUR} XP",
+                "الشباتر: ${ltr("${d.totalChapters} × ${RDragonLevel.XP_PER_CHAPTER} XP")}\n" +
+                    "الساعات: ${ltr("${String.format(Locale.US, "%.1f", hours)} × ${RDragonLevel.XP_PER_HOUR} XP")}",
                 13f, false, textColor, 0.7f,
             ).apply { setPadding(0, (10 * dp).toInt(), 0, (16 * dp).toInt()) },
         )
@@ -119,7 +128,7 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
                     LinearLayout.LayoutParams((96 * dp).toInt(), (110 * dp).toInt()),
                 )
                 col.addView(txt(if (open) "مستوى $level" else "مستوى $level 🔒", 12f, open, textColor, if (open) 1f else 0.6f))
-                if (!open) col.addView(txt("${RDragonLevel.STARTS[i]} XP", 11f, false, textColor, 0.5f))
+                if (!open) col.addView(txt(ltr("${RDragonLevel.STARTS[i]} XP"), 11f, false, textColor, 0.5f))
                 cell.addView(col, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT))
                 row.addView(cell, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
             }
