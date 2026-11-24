@@ -447,6 +447,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
         binding.chaptersSheet.chaptersBottomSheet.setup(this)
         rSetupToolsBar()
+        rSetupXpCounter()
         rStyleClock()
         binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> rPositionClock() }
         // R: the original page bar is only shown when its switch is on (Settings > R); the new tools card replaces it
@@ -552,6 +553,9 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
      */
     override fun onDestroy() {
         super.onDestroy()
+        eu.kanade.tachiyomi.util.RXp.onGain = null
+        rXpCounter?.release()
+        rXpCounter = null
         viewer?.destroy()
         binding.chaptersSheet.chaptersBottomSheet.adapter = null
         viewer = null
@@ -1793,6 +1797,16 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 }
             }
         }
+    }
+
+    private var rXpCounter: RXpCounterView? = null
+
+    /** R: top-left XP counter (flying XP badge, count-up, coin sound) fed by [RXp.onGain]. */
+    private fun rSetupXpCounter() {
+        if (!preferences.rXpCounter().get()) return
+        val view = RXpCounterView(this)
+        rXpCounter = view
+        eu.kanade.tachiyomi.util.RXp.onGain = { gain, total -> view.showGain(total, gain) }
     }
 
     private var rPositioning = false

@@ -361,6 +361,13 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rXpCounter())
+                title = "عداد الـ XP في القارئ"
+                rIcon(R.drawable.ic_r_hotel)
+                summary = "لما تخلص شبتر تطير أيقونة الـ XP للركن الشمال فوق، والرقم يزيد بصوت عملة. عند الإيقاف: لا عداد ولا صوت."
+            }
+
+            switchPreference {
                 bindTo(preferences.rReminder())
                 title = "تذكير التنين بالقراءة"
                 rIcon(R.drawable.ic_r_hotel)
