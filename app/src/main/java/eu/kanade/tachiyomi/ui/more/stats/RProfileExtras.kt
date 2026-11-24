@@ -290,49 +290,131 @@ object RProfileExtras {
         return c
     }
 
-    // ---- favourites ----
+    // ---- favourites (up to 5) ----
+    private const val MAX_FAV = 5
+
     private fun favouritesCard(ctx: Context, library: List<Manga>, prefs: PreferencesHelper, rebuild: () -> Unit): View {
         val c = card(ctx)
         c.addView(title(ctx, "⭐ مانجاتي المفضلة"))
         val keys = prefs.rFavManga().get().split("\n").filter { it.isNotBlank() }
         val favs = keys.mapNotNull { k -> library.firstOrNull { rMangaKey(it.source, it.url) == k } }
-        val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_HORIZONTAL }
-        favs.forEach { m ->
+        val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; weightSum = MAX_FAV.toFloat() }
+        for (i in 0 until MAX_FAV) {
+            val m = favs.getOrNull(i)
             val img = ImageView(ctx).apply {
                 scaleType = ImageView.ScaleType.CENTER_CROP
                 clipToOutline = true
-                background = GradientDrawable().apply { cornerRadius = dp(ctx, 10f).toFloat(); setColor(0x22808080) }
-                runCatching { loadManga(m) }
+                background = GradientDrawable().apply { cornerRadius = dp(ctx, 8f).toFloat(); setColor(if (m != null) 0x22808080 else 0x11808080) }
+                if (m != null) runCatching { loadManga(m) }
             }
-            row.addView(img, LinearLayout.LayoutParams(dp(ctx, 92f), dp(ctx, 132f)).apply { setMargins(dp(ctx, 5f), 0, dp(ctx, 5f), 0) })
+            row.addView(img, LinearLayout.LayoutParams(0, dp(ctx, 96f), 1f).apply { setMargins(dp(ctx, 3f), 0, dp(ctx, 3f), 0) })
         }
-        if (favs.isEmpty()) c.addView(small(ctx, "اختار لحد 3 مانجا يظهروا هنا."))
+        if (favs.isEmpty()) c.addView(small(ctx, "اختار لحد $MAX_FAV مانجا يظهروا هنا."))
         c.addView(row)
         c.addView(
             button(ctx, if (favs.isEmpty()) "اختار المفضلة" else "غيّر المفضلة") {
-                val sorted = library.distinctBy { it.id }.sortedBy { it.title.lowercase() }
-                val titles = sorted.map { it.title }.toTypedArray()
-                val picked = BooleanArray(sorted.size) { i -> sorted[i].let { rMangaKey(it.source, it.url) } in keys }
-                var dlg: androidx.appcompat.app.AlertDialog? = null
-                dlg = MaterialAlertDialogBuilder(ctx)
-                    .setTitle("اختار لحد 3")
-                    .setMultiChoiceItems(titles, picked) { _, which, checked ->
-                        picked[which] = checked
-                        if (picked.count { it } > 3) {
-                            picked[which] = false
-                            dlg?.listView?.setItemChecked(which, false)
-                            Toast.makeText(ctx, "لحد 3 بس", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    .setPositiveButton("حفظ") { _, _ ->
-                        prefs.rFavManga().set(sorted.filterIndexed { i, _ -> picked[i] }.joinToString("\n") { rMangaKey(it.source, it.url) })
-                        rebuild()
-                    }
-                    .setNegativeButton("إلغاء", null)
-                    .show()
+                pickFavourites(ctx, library, keys) { chosen ->
+                    prefs.rFavManga().set(chosen.joinToString("\n"))
+                    rebuild()
+                }
             },
         )
         return c
+    }
+
+    /** Picker: a search box + a grid of covers on colour cards; tap to select (max [MAX_FAV]). */
+    private fun pickFavourites(ctx: Context, library: List<Manga>, initial: List<String>, onSaved: (List<String>) -> Unit) {
+        val all = library.distinctBy { it.id }.sortedBy { it.title.lowercase() }
+        val selected = LinkedHashSet(initial)
+        var shown: List<Manga> = all
+        val palette = intArrayOf(0xFF2E7D45.toInt(), 0xFF1565C0.toInt(), 0xFF6A1B9A.toInt(), 0xFFC62828.toInt(), 0xFFEF6C00.toInt(), 0xFF00838F.toInt(), 0xFF4E342E.toInt())
+        val cols = 3
+        val cellW = (ctx.resources.displayMetrics.widthPixels - dp(ctx, 64f)) / cols
+
+        val search = android.widget.EditText(ctx).apply {
+            hint = "ابحث بالاسم"
+            setSingleLine()
+        }
+        val rv = androidx.recyclerview.widget.RecyclerView(ctx).apply {
+            layoutManager = androidx.recyclerview.widget.GridLayoutManager(ctx, cols)
+        }
+        lateinit var dlg: androidx.appcompat.app.AlertDialog
+        fun refreshTitle() { dlg.setTitle("اختار لحد $MAX_FAV (${selected.size}/$MAX_FAV)") }
+
+        val adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
+            override fun getItemCount() = shown.size
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder {
+                val cell = android.widget.FrameLayout(ctx).apply {
+                    layoutParams = androidx.recyclerview.widget.RecyclerView.LayoutParams(cellW, (cellW * 1.5f).toInt()).apply { setMargins(4, 4, 4, 4) }
+                    clipToOutline = true
+                }
+                cell.addView(ImageView(ctx).apply { scaleType = ImageView.ScaleType.CENTER_CROP; tag = "cover" }, android.widget.FrameLayout.LayoutParams(-1, -1))
+                cell.addView(
+                    TextView(ctx).apply {
+                        tag = "name"; textSize = 11f; maxLines = 2; setTextColor(Color.WHITE)
+                        setPadding(dp(ctx, 5f), dp(ctx, 3f), dp(ctx, 5f), dp(ctx, 3f))
+                    },
+                    android.widget.FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM),
+                )
+                cell.addView(
+                    TextView(ctx).apply { tag = "check"; text = "✓"; textSize = 26f; setTextColor(Color.WHITE); gravity = Gravity.CENTER },
+                    android.widget.FrameLayout.LayoutParams(-1, -1),
+                )
+                return object : androidx.recyclerview.widget.RecyclerView.ViewHolder(cell) {}
+            }
+            override fun onBindViewHolder(h: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
+                val m = shown[position]
+                val key = rMangaKey(m.source, m.url)
+                val cell = h.itemView as android.widget.FrameLayout
+                val color = palette[(m.title.hashCode() and 0x7fffffff) % palette.size]
+                cell.background = GradientDrawable().apply { cornerRadius = dp(ctx, 8f).toFloat(); setColor(color) }
+                cell.findViewWithTag<ImageView>("cover").apply { setImageDrawable(null); runCatching { loadManga(m) } }
+                cell.findViewWithTag<TextView>("name").apply { text = m.title; setBackgroundColor((color and 0x00FFFFFF) or 0xCC000000.toInt()) }
+                fun paint() {
+                    val on = key in selected
+                    cell.findViewWithTag<TextView>("check").apply {
+                        visibility = if (on) View.VISIBLE else View.GONE
+                        setBackgroundColor(0x882E7D45.toInt())
+                    }
+                }
+                paint()
+                cell.setOnClickListener {
+                    if (key in selected) {
+                        selected.remove(key)
+                    } else if (selected.size >= MAX_FAV) {
+                        Toast.makeText(ctx, "لحد $MAX_FAV بس", Toast.LENGTH_SHORT).show()
+                    } else {
+                        selected.add(key)
+                    }
+                    paint()
+                    refreshTitle()
+                }
+            }
+        }
+        rv.adapter = adapter
+        search.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(e: android.text.Editable?) {
+                val q = e?.toString()?.trim().orEmpty()
+                shown = if (q.isEmpty()) all else all.filter { it.title.contains(q, ignoreCase = true) }
+                adapter.notifyDataSetChanged()
+            }
+            override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
+            override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {}
+        })
+        val box = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(ctx, 16f), dp(ctx, 8f), dp(ctx, 16f), 0)
+            addView(search)
+            addView(rv, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(ctx, 420f)))
+        }
+        dlg = MaterialAlertDialogBuilder(ctx)
+            .setTitle("اختار لحد $MAX_FAV")
+            .setView(box)
+            .setPositiveButton("حفظ") { _, _ -> onSaved(selected.toList()) }
+            .setNegativeButton("إلغاء", null)
+            .create()
+        dlg.show()
+        refreshTitle()
     }
 
     // ---- share card ----
