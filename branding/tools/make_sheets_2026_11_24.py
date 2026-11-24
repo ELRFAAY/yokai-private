@@ -31,8 +31,10 @@ ICONS = ['IC1-icons-568233.jpg', 4, 2,
 HAMMER = ['HAMMER-568234.jpg', 2, 1, ['r_hammer_up', 'r_hammer_raised']]
 
 
-def to_rgba(rgb):
-    """rgb: float array HxWx3 (0-255) on white. Returns RGBA uint8 with the core opaque and the rest un-blended from white."""
+def to_rgba(rgb, clear_gaps=0):
+    """rgb: float array HxWx3 (0-255) on white. Returns RGBA uint8 with the core opaque and the rest un-blended from white.
+    clear_gaps = min area (px) of a closed PURE-WHITE gap inside the outline (between an arm and the body, inside a tail coil) that is turned
+    transparent too (0 = keep every enclosed white area, right for hats, calendar pages, eye whites)."""
     mn = rgb.min(axis=2)
     dark = mn < 110
     closed = ndi.binary_closing(dark, iterations=3)
@@ -43,8 +45,20 @@ def to_rgba(rgb):
         sizes = ndi.sum(core, lab, range(1, n + 1))
         keep = [i + 1 for i, s in enumerate(sizes) if s >= 0.0006 * core.size]
         core = np.isin(lab, keep)
-    a = np.clip((255.0 - mn - 12.0) / (135.0 - 12.0), 0, 1)
-    af = np.maximum(a, 1e-3)[..., None]
+    if clear_gaps:
+        white = (mn >= 246) & ((rgb.max(axis=2) - mn) < 8)
+        wl, wn = ndi.label(white)
+        if wn:
+            sizes = ndi.sum(white, wl, range(1, wn + 1))
+            big = [i + 1 for i, sz in enumerate(sizes) if sz >= clear_gaps]
+            gap = ndi.binary_dilation(np.isin(wl, big), iterations=1)
+            core = core & ~gap
+    # alpha ~ distance from white (reaches 1 at min channel 185 (a glow keeps a light, luminous colour on dark backgrounds)); the colour is recovered with the SAME ratio so a glow keeps ONE hue along its
+    # whole fade (a gate, not an offset, removes the jpeg noise: pixels < 8 levels from white stay clear, 8-18 fade in)
+    a_raw = np.clip((255.0 - mn) / (255.0 - 185.0), 0, 1)
+    gate = np.clip((255.0 - mn - 8.0) / 10.0, 0, 1)
+    a = a_raw * gate
+    af = np.maximum(a_raw, 1e-3)[..., None]
     colour = np.clip(255.0 - (255.0 - rgb) / af, 0, 255)
     alpha = np.where(core, 1.0, a)
     out_rgb = np.where(core[..., None], rgb, colour)

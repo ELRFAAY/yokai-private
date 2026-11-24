@@ -1,7 +1,7 @@
 # Yokai (private fork) — Handoff (SHORT, current state)
 
 Read ONLY this file when starting a session or when another account takes over. Older history, every owner input (#1-#30), branch map and the full change log are in `YOKAI_HANDOFF_ARCHIVE.md` (open it only for a specific old detail). Keep this file under ~100 lines: when something becomes history, move it to the archive.
-Last updated: 2026-11-23 (see NEWEST-59).
+Last updated: 2026-11-23 (see NEWEST-60).
 
 ## What this is
 - Private fork of https://github.com/null2264/yokai (Android manga reader, Tachiyomi/Mihon lineage); installs alongside the original (own applicationId). Placeholder name "Yokai R", app name not decided.
@@ -15,6 +15,12 @@ Last updated: 2026-11-23 (see NEWEST-59).
 - Hands rule: the small dragon has exactly TWO hands, the body's own. Never put the old head sprites' hands back.
 - Anything the owner sends (images, ideas) is recorded in the repo first, then used. Phrases the mascots say are my drafts, NOT approved.
 - Never write down or use the GitHub tokens he pasted in chat earlier; if access is lost, ask him.
+
+## NEWEST-60 (24 Nov 10:45, chat-app account): owner disliked the CUT of the level pictures (screenshot of stage 8: opaque cream disc + jagged white fringe on the antlers). Fixed. NOT compiled, NOT built (no build until "بيلد").
+- Cause: `make_dragon_levels.py` (old) treated everything not white as solid, so soft glows / halo rings of stages 8, 9, 10, 12 became opaque cream/white discs and the antler tips got a white fringe.
+- Now `make_dragon_levels.py` v2 uses `to_rgba` of `make_sheets_2026_11_24.py`: opaque core inside the outline, light pixels outside it un-blended from white (alpha = distance from white / 70, reaches 1 at min channel 185; colour recovered with the same ratio = one hue along the fade; jpeg noise < 8 levels cleared), closed pure-white gaps >= 200 px (arm/body, tail coil) cleared. All 12 `r_lv_*` share ONE canvas 308x348 and ONE body scale (body = 300 px tall, bottom-centred), so the glow no longer shrinks the dragon and the stages line up (the level screen shows them fit-centre in 220x250 dp / 96x110 dp boxes, nothing to change in code). Checked on black AND on light grey: soft halos, no discs.
+- The same formula change re-cut everything from NEWEST-59 (`r_av_*`, `r_avc_*`, `r_ic_*`, `r_hammer_*`): glows are now luminous on dark backgrounds.
+- Noticed on his screenshot, NOT fixed (ask first): the XP line "XP 15000 / 9867" reads reversed (Arabic RTL mixing: it is "9867 / 15000 XP"; likewise "XP 1 × 7135", "XP 4 × 1,683" and the Arabic-Indic digits in the hours line). Fix = wrap the numbers in LRM/`BidiFormatter` or reorder the strings in `RDragonLevelController`.
 
 ## NEWEST-59 (24 Nov 10:30, chat-app account, owner chose "save AND cut AND install"): the owner's new model sheets are IN THE REPO and CUT. NOT compiled, NOT built (no build until "بيلد").
 - Originals (his files 568231-568237; 568232 = byte-identical duplicate of 568231) in `branding/mascot-models/new-sheets-2026-11-24/`: `AV1-stage-portraits` (12 round heads), `IC1-icons` (8), `HAMMER` (2 poses), `AV2-costume-portraits-1-12`, `AV3-costume-portraits-13-21`, `SG-friday-8-views`.
