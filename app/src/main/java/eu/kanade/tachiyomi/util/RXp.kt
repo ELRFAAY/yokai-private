@@ -73,7 +73,7 @@ object RXp {
     fun gainFor(count: Int): Long = RDragonLevel.XP_PER_CHAPTER.toLong() shl (count - 1).coerceIn(0, MAX_DOUBLINGS)
 
     /** Call once when a chapter becomes read (it was not read before). Returns the xp gained. */
-    fun onChapterRead(context: Context, prefs: PreferencesHelper = Injekt.get()): Int {
+    fun onChapterRead(context: Context, prefs: PreferencesHelper = Injekt.get()): Long {
         val sp = context.getSharedPreferences("r_xp", Context.MODE_PRIVATE)
         val now = System.currentTimeMillis()
         val last = sp.getLong("last", 0L)
