@@ -108,19 +108,20 @@ object RProfileExtras {
         d: RStatsData,
         library: List<Manga>,
         prefs: PreferencesHelper = Injekt.get(),
+        openManga: (Manga) -> Unit = {},
         onChanged: () -> Unit,
     ) {
         root.removeAllViews()
         ach.removeAllViews()
         fun rebuild() {
             onChanged()
-            build(ctx, root, ach, d, library, prefs, onChanged)
+            build(ctx, root, ach, d, library, prefs, openManga, onChanged)
         }
         ach.addView(chestCard(ctx, prefs, ::rebuild))
         ach.addView(badgesCard(ctx, d, prefs, ::rebuild))
         ach.addView(recordsCard(ctx, d))
         root.addView(calendarCard(ctx, d))
-        root.addView(favouritesCard(ctx, library, prefs, ::rebuild))
+        root.addView(favouritesCard(ctx, library, prefs, openManga, ::rebuild))
         root.addView(shareCard(ctx, d, prefs))
     }
 
@@ -375,26 +376,36 @@ object RProfileExtras {
     }
 
     // ---- favourites (up to 5) ----
-    private const val MAX_FAV = 5
+    private const val MAX_FAV = 10
+    private const val FAV_PER_ROW = 5
 
-    private fun favouritesCard(ctx: Context, library: List<Manga>, prefs: PreferencesHelper, rebuild: () -> Unit): View {
+    private fun favouritesCard(ctx: Context, library: List<Manga>, prefs: PreferencesHelper, openManga: (Manga) -> Unit, rebuild: () -> Unit): View {
         val c = card(ctx)
         c.addView(title(ctx, "⭐ مانجاتي المفضلة"))
         val keys = prefs.rFavManga().get().split("\n").filter { it.isNotBlank() }
         val favs = keys.mapNotNull { k -> library.firstOrNull { rMangaKey(it.source, it.url) == k } }
-        val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; weightSum = MAX_FAV.toFloat() }
-        for (i in 0 until MAX_FAV) {
-            val m = favs.getOrNull(i)
-            val img = ImageView(ctx).apply {
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                clipToOutline = true
-                background = GradientDrawable().apply { cornerRadius = dp(ctx, 8f).toFloat(); setColor(if (m != null) 0x22808080 else 0x11808080) }
-                if (m != null) runCatching { loadManga(m) }
+        val rows = ArrayList<LinearLayout>()
+        // two rows of 5 slots; the second row only appears when more than 5 are chosen
+        for (r in 0 until MAX_FAV / FAV_PER_ROW) {
+            if (r > 0 && favs.size <= r * FAV_PER_ROW) break
+            val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; weightSum = FAV_PER_ROW.toFloat() }
+            for (i in r * FAV_PER_ROW until (r + 1) * FAV_PER_ROW) {
+                val m = favs.getOrNull(i)
+                val img = ImageView(ctx).apply {
+                    scaleType = ImageView.ScaleType.CENTER_CROP
+                    clipToOutline = true
+                    background = GradientDrawable().apply { cornerRadius = dp(ctx, 8f).toFloat(); setColor(if (m != null) 0x22808080 else 0x11808080) }
+                    if (m != null) {
+                        runCatching { loadManga(m) }
+                        setOnClickListener { openManga(m) }
+                    }
+                }
+                row.addView(img, LinearLayout.LayoutParams(0, dp(ctx, 96f), 1f).apply { setMargins(dp(ctx, 3f), dp(ctx, 3f), dp(ctx, 3f), dp(ctx, 3f)) })
             }
-            row.addView(img, LinearLayout.LayoutParams(0, dp(ctx, 96f), 1f).apply { setMargins(dp(ctx, 3f), 0, dp(ctx, 3f), 0) })
+            rows += row
         }
         if (favs.isEmpty()) c.addView(small(ctx, "اختار لحد $MAX_FAV مانجا يظهروا هنا."))
-        c.addView(row)
+        rows.forEach { c.addView(it) }
         c.addView(
             button(ctx, if (favs.isEmpty()) "اختار المفضلة" else "غيّر المفضلة") {
                 pickFavourites(ctx, library, keys) { chosen ->

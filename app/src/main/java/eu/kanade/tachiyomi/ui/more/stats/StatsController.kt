@@ -437,7 +437,10 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
                 val data = rData ?: withContext(Dispatchers.IO) { presenter.getRData() }.also { rData = it }
                 val achBox = rAch
                 if (rExtras != null && achBox != null) rExtras?.let { ex ->
-                    RProfileExtras.build(ctx, ex, achBox, data, mangaDistinct.map { it.manga }) {
+                    RProfileExtras.build(
+                        ctx, ex, achBox, data, mangaDistinct.map { it.manga },
+                        openManga = { m -> router.pushController(eu.kanade.tachiyomi.ui.manga.MangaDetailsController(m).withFadeTransaction()) },
+                    ) {
                         // XP changed: repaint the header card in place
                         (rHeader?.parent as? android.view.ViewGroup)?.let { parent ->
                             val i = parent.indexOfChild(rHeader)
