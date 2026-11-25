@@ -293,6 +293,7 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     fun rBadgesClaimed() = preferenceStore.getStringSet("r_badges_claimed", emptySet()) // badge ids whose XP was collected
     fun rChestWeek() = preferenceStore.getString("r_chest_week", "") // ISO week of the last opened weekly chest
     fun rFavManga() = preferenceStore.getString("r_fav_manga", "") // up to 3 "source|url" keys shown on the profile, "\n"-separated
+    fun rSystemBrightness() = preferenceStore.getBoolean("r_system_brightness", true) // the reader brightness slider also changes the PHONE brightness (needs the "modify system settings" permission)
     fun rMascotEvolve() = preferenceStore.getBoolean("r_mascot_evolve", true) // egg evolution of the home dragon on level-up
     fun rDragonSeenLevel() = preferenceStore.getInt("r_dragon_seen_level", 0) // last level the evolution was shown for (0 = not set yet)
     fun rMascotTransform() = preferenceStore.getBoolean("r_mascot_transform", true)

@@ -1602,6 +1602,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
     /** R: simple chapters list dialog (the tools bar used to expand the heavy chapters sheet, which froze some phones). */
     private var rChapterDialogOpen = false
+    private var rAskedWriteSettings = false
     private var rChapterDialogRef: android.app.Dialog? = null
 
     /** R: title row of the chapters list: two chips to switch between the chapters and the reading settings. */
@@ -2810,7 +2811,37 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 else -> WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
             }
 
-            window.attributes = window.attributes.apply { screenBrightness = readerBrightness }
+            // R: the slider can change the WHOLE phone's brightness (system setting) instead of only this window
+            var finalBrightness = readerBrightness
+            if (preferences.rSystemBrightness().get() && value != 0) {
+                if (android.provider.Settings.System.canWrite(this@ReaderActivity)) {
+                    runCatching {
+                        val cr = contentResolver
+                        android.provider.Settings.System.putInt(
+                            cr,
+                            android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE,
+                            android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
+                        )
+                        android.provider.Settings.System.putInt(cr, android.provider.Settings.System.SCREEN_BRIGHTNESS, (if (value > 0) value * 255 / 100 else 1).coerceIn(1, 255))
+                        finalBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE // the system value applies
+                    }
+                } else if (!rAskedWriteSettings) {
+                    rAskedWriteSettings = true
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(this@ReaderActivity)
+                        .setTitle("سطوع الموبايل كله")
+                        .setMessage("عشان السطوع يتغيّر في الموبايل كله مش في البرنامج بس، لازم تسمح للبرنامج بتعديل إعدادات النظام. هتفتح لك شاشة الإذن.")
+                        .setPositiveButton("اسمح") { _, _ ->
+                            runCatching {
+                                startActivity(
+                                    Intent(android.provider.Settings.ACTION_MANAGE_WRITE_SETTINGS, android.net.Uri.parse("package:$packageName")),
+                                )
+                            }
+                        }
+                        .setNegativeButton("لا، في البرنامج بس", null)
+                        .show()
+                }
+            }
+            window.attributes = window.attributes.apply { screenBrightness = finalBrightness }
 
             // Set black overlay visibility.
             if (value < 0) {

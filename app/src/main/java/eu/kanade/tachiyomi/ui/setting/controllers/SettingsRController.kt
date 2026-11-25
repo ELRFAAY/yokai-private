@@ -121,6 +121,13 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rSystemBrightness())
+                title = "السطوع يغيّر سطوع الموبايل كله"
+                rIcon(R.drawable.ic_play_arrow_24dp)
+                summary = "شريط السطوع في القارئ يعدّل سطوع الموبايل نفسه مش البرنامج بس (بيطلب إذن تعديل إعدادات النظام مرة واحدة). عند الإيقاف: السطوع جوه البرنامج بس."
+            }
+
+            switchPreference {
                 bindTo(preferences.rTapScroll())
                 title = "التمرير بلمس أسفل الشاشة"
                 rIcon(R.drawable.ic_play_arrow_24dp)

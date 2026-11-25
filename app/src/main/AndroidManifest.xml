@@ -9,6 +9,8 @@
 
     <!-- For background jobs -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- R: lets the reader brightness slider change the phone's brightness (asked once through the system screen) -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
