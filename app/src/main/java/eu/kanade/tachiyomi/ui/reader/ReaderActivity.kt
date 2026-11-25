@@ -1662,7 +1662,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         binding.root.requestApplyInsets()
 
         val strip = RSideTools(this) { rScheduleAutoHide() }
-        strip.add("الشباتر", null, R.drawable.ic_format_list_numbered_24dp) { rShowChapterDialog() }
+        strip.add("الشباتر", null, R.drawable.ic_format_list_numbered_24dp) { rExpandChapterSheet() }
         strip.add("فتح في المتصفح", sheet.webviewButton, 0) { sheet.webviewButton.performClick() }
         strip.add("وضع القراءة", sheet.readingMode, 0) { sheet.readingMode.performClick() }
         strip.add("التدوير", sheet.rotationSheetButton, 0) { sheet.rotationSheetButton.performClick() }
@@ -1724,6 +1724,15 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
     }
 
+    /** R: swipe up / chapter name / "الشباتر" opens the ORIGINAL chapters sheet (the old bar), smooth, not a dialog in the middle. */
+    private fun rExpandChapterSheet() {
+        val sb = binding.chaptersSheet.chaptersBottomSheet.sheetBehavior ?: return
+        if (sb.state == BottomSheetBehavior.STATE_HIDDEN) sb.state = BottomSheetBehavior.STATE_COLLAPSED
+        sb.expand()
+        rPositionToolsBar()
+    }
+
+    @Suppress("unused")
     private fun rShowChapterDialog() {
         lifecycleScope.launch {
             val items = viewModel.getChapters()
@@ -1762,13 +1771,13 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             this,
             preferences,
             { rBatteryPercent },
-            { rShowChapterDialog() },
+            { rExpandChapterSheet() },
             { TabbedReaderSettingsSheet(this@ReaderActivity).show() },
             { rScheduleAutoHide() },
             { rLock() },
             { loadAdjacentChapter(viewer is R2LPagerViewer) }, // previous chapter
             { loadAdjacentChapter(viewer !is R2LPagerViewer) }, // next chapter
-            { rShowChapterDialog() },
+            { rExpandChapterSheet() },
         )
         // R: floating card at the bottom; its bottom margin is computed from the TOP of the page bar / chapters sheet
         // (rPositionToolsBar), so it never covers them
