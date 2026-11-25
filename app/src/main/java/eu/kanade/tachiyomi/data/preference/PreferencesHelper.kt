@@ -324,6 +324,7 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** The little dragon in the chapter-end card and in the statistics hovers (bob, glow shadow, sparkle trail) and points at its text. */
     fun rDragonXpL() = preferenceStore.getLong("r_dragon_xp_l", 0L) // total XP, unlimited (Long); the Int `r_dragon_xp` is only read once to migrate
     fun rDragonXpBonusL() = preferenceStore.getLong("r_dragon_xp_bonus_l", 0L) // combo + badges + chest XP, unlimited
+    fun rGoldSpent() = preferenceStore.getLong("r_gold_spent", 0L) // gold coins spent in the (future) shop; balance = XP/1000 - spent
     fun rDragonXpBonus() = preferenceStore.getInt("r_dragon_xp_bonus", 0)
     fun rXpCounter() = preferenceStore.getBoolean("r_xp_counter", true)
     fun rHammerMode() = preferenceStore.getBoolean("r_hammer_mode", false)

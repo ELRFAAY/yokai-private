@@ -11,8 +11,8 @@ import androidx.core.content.ContextCompat
 import eu.kanade.tachiyomi.util.RDragonLevel
 
 /**
- * R: "gold XP": every 1000 XP of the whole history (level 1 until now) is one gold XP. XP is never spent; the gold count is just
- * total / 1000, shown with the gold version of the animated XP icon (r_xpg_0..10) and the XP still missing for the next one.
+ * R: GOLD COINS: a currency (NOT xp). Every 1000 XP of the whole history gives one coin; XP itself is never spent. Balance = earned -
+ * spent (a shop comes later), shown with the code-drawn coin and the XP still missing for the next coin.
  */
 class RGoldXpRow(context: Context, xp: Long, textColor: Int, small: Boolean = false) : LinearLayout(context) {
     init {
@@ -20,19 +20,13 @@ class RGoldXpRow(context: Context, xp: Long, textColor: Int, small: Boolean = fa
         gravity = Gravity.CENTER_VERTICAL
         val d = resources.displayMetrics.density
         val size = ((if (small) 18 else 26) * d).toInt()
-        val anim = AnimationDrawable().apply {
-            for (i in 0..10) {
-                val id = resources.getIdentifier("r_xpg_$i", "drawable", context.packageName)
-                if (id != 0) ContextCompat.getDrawable(context, id)?.let { addFrame(it, 90) }
-            }
-            isOneShot = false
-        }
-        addView(ImageView(context).apply { setImageDrawable(anim); post { anim.start() } }, LayoutParams(size, size))
-        val gold = RDragonLevel.gold(xp)
+        addView(ImageView(context).apply { setImageDrawable(RXpBadge.coin()) }, LayoutParams(size, size))
+        val prefs = uy.kohesive.injekt.Injekt.get<eu.kanade.tachiyomi.data.preference.PreferencesHelper>()
+        val gold = RDragonLevel.goldBalance(prefs)
         val toNext = 1000L - xp % 1000L
         addView(
             TextView(context).apply {
-                text = "${RDragonLevel.compact(gold)} ذهبية  •  فاضل $toNext XP للذهبية الجاية"
+                text = "${RDragonLevel.compact(gold)} عملة ذهبية  •  فاضل $toNext XP للعملة الجاية"
                 setTextColor(textColor)
                 textSize = if (small) 11.5f else 13.5f
                 setTypeface(typeface, Typeface.BOLD)

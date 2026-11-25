@@ -52,12 +52,18 @@ class RRankCardView(context: Context) : LinearLayout(context) {
         addView(avatar, LayoutParams(52.dpToPx, 52.dpToPx))
 
         val col = LinearLayout(context).apply { orientation = VERTICAL }
-        col.addView(TextView(context).apply {
-            text = "مستوى ${info.level}"
-            setTextColor(Color.WHITE)
-            textSize = 16f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        })
+        val head = LinearLayout(context).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        head.addView(ImageView(context).apply { setImageDrawable(RXpBadge.drawable(info.level)) }, LayoutParams(26.dpToPx, 26.dpToPx))
+        head.addView(
+            TextView(context).apply {
+                text = "مستوى ${info.level}"
+                setTextColor(Color.WHITE)
+                textSize = 16f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            },
+            LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply { marginStart = 8.dpToPx },
+        )
+        col.addView(head)
         col.addView(
             RXpBar(context, Color.WHITE).apply { bind(info, animate = false) },
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { topMargin = 6.dpToPx },

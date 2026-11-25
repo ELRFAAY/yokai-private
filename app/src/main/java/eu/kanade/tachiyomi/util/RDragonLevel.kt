@@ -51,7 +51,12 @@ object RDragonLevel {
         prefs.rDragonXpL().set(prefs.rDragonXpL().get() + gain)
     }
 
+    /** Gold COINS ever earned: 1 per 1000 XP of the whole history. It is a currency (a shop comes later), not XP. */
     fun gold(xp: Long): Long = xp / 1000L
+
+    /** Coins the owner can spend now = earned - spent. */
+    fun goldBalance(prefs: eu.kanade.tachiyomi.data.preference.PreferencesHelper): Long =
+        (gold(totalXp(prefs)) - prefs.rGoldSpent().get()).coerceAtLeast(0L)
 
     /** 999 -> "999", 12345 -> "12.3K", then M, B, T, Qa, Qi, Sx, Sp, Oc (so a huge combo still fits a small label). */
     fun compact(v: Long): String {

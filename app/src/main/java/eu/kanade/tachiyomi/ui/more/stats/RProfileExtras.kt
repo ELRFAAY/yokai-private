@@ -580,7 +580,7 @@ object RProfileExtras {
             "${d.totalChapters}" to "شابتر",
             "${d.totalReadMs / 3_600_000L}" to "ساعة",
             "${d.streakBest}" to "أطول سلسلة",
-            RDragonLevel.compact(RDragonLevel.gold(info.xp)) to "ذهبية",
+            RDragonLevel.compact(RDragonLevel.gold(info.xp)) to "عملة ذهبية",
         )
         stats.forEachIndexed { i, (v, label) ->
             val cx = 60f + 120f + i * 250f
