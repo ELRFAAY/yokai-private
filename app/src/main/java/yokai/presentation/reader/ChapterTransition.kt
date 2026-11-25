@@ -338,7 +338,7 @@ private fun ReadTimeCard(readMillis: () -> Long) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val floatOn = remember { runCatching { Injekt.get<PreferencesHelper>().rDragonFloat().get() }.getOrDefault(true) }
+        val floatOn = remember { runCatching { Injekt.get<PreferencesHelper>().let { it.rDragonFloat().get() && !it.rDragonsOff().get() } }.getOrDefault(true) }
         if (floatOn) {
             // text is after the dragon in the row: it points toward it (right in LTR, left in RTL)
             val textOnRight = LocalLayoutDirection.current == LayoutDirection.Ltr

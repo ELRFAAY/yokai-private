@@ -265,7 +265,7 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
 
     /** R: show the snake mascot only on the library (home) screen and only when the R switch is on. */
     private fun updateRMascot(controller: Controller?) {
-        val show = preferences.rMascot().get() &&
+        val show = preferences.rMascot().get() && !preferences.rDragonsOff().get() &&
             (controller is LibraryController || controller is eu.kanade.tachiyomi.ui.manga.MangaDetailsController)
         rMascot?.visibility = if (show) View.VISIBLE else View.GONE
         // R: a random opinion when a manga page opens (see RMascotView.reactToManga)

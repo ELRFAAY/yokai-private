@@ -285,6 +285,7 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     fun rSingleAppIcon() = preferenceStore.getBoolean("r_single_app_icon", true)
 
     /** Home screen (library): the floating snake mascot you can grab and throw. */
+    fun rDragonsOff() = preferenceStore.getBoolean("r_dragons_off", false) // master switch: hides the small home dragon AND the big reader/stats dragon; profile, XP, badges stay
     fun rMascot() = preferenceStore.getBoolean("r_mascot", true)
 
     /** Mascot: small talking blips (one per letter) while a speech bubble types out; silent in silent/vibrate mode. */

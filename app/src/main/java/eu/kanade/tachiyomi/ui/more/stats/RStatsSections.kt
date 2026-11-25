@@ -393,7 +393,7 @@ object RStatsSections {
     private fun dragonLine(ctx: Context, message: String): View = hRow(ctx).apply {
         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             .apply { topMargin = ctx.dp(6) }
-        val floatOn = runCatching { Injekt.get<PreferencesHelper>().rDragonFloat().get() }.getOrDefault(true)
+        val floatOn = runCatching { Injekt.get<PreferencesHelper>().let { it.rDragonFloat().get() && !it.rDragonsOff().get() } }.getOrDefault(true)
         if (floatOn) {
             // the text is after the dragon in the row: it points toward it (left in RTL, right in LTR)
             addView(

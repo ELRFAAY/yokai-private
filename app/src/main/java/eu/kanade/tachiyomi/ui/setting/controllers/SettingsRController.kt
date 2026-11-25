@@ -276,6 +276,13 @@ class SettingsRController : SettingsLegacyController() {
             title = "الثعبان"
 
             switchPreference {
+                bindTo(preferences.rDragonsOff())
+                title = "إخفاء التنين (الكبير والصغير)"
+                rIcon(R.drawable.ic_r_mood)
+                summary = "يخفي التنين الصغير في المكتبة والتنين الكبير في القارئ والإحصائيات. الملف الشخصي والمستوى والـ XP والإنجازات تفضل زي ما هي."
+            }
+
+            switchPreference {
                 bindTo(preferences.rMascot())
                 title = "شخصية الثعبان"
                 rIcon(R.drawable.ic_r_mood)
