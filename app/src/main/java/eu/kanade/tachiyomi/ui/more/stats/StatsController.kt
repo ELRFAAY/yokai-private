@@ -79,6 +79,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
             handleGeneralStats(pre)
             handleHero(pre.week)
             handleExtraSections()
+            handleBadges()
             if (mangaDistinct.isNotEmpty()) {
                 binding.viewDetailLayout.setOnClickListener {
                     router.pushController(StatsDetailsController().withFadeTransaction())
@@ -405,6 +406,36 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
             } catch (e: Exception) {
                 Logger.e(e) { "Failed to build R stats sections" }
                 binding.rExtraStats.isVisible = false
+            }
+        }
+    }
+
+    private var badgesView: RBadgesView? = null
+
+    /** R: the badges card (under the rank card). The data comes from the whole history, so restored backups unlock at once. */
+    private fun handleBadges() {
+        val ctx = activity ?: return
+        val box = binding.statsScrollView.getChildAt(0) as? android.widget.LinearLayout ?: return
+        badgesView?.let { box.removeView(it) }
+        badgesView = null
+        if (!prefs.rBadges().get()) return
+        viewScope.launch {
+            try {
+                val data = rData ?: withContext(Dispatchers.IO) { presenter.getRData() }.also { rData = it }
+                if (view == null) return@launch
+                badgesView?.let { box.removeView(it) }
+                val v = RBadgesView(ctx, prefs, data) { }
+                badgesView = v
+                box.addView(
+                    v,
+                    minOf(3, box.childCount),
+                    android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                        val d = ctx.resources.displayMetrics.density
+                        setMargins((12 * d).toInt(), (6 * d).toInt(), (12 * d).toInt(), (6 * d).toInt())
+                    },
+                )
+            } catch (e: Exception) {
+                Logger.e(e) { "Failed to build the badges card" }
             }
         }
     }

@@ -321,6 +321,8 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     fun rDragonXpBonus() = preferenceStore.getInt("r_dragon_xp_bonus", 0)
     fun rXpCounter() = preferenceStore.getBoolean("r_xp_counter", true)
     fun rHammerMode() = preferenceStore.getBoolean("r_hammer_mode", false)
+    fun rBadgesClaimed() = preferenceStore.getString("r_badges_claimed", "") // ids of the badges whose xp was collected, comma separated
+    fun rBadges() = preferenceStore.getBoolean("r_badges", true) // achievement badges card on the profile
     fun rRankCard() = preferenceStore.getBoolean("r_rank_card", true) // compact green rank card on top of the overflow menu
     fun rDragonOutfit() = preferenceStore.getString("r_dragon_outfit", "") // costume name (r_avc_<name>) used as the rank-card avatar, "" = stage portrait
     fun rDragonFloat() = preferenceStore.getBoolean("r_dragon_float", true)

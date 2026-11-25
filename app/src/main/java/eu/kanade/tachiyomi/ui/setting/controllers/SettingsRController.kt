@@ -352,6 +352,14 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rBadges())
+                title = "الأوسمة"
+                rIcon(R.drawable.ic_r_hotel)
+                summary = "في الملف الشخصي: أوسمة للشباتر والساعات والأيام المتتالية. كل وسام بياخد XP تجمعه بإيدك (أو زرار جمع الكل)، " +
+                    "وبتتفتح من تاريخ قراءتك كله، فنسخة قديمة مسترجعة تلاقي أوسمتها جاهزة. عند الإيقاف: تختفي."
+            }
+
+            switchPreference {
                 bindTo(preferences.rRankCard())
                 title = "بطاقة الرتبة في القائمة"
                 rIcon(R.drawable.ic_r_hotel)
