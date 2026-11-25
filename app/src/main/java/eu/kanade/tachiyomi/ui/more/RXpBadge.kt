@@ -36,8 +36,16 @@ object RXpBadge {
         else -> Tier(STAR, 0xFFFFB300.toInt())
     }
 
-    fun drawable(level: Int): Drawable = BadgeDrawable(tier(level))
-    fun coin(): Drawable = CoinDrawable()
+    /** The cut + recoloured diamond of the level (r_xpb_1..12, gold at 12); falls back to the code-drawn shape. */
+    fun drawable(context: android.content.Context, level: Int): Drawable {
+        val id = context.resources.getIdentifier("r_xpb_${level.coerceIn(1, 12)}", "drawable", context.packageName)
+        return (if (id != 0) androidx.core.content.ContextCompat.getDrawable(context, id) else null) ?: BadgeDrawable(tier(level))
+    }
+
+    fun coin(context: android.content.Context): Drawable {
+        val id = context.resources.getIdentifier("r_coin_gold", "drawable", context.packageName)
+        return (if (id != 0) androidx.core.content.ContextCompat.getDrawable(context, id) else null) ?: CoinDrawable()
+    }
 
     private fun lighten(c: Int, f: Float): Int {
         val r = ((c shr 16 and 0xFF) + (255 - (c shr 16 and 0xFF)) * f).toInt()

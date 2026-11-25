@@ -20,7 +20,7 @@ class RGoldXpRow(context: Context, xp: Long, textColor: Int, small: Boolean = fa
         gravity = Gravity.CENTER_VERTICAL
         val d = resources.displayMetrics.density
         val size = ((if (small) 18 else 26) * d).toInt()
-        addView(ImageView(context).apply { setImageDrawable(RXpBadge.coin()) }, LayoutParams(size, size))
+        addView(ImageView(context).apply { setImageDrawable(RXpBadge.coin(context)) }, LayoutParams(size, size))
         val prefs = uy.kohesive.injekt.Injekt.get<eu.kanade.tachiyomi.data.preference.PreferencesHelper>()
         val gold = RDragonLevel.goldBalance(prefs)
         val toNext = 1000L - xp % 1000L

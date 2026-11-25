@@ -53,7 +53,7 @@ class RRankCardView(context: Context) : LinearLayout(context) {
 
         val col = LinearLayout(context).apply { orientation = VERTICAL }
         val head = LinearLayout(context).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        head.addView(ImageView(context).apply { setImageDrawable(RXpBadge.drawable(info.level)) }, LayoutParams(26.dpToPx, 26.dpToPx))
+        head.addView(ImageView(context).apply { setImageDrawable(RXpBadge.drawable(context, info.level)) }, LayoutParams(26.dpToPx, 26.dpToPx))
         head.addView(
             TextView(context).apply {
                 text = "مستوى ${info.level}"
