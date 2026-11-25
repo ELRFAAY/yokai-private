@@ -14,12 +14,12 @@ object RXp {
     private const val SESSION_GAP_MS = 30 * 60 * 1000L
 
     /** What the last finished chapter gave (shown on the end card). */
-    @Volatile var lastGain: Int = 0
+    @Volatile var lastGain: Long = 0L
     @Volatile var lastMultiplier: Float = 1f
     @Volatile var lastCombo: Int = 0
 
     /** The reader sets this to animate the XP counter (gain, total xp after it); called on the main thread. */
-    @Volatile var onGain: ((Int, Long) -> Unit)? = null
+    @Volatile var onGain: ((Long, Long) -> Unit)? = null
 
     /** A short retro "coin" sound (two square-wave notes), synthesized, no sound file needed. */
     fun playCoin() {
@@ -64,7 +64,13 @@ object RXp {
     }
 
     /** Doubles with every chapter of the session: 1st x1 (10 XP), 2nd x2 (20), 3rd x4 (40), 4th x8 (80)... capped at x1024. */
-    fun multiplier(count: Int): Float = (1L shl (count - 1).coerceIn(0, 10)).toFloat()
+    fun multiplier(count: Int): Float = (1L shl (count - 1).coerceIn(0, MAX_DOUBLINGS)).toFloat()
+
+    /** x2 per chapter with no practical limit: 2^58 x 10 XP is the biggest value that still fits a Long. */
+    private const val MAX_DOUBLINGS = 58
+
+    /** XP of the [count]-th chapter of a session: 10, 20, 40, 80 ... (Long). */
+    fun gainFor(count: Int): Long = RDragonLevel.XP_PER_CHAPTER.toLong() shl (count - 1).coerceIn(0, MAX_DOUBLINGS)
 
     /** Call once when a chapter becomes read (it was not read before). Returns the xp gained. */
     fun onChapterRead(context: Context, prefs: PreferencesHelper = Injekt.get()): Int {
@@ -73,16 +79,15 @@ object RXp {
         val last = sp.getLong("last", 0L)
         val count = (if (now - last <= SESSION_GAP_MS) sp.getInt("count", 0) else 0) + 1
         val mult = multiplier(count)
-        val gain = (RDragonLevel.XP_PER_CHAPTER * mult).toInt()
+        val gain = gainFor(count)
         val extra = gain - RDragonLevel.XP_PER_CHAPTER
         sp.edit().putLong("last", now).putInt("count", count).apply()
-        prefs.rDragonXpBonus().set(prefs.rDragonXpBonus().get() + extra)
-        prefs.rDragonXp().set(prefs.rDragonXp().get() + gain)
+        RDragonLevel.addXp(prefs, gain, extra)
         lastGain = gain
         lastMultiplier = mult
         lastCombo = count
         onGain?.let { cb ->
-            val total = prefs.rDragonXp().get().toLong()
+            val total = RDragonLevel.totalXp(prefs)
             android.os.Handler(android.os.Looper.getMainLooper()).post { cb(gain, total) }
         }
         return gain

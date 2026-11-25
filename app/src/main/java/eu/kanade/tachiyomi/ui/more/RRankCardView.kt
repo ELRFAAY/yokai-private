@@ -30,7 +30,7 @@ class RRankCardView(context: Context) : LinearLayout(context) {
         background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(0xFF1F4D2E.toInt(), 0xFF2E7D45.toInt())).apply {
             cornerRadius = 14.dpToPx.toFloat()
         }
-        val xp = prefs.rDragonXp().get().toLong()
+        val xp = RDragonLevel.totalXp(prefs)
         val info = RDragonLevel.info(xp)
 
         val avatar = ImageView(context).apply {
@@ -62,6 +62,7 @@ class RRankCardView(context: Context) : LinearLayout(context) {
             RXpBar(context, Color.WHITE).apply { bind(info, animate = false) },
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { topMargin = 6.dpToPx },
         )
+        col.addView(RGoldXpRow(context, xp, Color.WHITE, small = true), LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { topMargin = 4.dpToPx })
         addView(col, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = 12.dpToPx })
     }
 

@@ -116,10 +116,10 @@ class RXpCounterView(private val activity: Activity) : LinearLayout(activity) {
         elevation = 12 * density
     }
 
-    private fun fmt(v: Long) = String.format(Locale.US, "%,d XP", v)
+    private fun fmt(v: Long) = eu.kanade.tachiyomi.util.RDragonLevel.compact(v) + " XP"
 
     /** [total] = xp after the gain. */
-    fun showGain(total: Long, gain: Int) {
+    fun showGain(total: Long, gain: Long) {
         handler.removeCallbacks(hide)
         label.text = fmt(total - gain)
         visibility = VISIBLE
@@ -173,9 +173,9 @@ class RXpCounterView(private val activity: Activity) : LinearLayout(activity) {
                         icon.animate().scaleX(1.35f).scaleY(1.35f).setDuration(110L).withEndAction {
                             icon.animate().scaleX(1f).scaleY(1f).setDuration(140L).start()
                         }.start()
-                        ValueAnimator.ofInt(0, gain).apply {
+                        ValueAnimator.ofFloat(0f, 1f).apply {
                             duration = 550L
-                            addUpdateListener { v -> label.text = fmt(total - gain + (v.animatedValue as Int)) }
+                            addUpdateListener { v -> label.text = fmt(total - gain + (gain * (v.animatedValue as Float)).toLong()) }
                             start()
                         }
                         handler.postDelayed(hide, 3200L)

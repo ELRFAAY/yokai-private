@@ -34,6 +34,35 @@ object RDragonLevel {
         return Info(level, xp, STARTS[level - 1], STARTS.getOrNull(level))
     }
 
+    // ---- unlimited XP (Long) + gold XP: every 1000 XP is one gold XP; the XP itself is never spent, gold is just 1000-step count ----
+    private fun migrate(prefs: eu.kanade.tachiyomi.data.preference.PreferencesHelper) {
+        if (prefs.rDragonXpL().get() == 0L) prefs.rDragonXp().get().takeIf { it > 0 }?.let { prefs.rDragonXpL().set(it.toLong()) }
+        if (prefs.rDragonXpBonusL().get() == 0L) prefs.rDragonXpBonus().get().takeIf { it > 0 }?.let { prefs.rDragonXpBonusL().set(it.toLong()) }
+    }
+
+    fun totalXp(prefs: eu.kanade.tachiyomi.data.preference.PreferencesHelper): Long { migrate(prefs); return prefs.rDragonXpL().get() }
+    fun bonusXp(prefs: eu.kanade.tachiyomi.data.preference.PreferencesHelper): Long { migrate(prefs); return prefs.rDragonXpBonusL().get() }
+    fun setTotalXp(prefs: eu.kanade.tachiyomi.data.preference.PreferencesHelper, v: Long) { prefs.rDragonXpL().set(v) }
+
+    /** Adds [gain] to the total and [extra] (the part beyond the plain chapter XP) to the bonus. */
+    fun addXp(prefs: eu.kanade.tachiyomi.data.preference.PreferencesHelper, gain: Long, extra: Long = gain) {
+        migrate(prefs)
+        prefs.rDragonXpBonusL().set(prefs.rDragonXpBonusL().get() + extra)
+        prefs.rDragonXpL().set(prefs.rDragonXpL().get() + gain)
+    }
+
+    fun gold(xp: Long): Long = xp / 1000L
+
+    /** 999 -> "999", 12345 -> "12.3K", then M, B, T, Qa, Qi, Sx, Sp, Oc (so a huge combo still fits a small label). */
+    fun compact(v: Long): String {
+        if (v < 10_000L) return String.format(java.util.Locale.US, "%,d", v)
+        val units = arrayOf("K", "M", "B", "T", "Qa", "Qi")
+        var d = v.toDouble()
+        var i = -1
+        while (d >= 1000.0 && i < units.lastIndex) { d /= 1000.0; i++ }
+        return String.format(java.util.Locale.US, if (d >= 100) "%.0f%s" else if (d >= 10) "%.1f%s" else "%.2f%s", d, units[i])
+    }
+
     /** How much bigger the floating dragon is at a level: 0.80 at level 1, 1.15 at level 12 (smooth). */
     fun sizeFactor(level: Int): Float = 0.80f + (level - 1) * (0.35f / 11f)
 }

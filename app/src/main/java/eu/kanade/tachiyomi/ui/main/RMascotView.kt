@@ -77,7 +77,7 @@ class RMascotView(context: Context) : View(context) {
     private fun refreshSize() {
         // the dragon grows with reading: x0.80 at level 1 up to x1.15 at level 12 (RDragonLevel)
         half = prefs.rDragonSize().get().coerceIn(40, 160) / 2f * density *
-            eu.kanade.tachiyomi.util.RDragonLevel.sizeFactor(eu.kanade.tachiyomi.util.RDragonLevel.info(prefs.rDragonXp().get().toLong()).level)
+            eu.kanade.tachiyomi.util.RDragonLevel.sizeFactor(eu.kanade.tachiyomi.util.RDragonLevel.info(eu.kanade.tachiyomi.util.RDragonLevel.totalXp(prefs)).level)
     }
 
     /** Extra height of the current costume above the normal dragon (tall hats): the speech bubble sits above it. */
@@ -780,7 +780,7 @@ class RMascotView(context: Context) : View(context) {
      */
     /** R: when the reading level went up since the last time we looked, play the egg evolution once. */
     private fun checkEvolution() {
-        val level = eu.kanade.tachiyomi.util.RDragonLevel.info(prefs.rDragonXp().get().toLong()).level
+        val level = eu.kanade.tachiyomi.util.RDragonLevel.info(eu.kanade.tachiyomi.util.RDragonLevel.totalXp(prefs)).level
         val seen = prefs.rDragonSeenLevel().get()
         prefs.rDragonSeenLevel().set(level)
         if (seen <= 0 || level <= seen || !prefs.rMascotEvolve().get()) return
@@ -811,7 +811,7 @@ class RMascotView(context: Context) : View(context) {
             lastStatsCheckAt = now
             Thread {
                 val d = runCatching { eu.kanade.tachiyomi.ui.more.stats.StatsPresenter().getRData() }.getOrNull() ?: return@Thread
-                prefs.rDragonXp().set(eu.kanade.tachiyomi.util.RDragonLevel.xp(d.totalChapters, d.totalReadMs, prefs.rDragonXpBonus().get().toLong()).coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+                eu.kanade.tachiyomi.util.RDragonLevel.setTotalXp(prefs, eu.kanade.tachiyomi.util.RDragonLevel.xp(d.totalChapters, d.totalReadMs, eu.kanade.tachiyomi.util.RDragonLevel.bonusXp(prefs)))
                 post { onStats(d.streakNow, d.weekChapters); checkEvolution() }
             }.start()
         }

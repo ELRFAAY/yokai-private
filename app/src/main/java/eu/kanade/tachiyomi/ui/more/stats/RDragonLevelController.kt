@@ -97,9 +97,9 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
         root.addView(c)
         root.addView(dress)
         showTab(startTab)
-        val xp = RDragonLevel.xp(d.totalChapters, d.totalReadMs, prefs.rDragonXpBonus().get().toLong())
+        val xp = RDragonLevel.xp(d.totalChapters, d.totalReadMs, RDragonLevel.bonusXp(prefs))
         val info = RDragonLevel.info(xp)
-        prefs.rDragonXp().set(xp.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+        RDragonLevel.setTotalXp(prefs, xp)
 
         val green = 0xFF2E7D32.toInt()
         val greenDark = 0xFF14341A.toInt()
@@ -157,6 +157,7 @@ class RDragonLevelController : BaseLegacyController<RDragonLevelControllerBindin
         val xpBar = eu.kanade.tachiyomi.ui.more.RXpBar(ctx, textColor)
         c.addView(xpBar, lp(MATCH, WRAP, 10, 6))
         xpBar.bind(info)
+        c.addView(eu.kanade.tachiyomi.ui.more.RGoldXpRow(ctx, info.xp, textColor), lp(MATCH, WRAP, 10, 8))
         val next = info.nextAt
         c.addView(
             txt(

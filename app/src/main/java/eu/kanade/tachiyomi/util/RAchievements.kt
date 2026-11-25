@@ -68,10 +68,7 @@ object RAchievements {
 
     fun claimed(prefs: PreferencesHelper = Injekt.get()): Set<String> = prefs.rBadgesClaimed().get()
 
-    private fun addXp(prefs: PreferencesHelper, xp: Int) {
-        prefs.rDragonXpBonus().set(prefs.rDragonXpBonus().get() + xp)
-        prefs.rDragonXp().set(prefs.rDragonXp().get() + xp)
-    }
+    private fun addXp(prefs: PreferencesHelper, xp: Int) = RDragonLevel.addXp(prefs, xp.toLong())
 
     /** Collects every unlocked, not yet collected badge. Returns (how many badges, how much XP). */
     fun claimAll(d: RStatsData, prefs: PreferencesHelper = Injekt.get()): Pair<Int, Int> {
@@ -116,8 +113,7 @@ object RChest {
             else -> Random.nextInt(500, 801)
         }
         prefs.rChestWeek().set(week())
-        prefs.rDragonXpBonus().set(prefs.rDragonXpBonus().get() + xp)
-        prefs.rDragonXp().set(prefs.rDragonXp().get() + xp)
+        RDragonLevel.addXp(prefs, xp.toLong())
         return xp
     }
 }

@@ -370,7 +370,7 @@ private fun ReadTimeCard(readMillis: () -> Long) {
             if (gain > 0) {
                 val mult = eu.kanade.tachiyomi.util.RXp.lastMultiplier
                 Text(
-                    text = "+$gain XP" + if (mult > 1f) "  (كومبو ×${if (mult % 1f == 0f) mult.toInt().toString() else mult.toString()} · شبتر ${eu.kanade.tachiyomi.util.RXp.lastCombo})" else "",
+                    text = "+${eu.kanade.tachiyomi.util.RDragonLevel.compact(gain)} XP" + if (mult > 1f) "  (كومبو ×${eu.kanade.tachiyomi.util.RDragonLevel.compact(1L shl (eu.kanade.tachiyomi.util.RXp.lastCombo - 1).coerceIn(0, 58))} · شبتر ${eu.kanade.tachiyomi.util.RXp.lastCombo})" else "",
                     style = MaterialTheme.typography.bodyMedium,
                     color = androidx.compose.ui.graphics.Color(0xFF8BC34A),
                 )

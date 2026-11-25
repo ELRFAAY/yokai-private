@@ -545,7 +545,7 @@ object RProfileExtras {
         p.shader = LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), 0xFF1F4D2E.toInt(), 0xFF2E7D45.toInt(), Shader.TileMode.CLAMP)
         cv.drawRoundRect(0f, 0f, w.toFloat(), h.toFloat(), 48f, 48f, p)
         p.shader = null
-        val info = RDragonLevel.info(prefs.rDragonXp().get().toLong())
+        val info = RDragonLevel.info(RDragonLevel.totalXp(prefs))
         // avatar
         val pic = prefs.rProfileAvatar().get()
         val avatar = (if (pic.isNotBlank() && File(pic).exists()) runCatching { android.graphics.BitmapFactory.decodeFile(pic) }.getOrNull() else null)
@@ -580,7 +580,7 @@ object RProfileExtras {
             "${d.totalChapters}" to "شابتر",
             "${d.totalReadMs / 3_600_000L}" to "ساعة",
             "${d.streakBest}" to "أطول سلسلة",
-            "${RAchievements.all.count { RAchievements.unlocked(it, d) }}" to "إنجاز",
+            RDragonLevel.compact(RDragonLevel.gold(info.xp)) to "ذهبية",
         )
         stats.forEachIndexed { i, (v, label) ->
             val cx = 60f + 120f + i * 250f
