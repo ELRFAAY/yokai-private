@@ -83,9 +83,9 @@ class ReaderGeneralView @JvmOverloads constructor(context: Context, attrs: Attri
 
         // R: tools / bar options
         val hideDelays = listOf(0, 3, 5, 8)
-        bindChoices(
-            binding.rAutohide,
-            listOf("أبدًا", "٣ ث", "٥ ث", "٨ ث"),
+        RChoiceRow.bind(
+            context, binding.rAutohide, RChoiceRow.CLOCK, hideDelays,
+            listOf("أبدًا", "٣ ثواني", "٥ ثواني", "٨ ثواني"),
             hideDelays.indexOf(preferences.rAutoHideTools().get()).coerceAtLeast(0),
         ) { preferences.rAutoHideTools().set(hideDelays[it]) }
         binding.rClockBattery.bindToPreference(preferences.rClockBattery())
@@ -96,20 +96,20 @@ class ReaderGeneralView @JvmOverloads constructor(context: Context, attrs: Attri
         // R: tap / hold to scroll (same prefs as Settings > R > القارئ)
         binding.rTapScroll.bindToPreference(preferences.rTapScroll())
         binding.rHoldScroll.bindToPreference(preferences.rHoldScroll())
-        bindChoices(
-            binding.rTapSide,
+        RChoiceRow.bind(
+            context, binding.rTapSide, RChoiceRow.SIDE, listOf(0, 1, 2),
             listOf("اليمين ينزّل", "اليسار ينزّل", "الاتنين ينزّلوا"),
             preferences.rTapScrollSide().get().coerceIn(0, 2),
         ) { preferences.rTapScrollSide().set(it) }
         val jumps = listOf(50, 70, 85, 100)
-        bindChoices(
-            binding.rTapJump,
-            jumps.map { "$it%" },
+        RChoiceRow.bind(
+            context, binding.rTapJump, RChoiceRow.JUMP, jumps,
+            jumps.map { "$it% من الشاشة" },
             jumps.indexOf(preferences.rTapJump().get()).coerceAtLeast(0),
         ) { preferences.rTapJump().set(jumps[it]) }
         val speeds = listOf(5, 10, 15, 25)
-        bindChoices(
-            binding.rHoldSpeed,
+        RChoiceRow.bind(
+            context, binding.rHoldSpeed, RChoiceRow.SPEED, listOf(1, 2, 3, 4),
             listOf("بطيئة", "عادية", "سريعة", "أسرع"),
             speeds.indexOf(preferences.rHoldScrollSpeed().get()).coerceAtLeast(0),
         ) { preferences.rHoldScrollSpeed().set(speeds[it]) }
