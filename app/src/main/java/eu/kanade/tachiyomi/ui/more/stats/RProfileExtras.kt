@@ -130,15 +130,26 @@ object RProfileExtras {
 
     // ---- the cobra wearing the shop outfit ----
     private fun cobraCard(ctx: Context, prefs: PreferencesHelper): View? {
-        val pic = RShop.equippedCobraPic(prefs)
-        val rid = if (pic.isEmpty()) 0 else ctx.resources.getIdentifier(pic, "drawable", ctx.packageName)
+        // power-up stage by dragon level (1-2, 3-5, 6-8, 9-10, 11-12); an equipped shop outfit replaces the stage picture
+        val level = RDragonLevel.info(RDragonLevel.totalXp(prefs)).level
+        val stage = when {
+            level <= 2 -> 0
+            level <= 5 -> 1
+            level <= 8 -> 2
+            level <= 10 -> 3
+            else -> 4
+        }
+        val outfit = RShop.equippedCobraPic(prefs)
+        val name = if (outfit.isNotEmpty()) outfit else "r_cobra_pow_$stage"
+        val rid = ctx.resources.getIdentifier(name, "drawable", ctx.packageName)
         if (rid == 0) return null
         val c = card(ctx)
         c.addView(title(ctx, "🐍 الكوبرا بتاعتك"))
         c.addView(
-            ImageView(ctx).apply { setImageResource(rid) },
-            LinearLayout.LayoutParams(dp(ctx, 170f), dp(ctx, 190f)).apply { gravity = Gravity.CENTER_HORIZONTAL },
+            ImageView(ctx).apply { setImageResource(rid); scaleType = ImageView.ScaleType.FIT_CENTER },
+            LinearLayout.LayoutParams(dp(ctx, 200f), dp(ctx, 240f)).apply { gravity = Gravity.CENTER_HORIZONTAL },
         )
+        c.addView(small(ctx, if (outfit.isNotEmpty()) "لابسة حاجة من الشوب" else "مرحلة ${stage + 1} من 5 (بتكبر مع مستوى التنين)").apply { gravity = Gravity.CENTER_HORIZONTAL })
         return c
     }
 
