@@ -24,6 +24,7 @@ import eu.kanade.tachiyomi.util.RAchievements
 import eu.kanade.tachiyomi.util.RChest
 import eu.kanade.tachiyomi.util.RDragonLevel
 import eu.kanade.tachiyomi.util.RReadLog
+import eu.kanade.tachiyomi.util.RShop
 import eu.kanade.tachiyomi.util.rMangaKey
 import eu.kanade.tachiyomi.util.storage.getUriCompat
 import yokai.util.coil.loadManga
@@ -121,9 +122,24 @@ object RProfileExtras {
         ach.addView(chestCard(ctx, prefs, ::rebuild))
         ach.addView(badgesCard(ctx, d, prefs, ::rebuild))
         ach.addView(recordsCard(ctx, d))
+        cobraCard(ctx, prefs)?.let { root.addView(it) }
         root.addView(calendarCard(ctx, d))
         root.addView(favouritesCard(ctx, library, prefs, openManga, ::rebuild))
         root.addView(shareCard(ctx, d, prefs))
+    }
+
+    // ---- the cobra wearing the shop outfit ----
+    private fun cobraCard(ctx: Context, prefs: PreferencesHelper): View? {
+        val pic = RShop.equippedCobraPic(prefs)
+        val rid = if (pic.isEmpty()) 0 else ctx.resources.getIdentifier(pic, "drawable", ctx.packageName)
+        if (rid == 0) return null
+        val c = card(ctx)
+        c.addView(title(ctx, "🐍 الكوبرا بتاعتك"))
+        c.addView(
+            ImageView(ctx).apply { setImageResource(rid) },
+            LinearLayout.LayoutParams(dp(ctx, 170f), dp(ctx, 190f)).apply { gravity = Gravity.CENTER_HORIZONTAL },
+        )
+        return c
     }
 
     // ---- daily chest (7-day cycle) ----

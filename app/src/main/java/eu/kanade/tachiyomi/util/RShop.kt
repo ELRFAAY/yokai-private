@@ -12,11 +12,12 @@ object RShop {
     enum class Group(val label: String) {
         BOOST("⚡ مساعدات"),
         FRAME("🖼️ إطارات الملف الشخصي"),
+        COBRA("🐍 اكسسوارات الكوبرا"),
         TITLE("🏷️ ألقاب"),
         COUNTER("🪙 ثيمات عداد القراءة"),
     }
 
-    data class Item(val id: String, val group: Group, val name: String, val desc: String, val price: Long, val color: Int = 0)
+    data class Item(val id: String, val group: Group, val name: String, val desc: String, val price: Long, val color: Int = 0, val pic: String = "")
 
     val items = listOf(
         Item("boost", Group.BOOST, "مضاعف XP ساعة", "كل XP تاخده في الساعة الجاية يتضاعف ×2.", 3),
@@ -26,6 +27,13 @@ object RShop {
         Item("frame_gold", Group.FRAME, "إطار ذهبي", "إطار ذهبي حوالين بطاقة المستوى.", 8, 0xFFFFC53D.toInt()),
         Item("frame_violet", Group.FRAME, "إطار بنفسجي", "إطار بنفسجي حوالين بطاقة المستوى.", 8, 0xFFB388FF.toInt()),
         Item("frame_ruby", Group.FRAME, "إطار ياقوتي", "إطار أحمر حوالين بطاقة المستوى.", 8, 0xFFFF5252.toInt()),
+        Item("cobra_viking", Group.COBRA, "خوذة فايكنج", "الكوبرا بتلبس خوذة فايكنج.", 10, pic = "r_cobra_acc_viking"),
+        Item("cobra_detective", Group.COBRA, "قبعة المحقق", "الكوبرا بتلبس قبعة شيرلوك.", 10, pic = "r_cobra_acc_detective"),
+        Item("cobra_monocle", Group.COBRA, "مونوكل", "نظارة أحادية بسلسلة.", 10, pic = "r_cobra_acc_monocle"),
+        Item("cobra_fedora", Group.COBRA, "قبعة فيدورا", "قبعة سودا أنيقة.", 10, pic = "r_cobra_acc_fedora"),
+        Item("cobra_cape", Group.COBRA, "كاب أحمر", "كاب البطل الأحمر.", 10, pic = "r_cobra_acc_cape"),
+        Item("cobra_propeller", Group.COBRA, "طاقية المروحة", "طاقية ملونة بمروحة.", 10, pic = "r_cobra_acc_propeller"),
+        Item("cobra_pearls", Group.COBRA, "عقد لؤلؤ", "عقد لؤلؤ حوالين الرقبة.", 10, pic = "r_cobra_acc_pearls"),
         Item("title_night", Group.TITLE, "قارئ الليل", "لقب يظهر تحت المستوى.", 6),
         Item("title_hunter", Group.TITLE, "صائد الشباتر", "لقب يظهر تحت المستوى.", 6),
         Item("title_legend", Group.TITLE, "تنين الأسطورة", "لقب يظهر تحت المستوى.", 6),
@@ -45,6 +53,7 @@ object RShop {
     private fun equipPref(prefs: PreferencesHelper, g: Group) = when (g) {
         Group.FRAME -> prefs.rShopFrame()
         Group.TITLE -> prefs.rShopTitle()
+        Group.COBRA -> prefs.rShopCobra()
         else -> prefs.rShopCounter()
     }
 
@@ -55,6 +64,9 @@ object RShop {
 
     /** Equipped item's colour for a group (0 = none). */
     fun equippedColor(prefs: PreferencesHelper, g: Group): Int = item(equipPref(prefs, g).get())?.color ?: 0
+
+    /** Drawable name of the equipped cobra outfit picture ("" = none). */
+    fun equippedCobraPic(prefs: PreferencesHelper): String = item(prefs.rShopCobra().get())?.pic ?: ""
 
     fun equippedTitle(prefs: PreferencesHelper): String = item(prefs.rShopTitle().get())?.name ?: ""
 

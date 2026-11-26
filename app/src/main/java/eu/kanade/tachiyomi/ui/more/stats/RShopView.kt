@@ -72,7 +72,15 @@ object RShopView {
             )
             for (it in RShop.items.filter { i -> i.group == g }) {
                 val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-                if (it.color != 0) {
+                if (it.pic.isNotEmpty()) {
+                    val rid = ctx.resources.getIdentifier(it.pic, "drawable", ctx.packageName)
+                    if (rid != 0) {
+                        row.addView(
+                            ImageView(ctx).apply { setImageResource(rid); scaleType = ImageView.ScaleType.FIT_CENTER },
+                            LinearLayout.LayoutParams(dp(ctx, 64f), dp(ctx, 72f)).apply { marginEnd = dp(ctx, 8f) },
+                        )
+                    }
+                } else if (it.color != 0) {
                     row.addView(
                         android.view.View(ctx).apply {
                             background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(it.color) }

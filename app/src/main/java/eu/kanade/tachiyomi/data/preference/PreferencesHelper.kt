@@ -296,6 +296,7 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     fun rShopOwned() = preferenceStore.getStringSet("r_shop_owned", emptySet()) // bought cosmetic item ids
     fun rShopFrame() = preferenceStore.getString("r_shop_frame", "") // equipped profile frame id
     fun rShopTitle() = preferenceStore.getString("r_shop_title", "") // equipped title id
+    fun rShopCobra() = preferenceStore.getString("r_shop_cobra", "") // equipped cobra outfit id
     fun rShopCounter() = preferenceStore.getString("r_shop_counter", "") // equipped reader counter theme id
     fun rBoostUntil() = preferenceStore.getLong("r_boost_until", 0L) // XP x2 booster active until (ms)
     fun rComboShields() = preferenceStore.getInt("r_combo_shields", 0) // combo protections in the bag
