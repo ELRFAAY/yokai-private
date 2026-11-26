@@ -16,3 +16,13 @@ for i in range(11):
     res = np.dstack([rgb2, al])
     Image.fromarray((res * 255).astype(np.uint8), 'RGBA').save(D + f'r_xpg_{i}.webp', quality=95, method=6)
 print('ok')
+
+# silver version of the same animation (r_xps_0..10) for the XP count in the profile wallet
+for i in range(11):
+    im = Image.open(D + f'r_xp_{i}.webp').convert('RGBA')
+    a = np.asarray(im).astype(np.float32) / 255
+    lum = (a[..., 0] * 0.3 + a[..., 1] * 0.59 + a[..., 2] * 0.11)
+    v = np.clip(lum * 1.05 + 0.20, 0, 1)
+    rgb = np.dstack([v * 0.93, v * 0.96, v * 1.0])
+    Image.fromarray((np.dstack([rgb, a[..., 3]]) * 255).astype(np.uint8), 'RGBA').save(D + f'r_xps_{i}.webp', quality=95, method=6)
+print('silver ok')
