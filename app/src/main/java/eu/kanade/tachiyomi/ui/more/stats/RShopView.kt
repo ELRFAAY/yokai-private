@@ -40,7 +40,7 @@ object RShopView {
                 setTextColor(0xFFFFD866.toInt())
                 textSize = 18f
                 setTypeface(typeface, Typeface.BOLD)
-                textDirection = TEXT_DIRECTION_LTR
+                textDirection = android.view.View.TEXT_DIRECTION_LTR
             },
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginStart = dp(ctx, 8f) },
         )
