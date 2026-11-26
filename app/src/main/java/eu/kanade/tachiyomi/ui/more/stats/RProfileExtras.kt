@@ -125,25 +125,49 @@ object RProfileExtras {
         root.addView(shareCard(ctx, d, prefs))
     }
 
-    // ---- weekly chest ----
+    // ---- daily chest (7-day cycle) ----
     private fun chestCard(ctx: Context, prefs: PreferencesHelper, rebuild: () -> Unit): View {
         val c = card(ctx)
-        c.addView(title(ctx, "🎁 صندوق الأسبوع"))
-        val chestPic = ctx.resources.getIdentifier(if (RChest.available(prefs)) "r_badge_chest" else "r_badge_chest_open", "drawable", ctx.packageName)
+        c.addView(title(ctx, "🎁 صندوق اليوم"))
+        val avail = RChest.available(prefs)
+        val day = RChest.cycleDay(prefs)
+        val chestPic = ctx.resources.getIdentifier(if (avail) "r_badge_chest" else "r_badge_chest_open", "drawable", ctx.packageName)
         if (chestPic != 0) {
             c.addView(
                 ImageView(ctx).apply { setImageResource(chestPic) },
                 LinearLayout.LayoutParams(dp(ctx, 84f), dp(ctx, 84f)).apply { gravity = Gravity.CENTER_HORIZONTAL; bottomMargin = dp(ctx, 6f) },
             )
         }
-        if (RChest.available(prefs)) {
-            c.addView(small(ctx, "فيه XP عشوائي. تفتحه مرة كل أسبوع."))
+        // the 7 days of the cycle
+        val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; layoutDirection = View.LAYOUT_DIRECTION_LTR }
+        for (i in 1..7) {
+            val done = if (avail) i < day else i <= day
+            val today = i == day
+            row.addView(
+                TextView(ctx).apply {
+                    text = if (done) "✓" else "$i"
+                    gravity = Gravity.CENTER
+                    textSize = 13f
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    setTextColor(if (done || today) Color.WHITE else 0xFF888888.toInt())
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        cornerRadius = dp(ctx, 10f).toFloat()
+                        setColor(if (done) 0xFF2E7D45.toInt() else if (today) 0xFFE0A800.toInt() else 0x22888888)
+                    }
+                },
+                LinearLayout.LayoutParams(0, dp(ctx, 38f), 1f).apply { marginStart = dp(ctx, 2f); marginEnd = dp(ctx, 2f) },
+            )
+        }
+        c.addView(row, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(ctx, 8f) })
+        val r = RChest.range(day)
+        if (avail) {
+            c.addView(small(ctx, "اليوم $day من 7 • فيه من ${r.first} لـ ${r.last} XP. يتجدد كل يوم 12 بالليل، وتفويت يوم بيرجّعك لليوم الأول."))
             c.addView(
                 button(ctx, "افتح الصندوق") {
                     val xp = RChest.open(prefs)
                     if (xp > 0) {
                         MaterialAlertDialogBuilder(ctx)
-                            .setTitle(if (xp >= 500) "🎉 الجائزة الكبرى!" else "🎁 الصندوق اتفتح")
+                            .setTitle(if (day == 7) "🎉 صندوق اليوم السابع!" else "🎁 الصندوق اتفتح")
                             .setMessage("خدت +$xp XP")
                             .setPositiveButton("تمام", null)
                             .show()
@@ -152,7 +176,7 @@ object RProfileExtras {
                 },
             )
         } else {
-            c.addView(small(ctx, "فتحت صندوق الأسبوع ده. الصندوق الجاي الأسبوع الجاي. 😴"))
+            c.addView(small(ctx, "فتحت صندوق النهارده (اليوم $day من 7). الجاي بعد 12 بالليل. 😴"))
         }
         return c
     }

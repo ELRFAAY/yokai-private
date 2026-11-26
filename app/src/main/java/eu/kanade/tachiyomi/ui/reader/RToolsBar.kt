@@ -60,6 +60,7 @@ class RToolsBar(
     private val panelLabel = TextView(context)
     private val slider = Slider(context)
     private val batterySwitch = MaterialSwitch(context)
+    private val brightSwitch = MaterialSwitch(context)
     private val chapterTitle = TextView(context)
     private val pageCounter = TextView(context)
     private lateinit var prevButton: ImageButton
@@ -184,6 +185,12 @@ class RToolsBar(
         panel.addView(panelLabel, LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         panel.addView(slider, LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         panel.addView(batterySwitch, LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        // brightness on/off: off = the whole feature is disabled (overlay gone, phone brightness left alone)
+        brightSwitch.apply {
+            isVisible = false
+            layoutDirection = LAYOUT_DIRECTION_RTL
+        }
+        panel.addView(brightSwitch, LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         addView(
             panel,
             LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
@@ -345,8 +352,10 @@ class RToolsBar(
         panel.isVisible = true
         slider.isVisible = tool != Tool.BATTERY && tool != Tool.LOCK
         batterySwitch.isVisible = tool == Tool.BATTERY
+        brightSwitch.isVisible = tool == Tool.BRIGHTNESS
         when (tool) {
             Tool.SPEED -> {
+                slider.isEnabled = true
                 slider.valueFrom = 20f
                 slider.valueTo = 240f
                 slider.stepSize = 10f
@@ -360,8 +369,17 @@ class RToolsBar(
                 slider.stepSize = 1f
                 slider.value = prefs.customBrightnessValue().get().coerceIn(-75, 100).toFloat()
                 panelLabel.text = "السطوع ${slider.value.toInt()}"
+                brightSwitch.setOnCheckedChangeListener(null)
+                brightSwitch.isChecked = prefs.customBrightness().get()
+                slider.isEnabled = brightSwitch.isChecked
+                brightSwitch.setOnCheckedChangeListener { _, checked ->
+                    prefs.customBrightness().set(checked)
+                    slider.isEnabled = checked
+                    onInteract()
+                }
             }
             Tool.VOLUME -> {
+                slider.isEnabled = true
                 val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
                 slider.valueFrom = 0f
                 slider.valueTo = max.toFloat()

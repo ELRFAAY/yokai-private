@@ -24,18 +24,27 @@ class RGoldXpRow(context: Context, xp: Long, textColor: Int, small: Boolean = fa
         val size = ((if (small) 20 else 28) * d).toInt()
         val sp = if (small) 12.5f else 15f
 
-        fun line(icon: android.graphics.drawable.Drawable, text: String, bold: Boolean): LinearLayout = LinearLayout(context).apply {
+        // the same pill as the reader counter: dark rounded bar, coloured outline, icon + number
+        fun line(icon: android.graphics.drawable.Drawable, text: String, stroke: Int): LinearLayout = LinearLayout(context).apply {
             orientation = HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
+            val pad = (6 * d).toInt()
+            setPadding(pad, pad / 2, pad * 2, pad / 2)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = 40 * d
+                setColor(0xCC10231A.toInt())
+                setStroke((1.2f * d).toInt(), stroke)
+            }
             addView(ImageView(context).apply { setImageDrawable(icon) }, LayoutParams(size, size))
             addView(
                 TextView(context).apply {
                     this.text = text
-                    setTextColor(textColor)
+                    setTextColor(android.graphics.Color.WHITE)
                     textSize = sp
-                    if (bold) setTypeface(typeface, Typeface.BOLD)
+                    setTypeface(typeface, Typeface.BOLD)
+                    textDirection = TEXT_DIRECTION_LTR
                 },
-                LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply { marginStart = (6 * d).toInt() },
+                LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply { marginStart = (4 * d).toInt() },
             )
         }
 
@@ -47,8 +56,8 @@ class RGoldXpRow(context: Context, xp: Long, textColor: Int, small: Boolean = fa
             }
             isOneShot = false
         }
-        val xpLine = line(anim, "${RDragonLevel.compact(xp)} XP", true)
-        addView(xpLine)
+        val xpLine = line(anim, "${RDragonLevel.full(xp)} XP", 0x884ADE80.toInt())
+        addView(xpLine, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
         post { anim.start() }
 
         // 2) gold coins under it
@@ -56,8 +65,17 @@ class RGoldXpRow(context: Context, xp: Long, textColor: Int, small: Boolean = fa
         val coins = RDragonLevel.goldBalance(prefs)
         val toNext = 1000L - xp % 1000L
         addView(
-            line(RXpBadge.coin(context), "${RDragonLevel.compact(coins)} عملة ذهبية  •  فاضل $toNext XP للعملة الجاية", true),
-            LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply { topMargin = (4 * d).toInt() },
+            line(RXpBadge.coin(context), "${RDragonLevel.full(coins)} عملة", 0xAAFFC53D.toInt()),
+            LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply { topMargin = (5 * d).toInt() },
+        )
+        addView(
+            TextView(context).apply {
+                text = "فاضل $toNext XP للعملة الجاية"
+                setTextColor(textColor)
+                alpha = 0.75f
+                textSize = 11f
+            },
+            LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply { topMargin = (3 * d).toInt(); marginStart = (6 * d).toInt() },
         )
     }
 }

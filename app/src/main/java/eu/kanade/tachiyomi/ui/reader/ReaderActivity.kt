@@ -1728,9 +1728,15 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     /** R: swipe up / chapter name / "الشباتر" opens the ORIGINAL chapters sheet (the old bar), smooth, not a dialog in the middle. */
     private fun rExpandChapterSheet() {
         val sb = binding.chaptersSheet.chaptersBottomSheet.sheetBehavior ?: return
-        if (sb.state == BottomSheetBehavior.STATE_HIDDEN) sb.state = BottomSheetBehavior.STATE_COLLAPSED
-        sb.expand()
-        rPositionToolsBar()
+        if (!menuVisible) setMenuVisibility(true)
+        sb.isHideable = false
+        binding.chaptersSheet.root.post {
+            if (sb.state == BottomSheetBehavior.STATE_HIDDEN) sb.state = BottomSheetBehavior.STATE_COLLAPSED
+            binding.chaptersSheet.root.post {
+                sb.expand()
+                rPositionToolsBar()
+            }
+        }
     }
 
     @Suppress("unused")
@@ -2800,6 +2806,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
          * 0 sets system brightness and hides the overlay.
          */
         private fun setCustomBrightnessValue(value: Int) {
+            // R: the feature switched off in the tools bar = nothing is touched
+            if (!preferences.customBrightness().get() && value != 0) return
             // Calculate and set reader brightness.
             val readerBrightness = when {
                 value > 0 -> {
@@ -2823,7 +2831,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                             android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
                         )
                         android.provider.Settings.System.putInt(cr, android.provider.Settings.System.SCREEN_BRIGHTNESS, (if (value > 0) value * 255 / 100 else 1).coerceIn(1, 255))
-                        finalBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE // the system value applies
+                        // keep the window value too (1.0 = the screen's real maximum, even when the system slider range is smaller)
                     }
                 } else if (!rAskedWriteSettings) {
                     rAskedWriteSettings = true

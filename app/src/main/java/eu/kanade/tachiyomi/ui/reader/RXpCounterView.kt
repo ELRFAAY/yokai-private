@@ -19,6 +19,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.util.RXp
+import uy.kohesive.injekt.api.get
 import java.util.Locale
 
 /**
@@ -27,6 +28,9 @@ import java.util.Locale
  * finger drag. The counter hides itself a few seconds later.
  */
 class RXpCounterView(private val activity: Activity) : LinearLayout(activity) {
+    private val pill = LinearLayout(activity)
+    private val coinPill = LinearLayout(activity)
+    private val coinLabel = TextView(activity)
     private val density = resources.displayMetrics.density
     private val frames = intArrayOf(
         R.drawable.r_xp_0, R.drawable.r_xp_1, R.drawable.r_xp_2, R.drawable.r_xp_3, R.drawable.r_xp_4, R.drawable.r_xp_5,
@@ -57,23 +61,45 @@ class RXpCounterView(private val activity: Activity) : LinearLayout(activity) {
     }
 
     init {
-        orientation = HORIZONTAL
-        gravity = Gravity.CENTER_VERTICAL
+        orientation = VERTICAL
         val pad = (6 * density).toInt()
-        setPadding(pad, pad / 2, pad * 2, pad / 2)
-        background = GradientDrawable().apply {
+        pill.orientation = HORIZONTAL
+        pill.gravity = Gravity.CENTER_VERTICAL
+        pill.setPadding(pad, pad / 2, pad * 2, pad / 2)
+        pill.background = GradientDrawable().apply {
             cornerRadius = 40 * density
             setColor(0xCC10231A.toInt())
             setStroke((1.2f * density).toInt(), 0x884ADE80.toInt())
         }
+        addView(pill, LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        // gold coins bar under the XP bar
+        coinPill.orientation = HORIZONTAL
+        coinPill.gravity = Gravity.CENTER_VERTICAL
+        coinPill.setPadding(pad, pad / 2, pad * 2, pad / 2)
+        coinPill.background = GradientDrawable().apply {
+            cornerRadius = 40 * density
+            setColor(0xCC10231A.toInt())
+            setStroke((1.2f * density).toInt(), 0xAAFFC53D.toInt())
+        }
+        coinPill.addView(
+            ImageView(activity).apply { setImageDrawable(eu.kanade.tachiyomi.ui.more.RXpBadge.coin(activity)) },
+            LayoutParams((28 * density).toInt(), (28 * density).toInt()),
+        )
+        coinLabel.setTextColor(0xFFFFD866.toInt())
+        coinLabel.textSize = 14f
+        coinLabel.setTypeface(coinLabel.typeface, android.graphics.Typeface.BOLD)
+        coinLabel.textDirection = TEXT_DIRECTION_LTR
+        coinLabel.setPadding((4 * density).toInt(), 0, 0, 0)
+        coinPill.addView(coinLabel)
+        addView(coinPill, LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = (4 * density).toInt() })
         icon.setImageResource(frames[0])
-        addView(icon, LayoutParams((34 * density).toInt(), (34 * density).toInt()))
+        pill.addView(icon, LayoutParams((34 * density).toInt(), (34 * density).toInt()))
         label.setTextColor(Color.WHITE)
         label.textSize = 15f
         label.setTypeface(label.typeface, android.graphics.Typeface.BOLD)
         label.textDirection = TEXT_DIRECTION_LTR
         label.setPadding((4 * density).toInt(), 0, 0, 0)
-        addView(label)
+        pill.addView(label)
         visibility = GONE
         alpha = 0f
         // the badge follows a finger drag sideways (a spin with the finger)
@@ -109,19 +135,21 @@ class RXpCounterView(private val activity: Activity) : LinearLayout(activity) {
             this,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                 gravity = Gravity.TOP or Gravity.START
-                topMargin = top + (56 * density).toInt()
+                topMargin = top + (20 * density).toInt()
                 marginStart = (10 * density).toInt()
             },
         )
         elevation = 12 * density
     }
 
-    private fun fmt(v: Long) = eu.kanade.tachiyomi.util.RDragonLevel.compact(v) + " XP"
+    private fun fmt(v: Long) = eu.kanade.tachiyomi.util.RDragonLevel.full(v) + " XP"
 
     /** [total] = xp after the gain. */
     fun showGain(total: Long, gain: Long) {
         handler.removeCallbacks(hide)
         label.text = fmt(total - gain)
+        val prefs = uy.kohesive.injekt.Injekt.get<eu.kanade.tachiyomi.data.preference.PreferencesHelper>()
+        coinLabel.text = eu.kanade.tachiyomi.util.RDragonLevel.full(eu.kanade.tachiyomi.util.RDragonLevel.goldBalance(prefs)) + " عملة"
         visibility = VISIBLE
         animate().alpha(1f).setDuration(200L).start()
         spinning = true

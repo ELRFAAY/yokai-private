@@ -58,6 +58,9 @@ object RDragonLevel {
     fun goldBalance(prefs: eu.kanade.tachiyomi.data.preference.PreferencesHelper): Long =
         (gold(totalXp(prefs)) - prefs.rGoldSpent().get()).coerceAtLeast(0L)
 
+    /** The whole number with separators (400,000), no K/M shortening. */
+    fun full(v: Long): String = String.format(java.util.Locale.US, "%,d", v)
+
     /** 999 -> "999", 12345 -> "12.3K", then M, B, T, Qa, Qi, Sx, Sp, Oc (so a huge combo still fits a small label). */
     fun compact(v: Long): String {
         if (v < 10_000L) return String.format(java.util.Locale.US, "%,d", v)

@@ -291,6 +291,8 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     /** Mascot: small talking blips (one per letter) while a speech bubble types out; silent in silent/vibrate mode. */
     /** Mascot: tapping the little dragon turns him into a random character (knight, ninja, pirate, detective) in a cloud of smoke. */
     fun rBadgesClaimed() = preferenceStore.getStringSet("r_badges_claimed", emptySet()) // badge ids whose XP was collected
+    fun rChestDay() = preferenceStore.getString("r_chest_day", "") // yyyy-MM-dd of the last opened daily chest
+    fun rChestStreak() = preferenceStore.getInt("r_chest_streak", 0) // day 1..7 of the 7-day cycle that was opened last
     fun rChestWeek() = preferenceStore.getString("r_chest_week", "") // ISO week of the last opened weekly chest
     fun rFavManga() = preferenceStore.getString("r_fav_manga", "") // up to 3 "source|url" keys shown on the profile, "\n"-separated
     fun rSystemBrightness() = preferenceStore.getBoolean("r_system_brightness", true) // the reader brightness slider also changes the PHONE brightness (needs the "modify system settings" permission)

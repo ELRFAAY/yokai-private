@@ -5,7 +5,6 @@ import eu.kanade.tachiyomi.ui.more.stats.RStatsData
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.time.LocalDate
-import java.time.temporal.IsoFields
 import kotlin.random.Random
 
 /**
@@ -95,24 +94,42 @@ object RAchievements {
 
 /** R: one chest per calendar week (weekly login reward) with a random XP amount. */
 object RChest {
-    fun week(): String {
-        val d = LocalDate.now()
-        return "${d.get(IsoFields.WEEK_BASED_YEAR)}-W${d.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)}"
+    private fun today() = LocalDate.now().toString()
+    private fun yesterday() = LocalDate.now().minusDays(1).toString()
+
+    /** Today's chest is still closed (it renews every day at midnight, local time). */
+    fun available(prefs: PreferencesHelper = Injekt.get()) = prefs.rChestDay().get() != today()
+
+    /** Day of the 7-day cycle (1..7) that today's chest belongs to / belonged to. A missed day starts again from day 1. */
+    fun cycleDay(prefs: PreferencesHelper = Injekt.get()): Int {
+        val last = prefs.rChestDay().get()
+        val streak = prefs.rChestStreak().get().coerceIn(0, 7)
+        return when (last) {
+            today() -> streak.coerceAtLeast(1)
+            yesterday() -> if (streak >= 7) 1 else streak + 1
+            else -> 1
+        }
     }
 
-    fun available(prefs: PreferencesHelper = Injekt.get()) = prefs.rChestWeek().get() != week()
+    /** XP range for a cycle day: grows each day, day 7 is the big one. */
+    fun range(day: Int): IntRange = when (day) {
+        1 -> 20..50
+        2 -> 30..70
+        3 -> 40..90
+        4 -> 60..120
+        5 -> 80..160
+        6 -> 100..200
+        else -> 300..600
+    }
 
-    /** Rolls the reward: common 30-80, good 80-160, rare 160-300, jackpot 500-800. Returns the XP (0 if already opened this week). */
+    /** Opens today's chest. Returns the XP (0 if already opened today). */
     fun open(prefs: PreferencesHelper = Injekt.get()): Int {
         if (!available(prefs)) return 0
-        val roll = Random.nextInt(100)
-        val xp = when {
-            roll < 55 -> Random.nextInt(30, 81)
-            roll < 85 -> Random.nextInt(80, 161)
-            roll < 97 -> Random.nextInt(160, 301)
-            else -> Random.nextInt(500, 801)
-        }
-        prefs.rChestWeek().set(week())
+        val day = cycleDay(prefs)
+        val r = range(day)
+        val xp = Random.nextInt(r.first, r.last + 1)
+        prefs.rChestDay().set(today())
+        prefs.rChestStreak().set(day)
         RDragonLevel.addXp(prefs, xp.toLong())
         return xp
     }
