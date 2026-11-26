@@ -1,0 +1,50 @@
+SHOP: DRAGON ACCESSORIES MODEL SHEET + SOUND GUIDE (2026-11-27)
+Owner: Egyptian Arabic. Small dragon = التنين الصغير (the app mascot, `r_mascot_happy` look: round green body, big head, small antlers).
+
+=====================================================================
+1) ACCESSORIES MODEL SHEET (one image, give it to the image model with the small dragon sheet as REF)
+=====================================================================
+REF to attach: the small dragon front-view sheet (same character, same line style, same colours).
+
+PROMPT:
+Character accessory model sheet for the SAME small green dragon mascot in the attached reference (do not redesign the dragon: same head shape, same antlers, same big eyes, same flat 2D sticker style, thick clean dark outline, soft cel shading). Pure flat background, light grey, no shadows on the floor, no text, no watermark.
+
+Layout: a 4 x 2 grid, 8 cells, equal size, wide gaps. Each cell shows the dragon's HEAD AND UPPER BODY, front view, centred, exactly the same size and position in every cell (so the cells can be stacked as layers), wearing ONE accessory only:
+1. golden crown (sits between the antlers)
+2. round reading glasses (thin gold frame)
+3. red scarf (wrapped round the neck, one end hanging)
+4. bow tie (dark blue with white dots)
+5. wizard hat (purple with stars, antlers poke through small holes)
+6. headphones (black with green cushions)
+7. pirate eye patch + small bandana
+8. flower garland (small pink and white flowers) on the head
+
+Under the grid, a second strip of the same 8 accessories ALONE (no dragon), each on a transparent-looking flat background, same scale as when worn, so they can be cut out separately.
+
+Rules: the dragon body/face must be IDENTICAL in all cells (only the accessory changes); the accessory must not hide the eyes or the mouth (except the eye patch hiding one eye); no extra hands, no extra limbs; same light direction; high resolution; 4:3 image.
+
+How the app will use it (for me, next account): the cutouts go to `branding/mascot-models/accessories/`, the script makes transparent PNG layers named `r_acc_<name>.webp` on the SAME canvas as the dragon portrait; the shop sells them (coins), "البس" equips one; the floating dragon + profile avatar draw the layer on top. Needs the strip (accessory alone) cut on the same canvas as the worn cell, i.e. keep the position identical to the grid cell.
+
+=====================================================================
+2) SOUND: how to make it (you do this, I wire it)
+=====================================================================
+What I need: short sound files, put them in a folder and send them, I add them to `app/src/main/res/raw/` and connect them.
+
+Format: WAV, mono, 44.1 kHz, 16-bit (OGG also fine). Length 0.2-1.5 s. Loudness: peak about -3 dB, no clipping, no silence at the start. Names (lowercase, English, no spaces): 
+- r_snd_buy.wav      (shop buy: cash register / coin spill)
+- r_snd_equip.wav    (equip: soft click / sparkle)
+- r_snd_chest.wav    (open the chest: creak + sparkle)
+- r_snd_levelup.wav  (level up: short fanfare, 1-2 s)
+- r_snd_coin2.wav, r_snd_coin3.wav (alternative XP counter sounds, for the shop "sound themes")
+
+Easiest ways (pick one):
+A) jsfxr (free, in the browser, retro like the current coin): sfxr.me -> press "Pickup/coin" for buy, "Powerup" for level up, "Blip/select" for equip -> tweak -> Export .wav.
+B) AI sound effects (ElevenLabs "Sound Effects" or similar). Prompts:
+   - buy: "short retro 8-bit coin pickup sound, two quick rising notes, bright, 0.4 seconds"
+   - equip: "soft magical sparkle click, very short, 0.3 seconds"
+   - chest: "wooden treasure chest creak opening then a short sparkle, 1.2 seconds"
+   - levelup: "short 8-bit victory fanfare, 4 rising notes, 1.5 seconds"
+C) Free libraries (check the licence allows apps, CC0 is safest): freesound.org (filter CC0), kenney.nl audio packs (CC0), pixabay sound effects.
+D) Record with the phone (tap a glass, a coin on a table) then trim in Audacity (free) and export WAV mono.
+
+Licence: if the app is ever published, only use sounds you made yourself or CC0 / licensed ones (same rule as the art).
