@@ -69,7 +69,11 @@ class RXpCounterView(private val activity: Activity) : LinearLayout(activity) {
         pill.background = GradientDrawable().apply {
             cornerRadius = 40 * density
             setColor(0xCC10231A.toInt())
-            setStroke((1.2f * density).toInt(), 0x884ADE80.toInt())
+            val theme = eu.kanade.tachiyomi.util.RShop.equippedColor(
+                uy.kohesive.injekt.Injekt.get<eu.kanade.tachiyomi.data.preference.PreferencesHelper>(),
+                eu.kanade.tachiyomi.util.RShop.Group.COUNTER,
+            )
+            setStroke((if (theme != 0) 2.2f else 1.2f).times(density).toInt(), if (theme != 0) theme else 0x884ADE80.toInt())
         }
         addView(pill, LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         // gold coins bar under the XP bar

@@ -29,6 +29,9 @@ class RRankCardView(context: Context) : LinearLayout(context) {
         setPadding(12.dpToPx, 10.dpToPx, 14.dpToPx, 10.dpToPx)
         background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(0xFF1F4D2E.toInt(), 0xFF2E7D45.toInt())).apply {
             cornerRadius = 14.dpToPx.toFloat()
+            // R shop: equipped frame colours the card outline
+            val frame = eu.kanade.tachiyomi.util.RShop.equippedColor(prefs, eu.kanade.tachiyomi.util.RShop.Group.FRAME)
+            if (frame != 0) setStroke(3.dpToPx, frame)
         }
         val xp = RDragonLevel.totalXp(prefs)
         val info = RDragonLevel.info(xp)
@@ -58,6 +61,10 @@ class RRankCardView(context: Context) : LinearLayout(context) {
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         })
+        val title = eu.kanade.tachiyomi.util.RShop.equippedTitle(prefs)
+        if (title.isNotBlank()) {
+            col.addView(TextView(context).apply { text = "«$title»"; setTextColor(0xFFFFD866.toInt()); textSize = 12f })
+        }
         col.addView(
             RXpBar(context, Color.WHITE).apply { bind(info, animate = false) },
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { topMargin = 6.dpToPx },

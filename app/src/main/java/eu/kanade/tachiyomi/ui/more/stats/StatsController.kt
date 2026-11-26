@@ -52,27 +52,35 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     private var rExtras: android.widget.LinearLayout? = null
     private var rAch: android.widget.LinearLayout? = null
     private var rTabsView: android.view.View? = null
-    private val rHiddenByAch = ArrayList<android.view.View>()
+    private var rStatsBox: android.widget.LinearLayout? = null
+    private var rShop: android.widget.LinearLayout? = null
+    private var rCurTab = RHubTabs.PROFILE
 
-    /** R: the "الإنجازات" tab: hides the rest of the page (remembering what was visible) and shows only the tabs + the badges. */
-    private fun showAchievements(on: Boolean) {
-        val box = binding.statsScrollView.getChildAt(0) as? android.view.ViewGroup ?: return
-        val ach = rAch ?: return
-        if (on) {
-            if (ach.visibility == android.view.View.VISIBLE) return
-            rHiddenByAch.clear()
-            for (i in 0 until box.childCount) {
-                val v = box.getChildAt(i)
-                if (v === rTabsView || v === ach) continue
-                if (v.visibility == android.view.View.VISIBLE) { rHiddenByAch.add(v); v.visibility = android.view.View.GONE }
-            }
-            ach.visibility = android.view.View.VISIBLE
-            binding.statsScrollView.scrollTo(0, 0)
-        } else {
-            if (ach.visibility != android.view.View.VISIBLE) return
-            ach.visibility = android.view.View.GONE
-            rHiddenByAch.forEach { it.visibility = android.view.View.VISIBLE }
-            rHiddenByAch.clear()
+    /** R: profile and statistics are SEPARATE pages now: each tab shows only its own group (profile = picture/banners + rank card + calendar/favourites/share; stats = all the statistics; ach; shop). */
+    private fun showTab(tab: Int) {
+        rCurTab = tab
+        val vis = android.view.View.VISIBLE
+        val gone = android.view.View.GONE
+        val profile = tab == RHubTabs.PROFILE
+        profileView?.visibility = if (profile) vis else gone
+        rHeader?.visibility = if (profile) vis else gone
+        rExtras?.visibility = if (profile) vis else gone
+        rAch?.visibility = if (tab == RHubTabs.ACH) vis else gone
+        rShop?.visibility = if (tab == RHubTabs.SHOP) vis else gone
+        rStatsBox?.visibility = if (tab == RHubTabs.STATS) vis else gone
+        binding.statsScrollView.scrollTo(0, 0)
+    }
+
+    /** XP / coins changed: repaint the rank card in place (and the shop wallet). */
+    private fun rRepaintHeader() {
+        val ctx = activity ?: return
+        (rHeader?.parent as? android.view.ViewGroup)?.let { parent ->
+            val i = parent.indexOfChild(rHeader)
+            val fresh = eu.kanade.tachiyomi.ui.more.RRankCardView(ctx)
+            fresh.visibility = rHeader?.visibility ?: android.view.View.VISIBLE
+            parent.removeViewAt(i)
+            parent.addView(fresh, i, rHeader?.layoutParams)
+            rHeader = fresh
         }
     }
 
@@ -135,13 +143,21 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
     private fun setupHubTabs() {
         val ctx = activity ?: return
         val box = binding.statsScrollView.getChildAt(0) as? android.widget.LinearLayout ?: return
-        val start = RHubTabs.pendingTab.coerceIn(RHubTabs.PROFILE, RHubTabs.ACH)
+        val start = RHubTabs.pendingTab.takeIf { it in intArrayOf(RHubTabs.PROFILE, RHubTabs.STATS, RHubTabs.ACH, RHubTabs.SHOP) } ?: RHubTabs.PROFILE
+        // every statistics view moves into one box so the whole group can be shown / hidden at once
+        val statsBox = android.widget.LinearLayout(ctx).apply { orientation = android.widget.LinearLayout.VERTICAL }
+        val originals = (0 until box.childCount).map { box.getChildAt(it) }
+        originals.forEach { v ->
+            val lp = v.layoutParams
+            box.removeView(v)
+            statsBox.addView(v, lp)
+        }
+        box.addView(statsBox, android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT))
+        rStatsBox = statsBox
         val tabsView = RHubTabs.build(ctx, start) { tab ->
             when (tab) {
-                RHubTabs.PROFILE -> { showAchievements(false); binding.statsScrollView.smoothScrollTo(0, 0) }
-                RHubTabs.STATS -> { showAchievements(false); binding.statsScrollView.post { binding.statsScrollView.smoothScrollTo(0, binding.rExtraStats.top) } }
-                RHubTabs.ACH -> showAchievements(true)
-                else -> RHubTabs.go(router, tab, fromDragonScreen = false)
+                RHubTabs.LEVEL -> RHubTabs.go(router, tab, fromDragonScreen = false)
+                else -> showTab(tab)
             }
         }
         box.addView(tabsView, 0)
@@ -165,8 +181,12 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
         val ach = android.widget.LinearLayout(ctx).apply { orientation = android.widget.LinearLayout.VERTICAL; visibility = android.view.View.GONE }
         rAch = ach
         box.addView(ach, 3)
-        if (start == RHubTabs.ACH) binding.statsScrollView.post { showAchievements(true) }
-        if (start == RHubTabs.STATS) binding.statsScrollView.post { binding.statsScrollView.scrollTo(0, binding.rExtraStats.top) }
+        val shop = android.widget.LinearLayout(ctx).apply { orientation = android.widget.LinearLayout.VERTICAL; visibility = android.view.View.GONE }
+        rShop = shop
+        box.addView(shop, 4)
+        RShopView.build(ctx, shop, prefs) { rRepaintHeader() }
+        rCurTab = start
+        binding.statsScrollView.post { showTab(start) }
     }
 
     private fun setupProfile() {
@@ -441,14 +461,7 @@ class StatsController : BaseLegacyController<StatsControllerBinding>() {
                         ctx, ex, achBox, data, mangaDistinct.map { it.manga },
                         openManga = { m -> router.pushController(eu.kanade.tachiyomi.ui.manga.MangaDetailsController(m).withFadeTransaction()) },
                     ) {
-                        // XP changed: repaint the header card in place
-                        (rHeader?.parent as? android.view.ViewGroup)?.let { parent ->
-                            val i = parent.indexOfChild(rHeader)
-                            val fresh = eu.kanade.tachiyomi.ui.more.RRankCardView(ctx)
-                            parent.removeViewAt(i)
-                            parent.addView(fresh, i, rHeader?.layoutParams)
-                            rHeader = fresh
-                        }
+                        rRepaintHeader()
                     }
                 }
                 if (!showTiles) return@launch

@@ -293,6 +293,13 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     fun rBadgesClaimed() = preferenceStore.getStringSet("r_badges_claimed", emptySet()) // badge ids whose XP was collected
     fun rChestDay() = preferenceStore.getString("r_chest_day", "") // yyyy-MM-dd of the last opened daily chest
     fun rChestStreak() = preferenceStore.getInt("r_chest_streak", 0) // day 1..7 of the 7-day cycle that was opened last
+    fun rShopOwned() = preferenceStore.getStringSet("r_shop_owned", emptySet()) // bought cosmetic item ids
+    fun rShopFrame() = preferenceStore.getString("r_shop_frame", "") // equipped profile frame id
+    fun rShopTitle() = preferenceStore.getString("r_shop_title", "") // equipped title id
+    fun rShopCounter() = preferenceStore.getString("r_shop_counter", "") // equipped reader counter theme id
+    fun rBoostUntil() = preferenceStore.getLong("r_boost_until", 0L) // XP x2 booster active until (ms)
+    fun rComboShields() = preferenceStore.getInt("r_combo_shields", 0) // combo protections in the bag
+    fun rExtraFav() = preferenceStore.getInt("r_extra_fav", 0) // bought favourite slot packs (+5 each, max 3)
     fun rChestWeek() = preferenceStore.getString("r_chest_week", "") // ISO week of the last opened weekly chest
     fun rFavManga() = preferenceStore.getString("r_fav_manga", "") // up to 3 "source|url" keys shown on the profile, "\n"-separated
     fun rSystemBrightness() = preferenceStore.getBoolean("r_system_brightness", true) // the reader brightness slider also changes the PHONE brightness (needs the "modify system settings" permission)

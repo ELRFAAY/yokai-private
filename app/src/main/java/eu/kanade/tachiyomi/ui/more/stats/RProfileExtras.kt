@@ -117,6 +117,7 @@ object RProfileExtras {
             onChanged()
             build(ctx, root, ach, d, library, prefs, openManga, onChanged)
         }
+        MAX_FAV = 10 + 5 * prefs.rExtraFav().get()
         ach.addView(chestCard(ctx, prefs, ::rebuild))
         ach.addView(badgesCard(ctx, d, prefs, ::rebuild))
         ach.addView(recordsCard(ctx, d))
@@ -400,7 +401,7 @@ object RProfileExtras {
     }
 
     // ---- favourites (up to 5) ----
-    private const val MAX_FAV = 10
+    private var MAX_FAV = 10 // 10 + 5 per bought slot pack (shop)
     private const val FAV_PER_ROW = 5
 
     private fun favouritesCard(ctx: Context, library: List<Manga>, prefs: PreferencesHelper, openManga: (Manga) -> Unit, rebuild: () -> Unit): View {

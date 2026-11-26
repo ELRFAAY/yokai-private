@@ -77,9 +77,17 @@ object RXp {
         val sp = context.getSharedPreferences("r_xp", Context.MODE_PRIVATE)
         val now = System.currentTimeMillis()
         val last = sp.getLong("last", 0L)
-        val count = (if (now - last <= SESSION_GAP_MS) sp.getInt("count", 0) else 0) + 1
+        var keep = now - last <= SESSION_GAP_MS
+        // R shop: a combo shield keeps the combo alive once after a long break
+        if (!keep && last > 0L && sp.getInt("count", 0) > 0 && prefs.rComboShields().get() > 0) {
+            prefs.rComboShields().set(prefs.rComboShields().get() - 1)
+            keep = true
+        }
+        val count = (if (keep) sp.getInt("count", 0) else 0) + 1
         val mult = multiplier(count)
-        val gain = gainFor(count)
+        // R shop: x2 XP booster while it is active
+        val boost = if (prefs.rBoostUntil().get() > now) 2L else 1L
+        val gain = gainFor(count) * boost
         val extra = gain - RDragonLevel.XP_PER_CHAPTER
         sp.edit().putLong("last", now).putInt("count", count).apply()
         RDragonLevel.addXp(prefs, gain, extra)
