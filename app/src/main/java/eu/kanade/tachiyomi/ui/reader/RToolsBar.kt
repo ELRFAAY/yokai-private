@@ -86,7 +86,7 @@ class RToolsBar(
         orientation = VERTICAL
         layoutDirection = LAYOUT_DIRECTION_LTR
         val side = (14 * density).toInt()
-        setPadding(side, (6 * density).toInt(), side, (6 * density).toInt())
+        setPadding(side, (4 * density).toInt(), side, (4 * density).toInt())
         // R: a floating rounded card (like the owner's reference): dark, theme-tinted outline
         background = rGlassBackground(density, 28f, accent)
 
@@ -106,7 +106,7 @@ class RToolsBar(
             gravity = Gravity.CENTER
             textDirection = TEXT_DIRECTION_FIRST_STRONG
             background = pill(ColorUtils.setAlphaComponent(Color.WHITE, 18), 18f)
-            setPadding((12 * density).toInt(), (9 * density).toInt(), (8 * density).toInt(), (9 * density).toInt())
+            setPadding((12 * density).toInt(), (7 * density).toInt(), (8 * density).toInt(), (7 * density).toInt())
             setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down_24dp, 0)
             compoundDrawableTintList = android.content.res.ColorStateList.valueOf(onSurface)
             setOnClickListener {
@@ -114,7 +114,7 @@ class RToolsBar(
                 onOpenChapters()
             }
         }
-        navRow.addView(prevButton, LayoutParams((44 * density).toInt(), (44 * density).toInt()))
+        navRow.addView(prevButton, LayoutParams((40 * density).toInt(), (40 * density).toInt()))
         navRow.addView(
             chapterTitle,
             LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
@@ -122,7 +122,7 @@ class RToolsBar(
                 marginEnd = (6 * density).toInt()
             },
         )
-        navRow.addView(nextButton, LayoutParams((44 * density).toInt(), (44 * density).toInt()))
+        navRow.addView(nextButton, LayoutParams((40 * density).toInt(), (40 * density).toInt()))
         addView(navRow, LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         pageCounter.apply {
             setTextColor(onSurface)
@@ -137,8 +137,8 @@ class RToolsBar(
             pageCounter,
             LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                 gravity = Gravity.CENTER_HORIZONTAL
-                topMargin = (4 * density).toInt()
-                bottomMargin = (4 * density).toInt()
+                topMargin = (2 * density).toInt()
+                bottomMargin = (2 * density).toInt()
             },
         )
 
@@ -201,12 +201,22 @@ class RToolsBar(
         // handle line under the card: drag it up (or tap it) to open the chapters list; its chips switch to the
         // reading settings
         val handleZone = android.widget.FrameLayout(context)
-        val handle = View(context).apply {
-            background = pill(ColorUtils.setAlphaComponent(Color.WHITE, 170), 3f)
+        // a fixed, visible "chapters" button (tap or drag up = the old chapters sheet)
+        val handle = TextView(context).apply {
+            text = "⌃  الشباتر"
+            textSize = 13f
+            setTextColor(onSurface)
+            gravity = Gravity.CENTER
+            background = pill(ColorUtils.setAlphaComponent(Color.WHITE, 30), 16f)
+            setPadding((18 * density).toInt(), (5 * density).toInt(), (18 * density).toInt(), (5 * density).toInt())
         }
         handleZone.addView(
             handle,
-            android.widget.FrameLayout.LayoutParams((44 * density).toInt(), (5 * density).toInt(), Gravity.CENTER),
+            android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER,
+            ),
         )
         var downY = 0f
         var fired = false
@@ -289,6 +299,31 @@ class RToolsBar(
             detector.onTouchEvent(ev)
             false
         }
+    }
+
+    private var swipeDownY = 0f
+    private var swipeDownX = 0f
+    private var swipeFired = false
+
+    /** A drag UP from anywhere on the card (even on a button) opens the chapters sheet. */
+    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                swipeDownY = ev.rawY
+                swipeDownX = ev.rawX
+                swipeFired = false
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val dy = swipeDownY - ev.rawY
+                if (!swipeFired && dy > 28 * density && abs(ev.rawX - swipeDownX) < dy) {
+                    swipeFired = true
+                    onInteract()
+                    onFlingUp()
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     /** Round button with a thin outline; filled with the accent tint while its panel is open. */
