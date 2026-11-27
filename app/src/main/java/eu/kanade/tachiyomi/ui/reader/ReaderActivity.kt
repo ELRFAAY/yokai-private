@@ -1661,6 +1661,20 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         sheet.root.sheetBehavior?.isDraggable = false
         rOldSheetHidden = true
         binding.root.requestApplyInsets()
+        // R: the old sheet is invisible (alpha 0) while collapsed; when it goes back to collapsed/hidden hide it again
+        sheet.root.sheetBehavior?.addBottomSheetCallback(
+            object : BottomSheetBehavior.BottomSheetCallback() {
+                override fun onStateChanged(bottomSheet: View, newState: Int) {
+                    if (newState == BottomSheetBehavior.STATE_COLLAPSED || newState == BottomSheetBehavior.STATE_HIDDEN) {
+                        sheet.root.alpha = 0f
+                        sheet.topbarLayout.visibility = View.INVISIBLE
+                        sheet.root.sheetBehavior?.isDraggable = false
+                    }
+                }
+
+                override fun onSlide(bottomSheet: View, slideOffset: Float) = Unit
+            },
+        )
 
         val strip = RSideTools(this) { rScheduleAutoHide() }
         strip.add("الشباتر", null, R.drawable.ic_format_list_numbered_24dp) { rExpandChapterSheet() }
@@ -1730,6 +1744,10 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         val sb = binding.chaptersSheet.chaptersBottomSheet.sheetBehavior ?: return
         if (!menuVisible) setMenuVisibility(true)
         sb.isHideable = false
+        // the old sheet was made invisible (alpha 0) and non-draggable: bring it back for the open sheet
+        binding.chaptersSheet.root.alpha = 1f
+        binding.chaptersSheet.topbarLayout.visibility = View.VISIBLE
+        sb.isDraggable = true
         binding.chaptersSheet.root.post {
             if (sb.state == BottomSheetBehavior.STATE_HIDDEN) sb.state = BottomSheetBehavior.STATE_COLLAPSED
             binding.chaptersSheet.root.post {
