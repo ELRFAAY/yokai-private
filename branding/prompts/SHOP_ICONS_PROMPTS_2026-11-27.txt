@@ -1,0 +1,26 @@
+SHOP ICONS: TWO PROMPTS (2026-11-27). Give each prompt to the image model with the cobra accessories sheet as STYLE REF.
+Style for both: same as the cobra sheets: flat 2D sticker icon, thick clean dark outline, soft cel shading, bright saturated colours, gold coin accents, NO text/letters/numbers anywhere, no watermark, flat light-grey background, equal square cells, each icon centred, same size, wide gaps. High resolution.
+
+============================== PROMPT 1: helpers + reader counter themes (4 x 2 grid, 7 icons, last cell empty) ==============================
+Icon sheet for a mobile reading-app shop, sticker style (see the style rules). 4 columns x 2 rows, 7 icons, last cell empty:
+1. XP BOOSTER: a glowing golden lightning bolt inside a round potion bottle, with a small "x2" shaped from two sparkles (NO letters).
+2. COMBO SHIELD: a round blue-and-gold shield with a small flame on it.
+3. CHEST REROLL: the treasure chest (wooden, gold corners) with two circular arrows around it.
+4. FAVOURITES SLOTS: a bookshelf cell / book stack with a green plus sign badge.
+5. COUNTER THEME GOLD: a rounded dark-green pill bar with a gold glowing outline and a small spinning gold diamond on the left.
+6. COUNTER THEME VIOLET: the same pill bar, violet glowing outline.
+7. COUNTER THEME RUBY: the same pill bar, red glowing outline.
+(The pill bars are empty: no text.)
+
+============================== PROMPT 2: profile frames + titles (3 x 2 grid, 6 items) ==============================
+Icon sheet for a mobile reading-app shop, sticker style (see the style rules). 3 columns x 2 rows, 6 items:
+Row 1 = PROFILE CARD FRAMES: three wide rounded-rectangle ornamental frames, EMPTY in the centre (flat plain colour fill), each with a clean outer border and decorated corners: 1 gold with small crowns at the corners, 2 violet with crystal gems, 3 ruby red with flame tips.
+Row 2 = TITLE PLAQUES: three blank ribbon/banner plaques (NO text, empty centre) with an icon at the left end: 1 "night reader": dark blue banner with a crescent moon and stars, 2 "chapter hunter": green banner with a crossed bow-and-arrow, 3 "legend dragon": gold-and-black banner with a small dragon head.
+
+============================== FILE NAMES (for me, next account) ==============================
+Cut each icon to a transparent PNG/WebP, square (frames/plaques wide), and name:
+r_shop_boost, r_shop_shield, r_shop_reroll, r_shop_fav,
+r_shop_ctr_gold, r_shop_ctr_violet, r_shop_ctr_ruby,
+r_shop_frame_gold, r_shop_frame_violet, r_shop_frame_ruby,
+r_shop_title_night, r_shop_title_hunter, r_shop_title_legend.
+The cobra outfits already have pictures (r_cobra_acc_*). The shop shows an emoji until the picture exists, so send them in any order.

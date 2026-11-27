@@ -17,6 +17,7 @@ import eu.kanade.tachiyomi.util.RShop
 
 /** R: the shop tab. Pays with gold coins (1 per 1000 XP). Rebuilds itself after each buy / equip. */
 object RShopView {
+    private var selectedGroup: RShop.Group? = null
     private fun dp(ctx: Context, v: Float) = (v * ctx.resources.displayMetrics.density).toInt()
 
     fun build(ctx: Context, root: LinearLayout, prefs: PreferencesHelper, onChanged: () -> Unit) {
@@ -57,68 +58,108 @@ object RShopView {
         )
         root.addView(wallet, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(ctx, 10f) })
 
-        for (g in RShop.Group.values()) {
+        // category chips (the filter is remembered while the screen is open)
+        val chips = android.widget.HorizontalScrollView(ctx).apply { isHorizontalScrollBarEnabled = false }
+        val chipRow = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; layoutDirection = android.view.View.LAYOUT_DIRECTION_RTL }
+        fun chip(label: String, selected: Boolean, onClick: () -> Unit) {
+            chipRow.addView(
+                TextView(ctx).apply {
+                    text = label
+                    textSize = 13f
+                    setTypeface(typeface, if (selected) Typeface.BOLD else Typeface.NORMAL)
+                    setTextColor(if (selected) android.graphics.Color.BLACK else 0xFFDDDDDD.toInt())
+                    setPadding(dp(ctx, 14f), dp(ctx, 7f), dp(ctx, 14f), dp(ctx, 7f))
+                    background = GradientDrawable().apply {
+                        cornerRadius = dp(ctx, 20f).toFloat()
+                        setColor(if (selected) 0xFFFFC53D.toInt() else 0x33808080)
+                    }
+                    setOnClickListener { onClick() }
+                },
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginEnd = dp(ctx, 6f) },
+            )
+        }
+        chip("الكل", selectedGroup == null) { selectedGroup = null; refresh() }
+        for (g in RShop.Group.values()) chip(g.label, selectedGroup == g) { selectedGroup = g; refresh() }
+        chips.addView(chipRow)
+        root.addView(chips, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(ctx, 10f) })
+
+        // 2-column grid of item cards: big picture, name, short line, price / equip button
+        val list = RShop.items.filter { selectedGroup == null || it.group == selectedGroup }
+        var rowView: LinearLayout? = null
+        list.forEachIndexed { index, it ->
+            if (index % 2 == 0) {
+                rowView = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; weightSum = 2f; layoutDirection = android.view.View.LAYOUT_DIRECTION_LTR }
+                root.addView(rowView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(ctx, 10f) })
+            }
+            val owned = it.group != RShop.Group.BOOST && RShop.owned(prefs, it.id)
+            val maxed = it.id == "fav" && prefs.rExtraFav().get() >= RShop.MAX_FAV_PACKS
+            val equipped = RShop.equipped(prefs, it.id)
             val card = LinearLayout(ctx).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(dp(ctx, 14f), dp(ctx, 12f), dp(ctx, 14f), dp(ctx, 8f))
+                gravity = Gravity.CENTER_HORIZONTAL
+                layoutDirection = android.view.View.LAYOUT_DIRECTION_RTL
+                setPadding(dp(ctx, 10f), dp(ctx, 12f), dp(ctx, 10f), dp(ctx, 10f))
                 background = GradientDrawable().apply {
-                    cornerRadius = dp(ctx, 14f).toFloat()
+                    cornerRadius = dp(ctx, 16f).toFloat()
                     setColor(0x14808080)
-                    setStroke(dp(ctx, 1f), 0x33808080)
+                    setStroke(dp(ctx, if (equipped) 2f else 1f), if (equipped) 0xFFFFC53D.toInt() else 0x33808080)
                 }
             }
+            // picture: r_shop_<id> (or the cobra picture); the group's emoji until the artwork exists
+            val picName = if (it.pic.isNotEmpty()) it.pic else "r_shop_${it.id}"
+            val rid = ctx.resources.getIdentifier(picName, "drawable", ctx.packageName)
+            if (rid != 0) {
+                card.addView(
+                    ImageView(ctx).apply { setImageResource(rid); scaleType = ImageView.ScaleType.FIT_CENTER },
+                    LinearLayout.LayoutParams(dp(ctx, 96f), dp(ctx, 96f)),
+                )
+            } else {
+                card.addView(
+                    TextView(ctx).apply {
+                        text = when (it.group) {
+                            RShop.Group.BOOST -> "⚡"
+                            RShop.Group.FRAME -> "🖼️"
+                            RShop.Group.COBRA -> "🐍"
+                            RShop.Group.TITLE -> "🏷️"
+                            RShop.Group.COUNTER -> "🪙"
+                        }
+                        textSize = 38f
+                        gravity = Gravity.CENTER
+                        if (it.color != 0) setTextColor(it.color)
+                    },
+                    LinearLayout.LayoutParams(dp(ctx, 96f), dp(ctx, 96f)),
+                )
+            }
+            card.addView(TextView(ctx).apply { text = it.name; textSize = 14f; setTypeface(typeface, Typeface.BOLD); gravity = Gravity.CENTER })
             card.addView(
-                TextView(ctx).apply { text = g.label; textSize = 16f; setTypeface(typeface, Typeface.BOLD); setPadding(0, 0, 0, dp(ctx, 6f)) },
+                TextView(ctx).apply { text = it.desc; textSize = 11f; alpha = 0.7f; gravity = Gravity.CENTER; minLines = 2; maxLines = 3 },
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(ctx, 2f) },
             )
-            for (it in RShop.items.filter { i -> i.group == g }) {
-                val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-                if (it.pic.isNotEmpty()) {
-                    val rid = ctx.resources.getIdentifier(it.pic, "drawable", ctx.packageName)
-                    if (rid != 0) {
-                        row.addView(
-                            ImageView(ctx).apply { setImageResource(rid); scaleType = ImageView.ScaleType.FIT_CENTER },
-                            LinearLayout.LayoutParams(dp(ctx, 64f), dp(ctx, 72f)).apply { marginEnd = dp(ctx, 8f) },
-                        )
+            val btn = MaterialButton(ctx).apply {
+                isAllCaps = false
+                textSize = 13f
+                insetTop = 0
+                insetBottom = 0
+                when {
+                    maxed -> { text = "الحد الأقصى"; isEnabled = false }
+                    owned -> {
+                        text = if (equipped) "لابسه ✓" else "البس"
+                        setOnClickListener { _ -> RShop.toggleEquip(prefs, it); refresh() }
                     }
-                } else if (it.color != 0) {
-                    row.addView(
-                        android.view.View(ctx).apply {
-                            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(it.color) }
-                        },
-                        LinearLayout.LayoutParams(dp(ctx, 18f), dp(ctx, 18f)).apply { marginEnd = dp(ctx, 8f) },
-                    )
-                }
-                val texts = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
-                texts.addView(TextView(ctx).apply { text = it.name; textSize = 14.5f; setTypeface(typeface, Typeface.BOLD) })
-                texts.addView(TextView(ctx).apply { text = it.desc; textSize = 11.5f; alpha = 0.7f })
-                row.addView(texts, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-                val owned = g != RShop.Group.BOOST && RShop.owned(prefs, it.id)
-                val maxed = it.id == "fav" && prefs.rExtraFav().get() >= RShop.MAX_FAV_PACKS
-                val btn = MaterialButton(ctx).apply {
-                    isAllCaps = false
-                    textSize = 12f
-                    insetTop = 0
-                    insetBottom = 0
-                    when {
-                        maxed -> { text = "الحد الأقصى"; isEnabled = false }
-                        owned -> {
-                            val on = RShop.equipped(prefs, it.id)
-                            text = if (on) "لابسه ✓" else "البس"
-                            setOnClickListener { _ -> RShop.toggleEquip(prefs, it); refresh() }
-                        }
-                        else -> {
-                            text = "${it.price} عملة"
-                            setOnClickListener { _ ->
-                                Toast.makeText(ctx, RShop.buy(prefs, it), Toast.LENGTH_SHORT).show()
-                                refresh()
-                            }
+                    else -> {
+                        text = "${it.price}"
+                        icon = RXpBadge.coin(ctx)
+                        iconTint = null
+                        iconSize = dp(ctx, 20f)
+                        setOnClickListener { _ ->
+                            Toast.makeText(ctx, RShop.buy(prefs, it), Toast.LENGTH_SHORT).show()
+                            refresh()
                         }
                     }
                 }
-                row.addView(btn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(ctx, 40f)))
-                card.addView(row, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(ctx, 8f) })
             }
-            root.addView(card, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(ctx, 10f) })
+            card.addView(btn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(ctx, 42f)).apply { topMargin = dp(ctx, 8f) })
+            rowView?.addView(card, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(ctx, 4f); marginEnd = dp(ctx, 4f) })
         }
     }
 }
