@@ -160,6 +160,13 @@ class SettingsRController : SettingsLegacyController() {
                 preferences.rTapScroll().changesIn(viewScope) { isEnabled = it }
             }
 
+            switchPreference {
+                bindTo(preferences.rToolsClean())
+                title = "كارت الأدوات نضيف (من غير تكرار)"
+                rIcon(R.drawable.ic_tune_24dp)
+                summary = "لما كارت الأدوات يظهر: بيخبي رقم الصفحة المكرر تحته، وساعة وبطارية الركن لأن شريط الموبايل بيعرضهم. عند الإيقاف: زي ما كان."
+            }
+
             intListPreference(activity) {
                 bindTo(preferences.rHoldScrollSpeed())
                 title = "سرعة الضغط المطوّل"

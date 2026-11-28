@@ -100,8 +100,8 @@ class RToolsBar(
         nextButton = navButton(R.drawable.ic_skip_next_24, "الفصل التالي") { onNextChapter() }
         chapterTitle.apply {
             setTextColor(onSurface)
-            textSize = 14f
-            maxLines = 1
+            textSize = 13f
+            maxLines = 2 // the full chapter name on two lines instead of "…" after one
             ellipsize = TextUtils.TruncateAt.END
             gravity = Gravity.CENTER
             textDirection = TEXT_DIRECTION_FIRST_STRONG
@@ -247,7 +247,7 @@ class RToolsBar(
         }
         addView(
             handleZone,
-            LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (22 * density).toInt()).apply {
+            LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (34 * density).toInt()).apply { // tall enough: the chip text was cut at the bottom
                 topMargin = (2 * density).toInt()
             },
         )

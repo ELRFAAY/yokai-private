@@ -1313,6 +1313,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     private fun setMenuVisibility(visible: Boolean, animate: Boolean = true) {
         val oldVisibility = menuVisible
         menuVisible = visible
+        if (!visible) binding.pageNumber.alpha = 1f
         binding.root.post { rUpdateClock() }
         if (visible) coroutine?.cancel()
         rScheduleAutoHide()
@@ -1854,6 +1855,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         // while the chapters list is opening / open the tools stay hidden and untouched (no layout work during the slide)
         if (!binding.chaptersSheet.chaptersBottomSheet.sheetBehavior.isCollapsed()) {
             if (bar.isVisible) bar.isVisible = false
+            binding.pageNumber.alpha = 1f
             return
         }
         val sheet = binding.chaptersSheet.root
@@ -1880,6 +1882,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             val shown = !rChapterDialogOpen && binding.chaptersSheet.chaptersBottomSheet.sheetBehavior.isCollapsed()
             if (bar.isVisible != shown) bar.isVisible = shown
         }
+        // the card already has its own page counter: no second "1/5" under it
+        binding.pageNumber.alpha = if (menuVisible && bar.isVisible && preferences.rToolsClean().get()) 0f else 1f
     }
 
     /** R: hides the tools by itself after the delay chosen in the reader settings (0 = never). */
@@ -1896,7 +1900,8 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
     /** R: clock + battery in the corner (switch in the reader settings). Always shown while the switch is on. */
     private fun rUpdateClock() {
-        val on = preferences.rClockBattery().get() && !rLocked
+        val on = preferences.rClockBattery().get() && !rLocked &&
+            !(menuVisible && preferences.rToolsClean().get()) // the system bar shows the same time and battery while the menu is open
         binding.rClockBattery.isVisible = on
         if (!on) return
         rReadBattery()
