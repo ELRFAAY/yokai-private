@@ -308,6 +308,9 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     fun rDragonSeenLevel() = preferenceStore.getInt("r_dragon_seen_level", 0) // last level the evolution was shown for (0 = not set yet)
     fun rMascotTransform() = preferenceStore.getBoolean("r_mascot_transform", true)
 
+    /** The little dragon walks by himself between a few safe spots (edges and the free middle), never over the bars. */
+    fun rMascotWander() = preferenceStore.getBoolean("r_mascot_wander", true)
+
     /**
      * The small dragon's size in dp. ONE value for the home screen and the reader (the dragon, the reader visits and
      * the stick scene), so the two are always exactly the same size.

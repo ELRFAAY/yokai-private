@@ -397,11 +397,50 @@ class RMascotView(context: Context) : View(context) {
     var homeYProvider: (() -> Float?)? = null
     private var tfShift = 0f // R: costume pushed down while it is taller than the room above it
 
-    private fun homeX() = if (layoutDirection == LAYOUT_DIRECTION_RTL) half + 16f * density else width - half - 16f * density
-    private fun homeY() = (homeYProvider?.invoke() ?: (minY() + 8f * density)).coerceIn(minY(), maxY())
+    private fun baseHomeX() = if (layoutDirection == LAYOUT_DIRECTION_RTL) half + 16f * density else width - half - 16f * density
+    private fun baseHomeY() = (homeYProvider?.invoke() ?: (minY() + 8f * density)).coerceIn(minY(), maxY())
+
+    // R: the spot he lives at right now: his home beside the title, or a safe spot he walked to by himself (see wander)
+    private var wanderX = Float.NaN
+    private var wanderY = Float.NaN
+    private var nextWanderAt = 0L
+    private fun homeX() = if (wanderX.isNaN()) baseHomeX() else wanderX.coerceIn(half + 8f * density, max(half + 8f * density, width - half - 8f * density))
+    private fun homeY() = if (wanderY.isNaN()) baseHomeY() else wanderY.coerceIn(minY(), maxY())
+
+    /** Every 25-60 s of quiet he picks another safe spot (the existing glide-home code then walks him there smoothly). */
+    private fun wander(now: Long) {
+        if (!prefs.rMascotWander().get() || !isShown) return
+        if (fallPhase != 0 || state != State.IDLE || asleep || tfStart != 0L || enterStart != 0L) return
+        if (nextWanderAt == 0L) nextWanderAt = now + 20_000L
+        if (now < nextWanderAt || now - lastActiveAt < 6_000L) return
+        nextWanderAt = now + 25_000L + (Math.random() * 35_000L).toLong()
+        val left = half + 12f * density
+        val right = max(left, width - half - 12f * density)
+        val top = minY()
+        val bottom = maxY()
+        val mid = (top + bottom) / 2f
+        // safe spots: both edges at the top / middle / bottom of the free area (never under the toolbar or the bottom bar)
+        val spots = listOf(
+            Pair(baseHomeX(), baseHomeY()),
+            Pair(left, top + 8f * density), Pair(right, top + 8f * density),
+            Pair(left, mid), Pair(right, mid),
+            Pair(left, bottom), Pair(right, bottom),
+            Pair((left + right) / 2f, bottom),
+        ).filter { hypot(it.first - x, it.second - y) > 90f * density }
+        val pick = spots.randomOrNull() ?: return
+        wanderX = pick.first
+        wanderY = pick.second
+    }
 
     private fun minY() = half + 24f * density
-    private fun maxY() = max(minY(), height - half - 72f * density) // stays above the bottom bar
+    /** R: y (in this view) of the top of the bottom bar (library / browse ...), set by MainActivity; null = no bar shown. */
+    var bottomLimitProvider: (() -> Float?)? = null
+
+    // stays above the REAL bottom bar (its measured top), never behind it
+    private fun maxY(): Float {
+        val byBar = bottomLimitProvider?.invoke()?.let { it - half - 10f * density } ?: Float.MAX_VALUE
+        return max(minY(), min(height - half - 72f * density, byBar))
+    }
 
     // ---- physics ----
 
@@ -443,6 +482,7 @@ class RMascotView(context: Context) : View(context) {
         }
 
         fallGag(now, dt)
+        wander(now)
 
         // R: a thrown or dragged dragon does not stay in the middle of the list: a few seconds after the last touch
         // it glides back to its home spot beside the title (smooth, no jump)
@@ -1090,6 +1130,11 @@ class RMascotView(context: Context) : View(context) {
                     lastTapAt = now
                     if (prefs.rMascotTransform().get() && doubleTap) {
                         lastTapAt = 0L
+                        // R: a costume is taller and wider than he is: first move to a roomy spot (away from the edges / the top)
+                        x = x.coerceIn(half * 1.5f + 8f * density, max(half * 1.5f + 8f * density, width - half * 1.5f - 8f * density))
+                        y = max(y, minY() + half * 0.9f).coerceAtMost(maxY())
+                        targetX = x
+                        targetY = y
                         tfStart = now
                         tfForm = nextCostume()
                         tfSpoke = false

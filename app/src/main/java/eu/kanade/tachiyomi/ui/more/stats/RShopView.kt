@@ -147,13 +147,28 @@ object RShopView {
                         setOnClickListener { _ -> RShop.toggleEquip(prefs, it); refresh() }
                     }
                     else -> {
+                        val missing = it.price - RShop.balance(prefs)
                         text = "${it.price}"
                         icon = RXpBadge.coin(ctx)
                         iconTint = null
                         iconSize = dp(ctx, 20f)
-                        setOnClickListener { _ ->
-                            Toast.makeText(ctx, RShop.buy(prefs, it), Toast.LENGTH_SHORT).show()
-                            refresh()
+                        if (missing > 0) {
+                            // not enough coins: the button is dimmed and says how many are missing
+                            alpha = 0.55f
+                            setOnClickListener { _ -> Toast.makeText(ctx, "ناقصك $missing عملة", Toast.LENGTH_SHORT).show() }
+                        } else {
+                            // ask first, so a stray tap never spends coins
+                            setOnClickListener { _ ->
+                                com.google.android.material.dialog.MaterialAlertDialogBuilder(ctx)
+                                    .setTitle(it.name)
+                                    .setMessage("هتدفع ${it.price} عملة، ويفضل معاك ${RDragonLevel.full(RShop.balance(prefs) - it.price)}. تكمّل؟")
+                                    .setPositiveButton("اشتري") { _, _ ->
+                                        Toast.makeText(ctx, RShop.buy(prefs, it), Toast.LENGTH_SHORT).show()
+                                        refresh()
+                                    }
+                                    .setNegativeButton("لأ", null)
+                                    .show()
+                            }
                         }
                     }
                 }

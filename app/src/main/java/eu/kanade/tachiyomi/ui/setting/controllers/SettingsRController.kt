@@ -305,6 +305,14 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             switchPreference {
+                bindTo(preferences.rMascotWander())
+                title = "التنين يتحرك لوحده"
+                rIcon(R.drawable.ic_swap_vert_24dp)
+                summary = "كل نص دقيقة تقريبًا (لو ما لمستوش) يمشي بنفسه لمكان تاني آمن: حرف الشاشة أو النص، ومش بيدخل ورا الأشرطة."
+                preferences.rMascot().changesIn(viewScope) { isEnabled = it }
+            }
+
+            switchPreference {
                 bindTo(preferences.rMascotTransform())
                 title = "تحويل التنين الصغير"
                 rIcon(R.drawable.ic_r_swap)

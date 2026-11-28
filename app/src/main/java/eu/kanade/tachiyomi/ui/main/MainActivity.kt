@@ -268,6 +268,11 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
         val show = preferences.rMascot().get() && !preferences.rDragonsOff().get() &&
             (controller is LibraryController || controller is eu.kanade.tachiyomi.ui.manga.MangaDetailsController)
         rMascot?.visibility = if (show) View.VISIBLE else View.GONE
+        // R: floating above everything (it was added before some views that could draw over it)
+        if (show) {
+            rMascot?.bringToFront()
+            rMascot?.translationZ = 40 * resources.displayMetrics.density
+        }
         // R: a random opinion when a manga page opens (see RMascotView.reactToManga)
         if (show && controller is eu.kanade.tachiyomi.ui.manga.MangaDetailsController) rMascot?.reactToManga()
         if (show) rMascot?.onShown()
@@ -403,6 +408,19 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
                     t.getLocationOnScreen(a)
                     view.getLocationOnScreen(b)
                     a[1] - b[1] + t.height / 2f
+                }
+            }
+            // R: the dragon stays above the bottom bar (library / browse ...): the real top of that bar
+            view.bottomLimitProvider = {
+                val bar = binding.bottomNav
+                if (bar == null || !bar.isShown || bar.height == 0) {
+                    null
+                } else {
+                    val a = IntArray(2)
+                    val b = IntArray(2)
+                    bar.getLocationOnScreen(a)
+                    view.getLocationOnScreen(b)
+                    (a[1] - b[1]).toFloat()
                 }
             }
             binding.root.addView(
