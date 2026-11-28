@@ -168,6 +168,14 @@ class SettingsRController : SettingsLegacyController() {
             }
 
             intListPreference(activity) {
+                bindTo(preferences.rToolsStyle())
+                title = "شكل شريط الأدوات في القارئ"
+                rIcon(R.drawable.ic_tune_24dp)
+                entries = listOf("الكارت الكامل (الحالي)", "شريط رفيع تحت", "كبسولة صغيرة عايمة", "شريط جانبي رفيع")
+                entryValues = listOf(0, 1, 2, 3)
+            }
+
+            intListPreference(activity) {
                 bindTo(preferences.rHoldScrollSpeed())
                 title = "سرعة الضغط المطوّل"
                 rIcon(R.drawable.ic_tune_24dp)

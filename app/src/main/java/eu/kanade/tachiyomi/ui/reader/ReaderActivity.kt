@@ -1816,6 +1816,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
             rightMargin = 10.dpToPx
             bottomMargin = 120.dpToPx
         }
+        bar.applyStyle(preferences.rToolsStyle().get())
         bar.isVisible = menuVisible
         (binding.root as ViewGroup).addView(bar, lp)
         rToolsBar = bar
@@ -1872,9 +1873,19 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
         }
         val lp = bar.layoutParams as? androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams ?: return
         val right = if (verticalNav && binding.navLayout.isVisible) 64.dpToPx else 10.dpToPx // the vertical slider lives on the right
-        if (lp.bottomMargin != margin || lp.rightMargin != right) {
+        // R: the bar's shape decides its width and where it sits (card / thin bar: full width at the bottom; capsule: small, bottom
+        // centre; side strip: small, on the right edge, vertically centred)
+        val wantWidth = if (bar.isWide) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT
+        val wantGravity = when {
+            bar.isSide -> android.view.Gravity.END or android.view.Gravity.CENTER_VERTICAL
+            bar.isWide -> android.view.Gravity.BOTTOM
+            else -> android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL
+        }
+        if (lp.bottomMargin != margin || lp.rightMargin != right || lp.width != wantWidth || lp.gravity != wantGravity) {
             lp.bottomMargin = margin
             lp.rightMargin = right
+            lp.width = wantWidth
+            lp.gravity = wantGravity
             bar.layoutParams = lp
         }
         // hidden while the chapters list is open

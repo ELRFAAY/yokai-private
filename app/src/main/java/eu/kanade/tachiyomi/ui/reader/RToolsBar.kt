@@ -66,6 +66,74 @@ class RToolsBar(
     private lateinit var prevButton: ImageButton
     private lateinit var nextButton: ImageButton
 
+    // R: the tools bar comes in 4 shapes (Settings > R): 0 full card, 1 thin bar, 2 floating capsule, 3 side strip
+    private var style = 0
+    private var capsuleOpen = false
+    private var moreShown = false
+    private lateinit var navRowRef: LinearLayout
+    private lateinit var toolRowRef: LinearLayout
+    private lateinit var handleRef: View
+    private val moreButton = TextView(context)
+
+    /** True when the bar stretches over the screen width (card, thin bar, opened capsule); false for the capsule and the side strip. */
+    val isWide: Boolean get() = style == 0 || style == 1 || (style == 2 && capsuleOpen)
+    val isSide: Boolean get() = style == 3
+
+    fun applyStyle(s: Int) {
+        style = s.coerceIn(0, 3)
+        capsuleOpen = false
+        moreShown = false
+        relayout()
+    }
+
+    private fun relayout() {
+        val capsule = style == 2 && !capsuleOpen
+        val side = style == 3
+        val thin = style == 1
+        val full = style == 0 || (style == 2 && capsuleOpen)
+        // the page counter lives under the chapter row, except in the capsule (between the two arrows)
+        (pageCounter.parent as? ViewGroup)?.removeView(pageCounter)
+        val ph = ((if (side) 6 else 14) * density).toInt()
+        pageCounter.setPadding(ph, (3 * density).toInt(), ph, (3 * density).toInt())
+        if (capsule) {
+            navRowRef.addView(
+                pageCounter,
+                1,
+                LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                    marginStart = (6 * density).toInt()
+                    marginEnd = (6 * density).toInt()
+                },
+            )
+        } else {
+            addView(
+                pageCounter,
+                indexOfChild(navRowRef) + 1,
+                LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                    gravity = Gravity.CENTER_HORIZONTAL
+                    topMargin = (2 * density).toInt()
+                    bottomMargin = (2 * density).toInt()
+                },
+            )
+        }
+        chapterTitle.isVisible = !(capsule || side)
+        navRowRef.orientation = if (side) VERTICAL else HORIZONTAL
+        navRowRef.gravity = if (side) Gravity.CENTER_HORIZONTAL else Gravity.CENTER_VERTICAL
+        toolRowRef.orientation = if (side) VERTICAL else HORIZONTAL
+        // the stretchy gaps between the tool buttons: a fixed small gap in the vertical strip
+        for (i in 0 until toolRowRef.childCount) {
+            val c = toolRowRef.getChildAt(i)
+            if (c is ImageButton) continue
+            c.layoutParams = if (side) LayoutParams(1, (6 * density).toInt(), 0f) else LayoutParams(1, 1, 1f)
+        }
+        toolRowRef.isVisible = full || side || (thin && moreShown)
+        handleRef.isVisible = full
+        moreButton.isVisible = thin
+        moreButton.text = if (moreShown) "أقل ⌃" else "المزيد ⌄"
+        panel.minimumWidth = if (side) (240 * density).toInt() else 0
+        if (!toolRowRef.isVisible) close()
+        requestLayout()
+    }
+
     /** The current chapter's name in the chapter row (tap it = the chapters list). */
     fun setChapterTitle(text: CharSequence) {
         chapterTitle.text = text
@@ -299,6 +367,38 @@ class RToolsBar(
             detector.onTouchEvent(ev)
             false
         }
+        navRowRef = navRow
+        toolRowRef = row
+        handleRef = handleZone
+        // thin bar: "more" shows / hides the tools row
+        moreButton.apply {
+            textSize = 12f
+            setTextColor(onSurface)
+            gravity = Gravity.CENTER
+            background = pill(ColorUtils.setAlphaComponent(Color.WHITE, 22), 14f)
+            setPadding((14 * density).toInt(), (3 * density).toInt(), (14 * density).toInt(), (3 * density).toInt())
+            setOnClickListener {
+                onInteract()
+                moreShown = !moreShown
+                relayout()
+            }
+        }
+        addView(
+            moreButton,
+            LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+                topMargin = (2 * density).toInt()
+            },
+        )
+        // capsule: tapping the page number opens / closes the full card
+        pageCounter.setOnClickListener {
+            if (style == 2) {
+                onInteract()
+                capsuleOpen = !capsuleOpen
+                relayout()
+            }
+        }
+        relayout()
     }
 
     private var swipeDownY = 0f

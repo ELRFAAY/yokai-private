@@ -376,6 +376,7 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
 
     /** Hold-scroll speed in tenths of a screen per second. */
     fun rHoldScrollSpeed() = preferenceStore.getInt("r_hold_scroll_speed", 10)
+    fun rToolsStyle() = preferenceStore.getInt("r_tools_style", 0) // reader tools: 0 full card, 1 thin bar, 2 floating capsule, 3 side strip
     fun rToolsClean() = preferenceStore.getBoolean("r_tools_clean", true) // while the tools card is open: no second page number, no second clock/battery pill
 
     /** Reader: hide the toolbar by itself after N seconds (0 = never). */
