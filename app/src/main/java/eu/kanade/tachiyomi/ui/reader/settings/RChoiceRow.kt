@@ -26,6 +26,7 @@ object RChoiceRow {
     const val JUMP = 1 // how far one tap scrolls: params = percent of the screen
     const val SPEED = 2 // hold-scroll speed: params = 1..4 chevrons
     const val CLOCK = 3 // auto-hide delay: params = seconds, 0 = never
+    const val TOOLS = 4 // shape of the reader tools box: params = 0 card, 1 thin bar, 2 capsule, 3 side strip, 4 the original (no tools box)
 
     /** Hides [group] (it keeps the ids/state code) and puts a row of picture cards right after it. */
     fun bind(
@@ -145,6 +146,25 @@ object RChoiceRow {
                     p.strokeCap = Paint.Cap.ROUND
                     val x = (scr.left + scr.right) / 2f
                     arrowDown(c, x, scr.top + 3 * dp, scr.top + scr.height() * f - 1.5f * dp)
+                }
+                TOOLS -> {
+                    p.style = Paint.Style.FILL
+                    p.color = (accent and 0x00FFFFFF) or 0x88000000.toInt()
+                    when (v) {
+                        0 -> c.drawRoundRect(RectF(scr.left + 1.5f * dp, scr.bottom - scr.height() * 0.36f, scr.right - 1.5f * dp, scr.bottom - 2f * dp), 3 * dp, 3 * dp, p)
+                        1 -> c.drawRoundRect(RectF(scr.left + 1.5f * dp, scr.bottom - scr.height() * 0.16f, scr.right - 1.5f * dp, scr.bottom - 2f * dp), 3 * dp, 3 * dp, p)
+                        2 -> c.drawRoundRect(RectF(scr.left + scr.width() * 0.2f, scr.bottom - scr.height() * 0.17f, scr.right - scr.width() * 0.2f, scr.bottom - 3f * dp), 6 * dp, 6 * dp, p)
+                        3 -> {
+                            c.drawRoundRect(RectF(scr.right - 7f * dp, scr.top + scr.height() * 0.25f, scr.right - 1.5f * dp, scr.bottom - scr.height() * 0.25f), 3 * dp, 3 * dp, p)
+                            c.drawRoundRect(RectF(scr.left + scr.width() * 0.25f, scr.bottom - scr.height() * 0.15f, scr.right - 10f * dp, scr.bottom - 3f * dp), 5 * dp, 5 * dp, p)
+                        }
+                        else -> { // the original: only the top toolbar, nothing floating
+                            p.color = ink
+                            p.alpha = 90
+                            c.drawRect(scr.left, scr.top, scr.right, scr.top + scr.height() * 0.12f, p)
+                            p.alpha = 255
+                        }
+                    }
                 }
                 else -> { // SPEED: v chevrons
                     p.color = accent

@@ -447,6 +447,16 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
 
         binding.chaptersSheet.chaptersBottomSheet.setup(this)
         rSetupToolsBar()
+        // R: the tools box shape is changed from the reader settings sheet: apply it at once (style) or show/hide the box (the original = off)
+        preferences.rToolsStyle().changes().drop(1).onEach {
+            rToolsBar?.applyStyle(it)
+            binding.root.post { rPositionToolsBar() }
+        }.launchIn(lifecycleScope)
+        preferences.rToolsBar().changes().drop(1).onEach { on ->
+            if (on && rToolsBar == null) rSetupToolsBar()
+            rToolsBar?.isVisible = on && menuVisible
+            binding.root.post { rPositionToolsBar() }
+        }.launchIn(lifecycleScope)
         rSetupXpCounter()
         rStyleClock()
         binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> rPositionClock() }
@@ -1329,7 +1339,7 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
                 wic.show(systemBars())
             }
             binding.appBar.isVisible = true
-            rToolsBar?.isVisible = true
+            rToolsBar?.isVisible = preferences.rToolsBar().get()
 
             if (binding.chaptersSheet.chaptersBottomSheet.sheetBehavior.isExpanded()) {
                 binding.chaptersSheet.chaptersBottomSheet.sheetBehavior?.isHideable = false
@@ -1851,6 +1861,10 @@ class ReaderActivity : BaseActivity<ReaderActivityBinding>() {
     /** R: puts the tools card right above the page bar (or above the chapters sheet when the page bar is not shown). */
     private fun rPositionToolsBar() {
         val bar = rToolsBar ?: return
+        if (!preferences.rToolsBar().get()) { // the original (no tools box)
+            if (bar.isVisible) bar.isVisible = false
+            return
+        }
         val rootHeight = binding.root.height
         if (rootHeight <= 0) return
         // while the chapters list is opening / open the tools stay hidden and untouched (no layout work during the slide)

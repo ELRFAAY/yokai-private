@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.LinearLayout
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
@@ -113,8 +114,40 @@ class ReaderGeneralView @JvmOverloads constructor(context: Context, attrs: Attri
             listOf("بطيئة", "عادية", "سريعة", "أسرع"),
             speeds.indexOf(preferences.rHoldScrollSpeed().get()).coerceAtLeast(0),
         ) { preferences.rHoldScrollSpeed().set(speeds[it]) }
+        rBindToolsShape()
 
         updatePrefs()
+    }
+
+    /** R: the tools box shape (card / thin bar / capsule / side strip / the original = none). Applies at once. */
+    private fun rBindToolsShape() {
+        val anchor = binding.rHoldSpeed
+        val parent = anchor.parent as? ViewGroup ?: return
+        val dp = resources.displayMetrics.density
+        val holder = View(context).apply { id = View.generateViewId() }
+        val speedRow = (0 until parent.childCount).map { parent.getChildAt(it) }.lastOrNull { it.tag == "r_choice_row_" + anchor.id }
+        val at = (if (speedRow != null) parent.indexOfChild(speedRow) else parent.indexOfChild(anchor)) + 1
+        parent.addView(
+            TextView(context).apply {
+                text = "شكل صندوق الأدوات"
+                textSize = 14f
+                setPadding(0, (14 * dp).toInt(), 0, 0)
+            },
+            at,
+        )
+        parent.addView(holder, at + 1)
+        val current = if (preferences.rToolsBar().get()) preferences.rToolsStyle().get().coerceIn(0, 3) else 4
+        RChoiceRow.bind(
+            context, holder, RChoiceRow.TOOLS, listOf(0, 1, 2, 3, 4),
+            listOf("كارت", "شريط رفيع", "كبسولة", "جانبي", "الأصلي (بدون)"), current,
+        ) { i ->
+            if (i == 4) {
+                preferences.rToolsBar().set(false)
+            } else {
+                preferences.rToolsStyle().set(i)
+                preferences.rToolsBar().set(true)
+            }
+        }
     }
 
     /** R: fills a segmented button row with [labels], checks [selected] and reports taps. */
